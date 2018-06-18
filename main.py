@@ -2,6 +2,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidg
     QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+import pyqtgraph as pg
+import numpy as np
+
 import sys
 import os
 
@@ -151,6 +154,14 @@ class MainWindow(QMainWindow):
             data = file.read()
             self.selected_dataset_textbrowser.clear()
             self.selected_dataset_textbrowser.append(data)
+        with open(location, "r") as file:
+            plot_data = []
+            for line in file:
+                if line[0] != "#":
+                    array = line.strip('\n').split('\t')
+                    int_array = [int(value) for value in array]
+                    plot_data.append(int_array)
+        pg.plot(plot_data)
 
     def open(self, file_type: str):
         print(file_type)
