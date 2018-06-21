@@ -148,20 +148,29 @@ class MainWindow(QMainWindow):
 
     def display_dataset(self):
         row = self.opened_datasets_tablewidget.currentRow()
-        item = self.opened_datasets_tablewidget.item(row, 1)
-        location = item.text()
-        with open(location, "r") as file:
-            data = file.read()
-            self.selected_dataset_textbrowser.clear()
-            self.selected_dataset_textbrowser.append(data)
-        with open(location, "r") as file:
-            plot_data = []
-            for line in file:
-                if line[0] != "#":
-                    array = line.strip('\n').split('\t')
-                    int_array = [int(value) for value in array]
-                    plot_data.append(int_array)
-        pg.plot(plot_data)
+        if row != -1:
+            item = self.opened_datasets_tablewidget.item(row, 1)
+            location = item.text()
+            with open(location, "r") as file:
+                data = file.read()
+                self.selected_dataset_textbrowser.clear()
+                self.selected_dataset_textbrowser.append(data)
+            with open(location, "r") as file:
+                data = []
+                for i, line in enumerate(file):
+                    if i == 2:  # this line contains the format of the data matrix
+                        matrix_dimensions = [int(number) for number in line[2:].strip("\n").split("\t")]
+                        print(matrix_dimensions)
+                    if line[0] != "#":
+                        array = line.strip('\n').split('\t')
+                        if array != [""]:
+                            float_array = [float(value) for value in array]
+                            data.append(float_array)
+
+            # this is how you draw 2D
+            x_data = [arr[0] for arr in data]
+            y_data = [arr[1] for arr in data]
+            pg.plot(x_data, y_data)
 
     def open(self, file_type: str):
         print(file_type)
