@@ -7,14 +7,15 @@ from PyQt5.QtGui import QIcon
 from BaseGraph import BaseGraph
 
 
-class LineTrace(BaseGraph):
+class Heatmap(BaseGraph):
 
-    def __init__(self, x_data=None, y_data=None):
+    def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Line trace window")
-        self.setWindowIcon(QIcon("img/lineGraph.png"))
-        self.plt = pg.PlotWidget(x=x_data, y=y_data)
+        self.setWindowTitle("Heatmap window")
+        self.setWindowIcon(QIcon("img/heatmapIcon.png"))
+        # need to keep track of number of opened windows and position the newly created one accordingly
+        self.plt = pg.ImageView()
         self.init_ui()
 
     def init_ui(self):
@@ -30,13 +31,10 @@ class LineTrace(BaseGraph):
         self.exit_action_Btn = QAction(QIcon("img/closeIcon.png"), "Exit")
         self.tools.addAction(self.exit_action_Btn)
 
-    def define_plot_parameters(self):
-        pass
-
 
 def main():
     app = QApplication(sys.argv)
-    ex = LineTrace([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [23, 1, 12, 43, 5, 7, 8, 44, 63, 33])
+    ex = Heatmap()
     sys.exit(app.exec_())
 
 

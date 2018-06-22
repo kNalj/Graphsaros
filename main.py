@@ -5,6 +5,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import pyqtgraph as pg
 import numpy as np
 
+from LineTrace import LineTrace
+
 import sys
 import os
 
@@ -170,7 +172,7 @@ class MainWindow(QMainWindow):
             # this is how you draw 2D
             x_data = [arr[0] for arr in data]
             y_data = [arr[1] for arr in data]
-            pg.plot(x_data, y_data)
+            self.lt = LineTrace(x_data, y_data)
 
     def open(self, file_type: str):
         print(file_type)
