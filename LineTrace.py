@@ -14,7 +14,12 @@ class LineTrace(BaseGraph):
 
         self.setWindowTitle("Line trace window")
         self.setWindowIcon(QIcon("img/lineGraph.png"))
-        self.plt = pg.PlotWidget(x=x_data, y=y_data)
+        self.plt = pg.PlotWidget(x=x_data, y=y_data, pen=(60, 60, 60))
+        self.plt.setBackground('w')
+        for axis in ['left', 'bottom']:
+            pi = self.plt.getPlotItem()
+            ax = pi.getAxis(axis)
+            ax.setPen((60, 60, 60))
         self.init_ui()
 
     def init_ui(self):
