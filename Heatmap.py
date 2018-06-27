@@ -28,6 +28,7 @@ class Heatmap(BaseGraph):
         self.plt = pg.GraphicsView()
 
         self.plt_data = data
+        self.active_data = self.plt_data
         self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (1, 4))
         self.display = "normal"
 
@@ -74,6 +75,9 @@ class Heatmap(BaseGraph):
         central_item.nextRow()
         line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
+        for axis in ["left", "bottom"]:
+            ax = line_trace_graph.getAxis(axis)
+            ax.setPen((60, 60, 60))
         self.plot_elements = {"central_item": central_item, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
@@ -91,16 +95,26 @@ class Heatmap(BaseGraph):
 
     def line_trace_action(self):
         line_segmet_roi = pg.LineSegmentROI([[5, 5], [22, 22]], pen=(5, 9))
+        line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
         self.line_segment_roi["ROI"] = line_segmet_roi
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
+
+    def update_line_trace_plot(self):
+        data = self.active_data
+        img = self.plot_elements["img"]
+        selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
+        line_trace_graph = self.plot_elements["line_trace_graph"]
+        line_trace_graph.plot(selected, clear=True)
 
     def gaussian_filter_action(self):
         if self.display != "gauss":
             self.plot_elements["img"].setImage(self.plt_data_gauss)
+            self.active_data = self.plt_data_gauss
             self.display = "gauss"
         else:
             self.plot_elements["img"].setImage(self.plt_data)
             self.display = "normal"
+            self.active_data = self.plt_data
 
     def lorentzian_filter_action(self):
         pass

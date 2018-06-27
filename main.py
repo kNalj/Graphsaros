@@ -10,6 +10,8 @@ from LineTrace import LineTrace
 import sys
 import os
 
+pg.setConfigOption("background", "w")
+pg.setConfigOption("foreground", "k")
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
     # when app raises uncaught exception, print info
