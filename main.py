@@ -10,8 +10,6 @@ from LineTrace import LineTrace
 import sys
 import os
 
-pg.setConfigOption("background", "w")
-pg.setConfigOption("foreground", "k")
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
     # when app raises uncaught exception, print info
@@ -156,15 +154,13 @@ class MainWindow(QMainWindow):
             item = self.opened_datasets_tablewidget.item(row, 1)
             location = item.text()
             with open(location, "r") as file:
-                data = file.read()
-                self.selected_dataset_textbrowser.clear()
-                self.selected_dataset_textbrowser.append(data)
-            with open(location, "r") as file:
                 data = []
+                self.selected_dataset_textbrowser.clear()
                 for i, line in enumerate(file):
-                    if i == 2:  # this line contains the format of the data matrix
+                    self.selected_dataset_textbrowser.append(line.strip("\n"))
+                    """if i == 2:  # this line contains the format of the data matrix
                         matrix_dimensions = [int(number) for number in line[2:].strip("\n").split("\t")]
-                        print(matrix_dimensions)
+                        print(matrix_dimensions)"""
                     if line[0] != "#":
                         array = line.strip('\n').split('\t')
                         if array != [""]:
@@ -172,14 +168,14 @@ class MainWindow(QMainWindow):
                             data.append(float_array)
 
             # this is how you draw 2D
-            x_data = [arr[0] for arr in data]
-            y_data = [arr[1] for arr in data]
-            self.lt = LineTrace(x_data, y_data)
+            # x_data = [arr[0] for arr in data]
+            # y_data = [arr[1] for arr in data]
+            # self.lt = LineTrace(x_data, y_data)
 
     def open(self, file_type: str):
         print(file_type)
 
-    def make_delete_file_from_list(self, name):
+    def make_delete_file_from_list(self, name: str):
 
         def delete_file_from_list():
             self.opened_datasets_tablewidget.removeRow(self.opened_datasets_tablewidget.row(name))

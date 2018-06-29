@@ -104,7 +104,7 @@ class Heatmap(BaseGraph):
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
-        line_trace_graph.plot(selected, clear=True)
+        line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
 
     def gaussian_filter_action(self):
         if self.display != "gauss":
@@ -122,10 +122,17 @@ class Heatmap(BaseGraph):
     def update_iso_curve(self):
         self.plot_elements["iso"].setLevel(self.plot_elements["isoLine"].value())
 
+
 def main():
+
     app = QApplication(sys.argv)
     data = np.random.normal(size=(200, 100))
-    ex = Heatmap(data=data)
+    data1 = np.zeros((200, 100))
+    for index, i in enumerate(data1):
+        new = np.linspace(0, 10*np.pi, 100)
+        # print(np.sin(new))
+        i += 10*np.exp(-index/50)*np.sin(new)
+    ex = Heatmap(data=data1)
     sys.exit(app.exec_())
 
 
