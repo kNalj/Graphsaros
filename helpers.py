@@ -8,13 +8,14 @@ import time
 import sys
 
 
-def get_filename_from_location(location: str):
+def split_location_string(location: str):
     """
-    Returns only the filename from full location of the file
+    Returns only the [parent directory, filename] from full location of the file
 
     :param location: string: location of the file on the disk
-    :return: string: name of the file
+    :return: list: [parent directory, name of the file]
     """
+    return [os.path.dirname(location), os.path.basename(location)]
 
 
 def get_data_from_qcodes_dat_file(location):
@@ -49,6 +50,10 @@ def get_data_from_qcodes_dat_file(location):
     return [matrix_data, x_axis_data, y_axis_data]
 
 
+def get_data_from_snapshot_file(location):
+    pass
+
+
 def get_subfolders(path):
     """
     Helper function to find all folders within folder specified by "path"
@@ -59,7 +64,7 @@ def get_subfolders(path):
     return [f.name for f in os.scandir(path) if f.is_dir() and f.name[0]]
 
 
-def get_files_in_folder(path, instrument_drivers_only=False):
+def get_files_in_folder(path):
     """
     Helper function to find all files within folder specified by path
 

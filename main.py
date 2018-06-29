@@ -158,14 +158,6 @@ class MainWindow(QMainWindow):
                 self.selected_dataset_textbrowser.clear()
                 for i, line in enumerate(file):
                     self.selected_dataset_textbrowser.append(line.strip("\n"))
-                    """if i == 2:  # this line contains the format of the data matrix
-                        matrix_dimensions = [int(number) for number in line[2:].strip("\n").split("\t")]
-                        print(matrix_dimensions)"""
-                    if line[0] != "#":
-                        array = line.strip('\n').split('\t')
-                        if array != [""]:
-                            float_array = [float(value) for value in array]
-                            data.append(float_array)
 
             # this is how you draw 2D
             # x_data = [arr[0] for arr in data]
