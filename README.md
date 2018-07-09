@@ -5,3 +5,4 @@
     - Python 3.6+
     - PyQt5
     - pyqtgraph
+    - NumPy

@@ -2,7 +2,7 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 
-from PyQt5.QtWidgets import QAction, qApp, QToolBar, QWidget, QMainWindow, QApplication, QGridLayout
+from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
@@ -16,6 +16,7 @@ def trap_exc_during_debug(exctype, value, traceback, *args):
 
 # install exception hook: without this, uncaught exception would cause application to exit
 sys.excepthook = trap_exc_during_debug
+
 
 class Heatmap(BaseGraph):
 

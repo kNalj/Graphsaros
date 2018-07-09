@@ -1,11 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidget, QPushButton, QWidget, QTableWidget,\
     QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem
-from PyQt5 import QtCore, QtGui, QtWidgets
-
-import pyqtgraph as pg
-import numpy as np
-
-from LineTrace import LineTrace
+from PyQt5 import QtCore, QtGui
 
 import sys
 import os

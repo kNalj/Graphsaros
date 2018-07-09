@@ -1,7 +1,7 @@
 import pyqtgraph as pg
 import sys
 
-from PyQt5.QtWidgets import QAction, qApp, QToolBar, QWidget, QMainWindow, QApplication, QGridLayout
+from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
