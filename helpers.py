@@ -87,12 +87,14 @@ def get_sweep_param_data(json_data):
     return [x_axis_data]
 
 
-def get_action_param_data(json_data):
+def get_action_param_data(json_data, depth=False):
     """
     Function that reads action parameter data from json file passed to it, used to get units for graph.
 
     :param json_data: json format of data file that qcodes creates after running a measurement, file name is
                         snapshot.json and is located in the same directory as the mesurement output file (matrix file)
+    :param depth: boolean that is FALSE by default, unless there is a recursive call to self when its set to True to
+                    signify that we are using a LINL
     :return: array: containing one or two dictionaries (depending if its 2D or 3D measurement) containing data for all
                     action parameters
     """
@@ -102,11 +104,17 @@ def get_action_param_data(json_data):
 
     actions = json_data["actions"]
     if actions[0]["__class__"] == "qcodes.loops.ActiveLoop":
-        return get_action_param_data(actions[0])
+        return get_action_param_data(actions[0], True)
     else:
-        y_axis_data = json_data["sweep_values"]["parameter"]
-        z_axis_data = json_data["actions"][0]
-        return [y_axis_data, z_axis_data]
+        if depth:
+            # if depth is not 0, then we have a LINL, and we need both y and z axis data
+            y_axis_data = json_data["sweep_values"]["parameter"]
+            z_axis_data = json_data["actions"][0]
+            return [y_axis_data, z_axis_data]
+        else:
+            # otherwise we only need y axis data since it's a 2D graph and there is no z
+            y_axis_data = json_data["actions"][0]
+            return [y_axis_data]
 
 
 def get_subfolders(path):
