@@ -5,17 +5,18 @@ from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
-from data_handlers.QcodesDataBuffer import QcodesData
+from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
 
 class LineTrace(BaseGraph):
 
-    def __init__(self, x_data=None, y_data=None):
+    def __init__(self, data: DataBuffer):
         super().__init__()
 
+        self.data_buffer = data
         self.setWindowTitle("Line trace window")
         self.setWindowIcon(QIcon("img/lineGraph.png"))
-        self.plt = pg.PlotWidget(x=x_data, y=y_data, pen=(60, 60, 60))
+        self.plt = pg.PlotWidget(x=self.data_buffer.data["x"], y=self.data_buffer.data["y"], pen=(60, 60, 60))
         self.plt.setBackground('w')
         for axis in ['left', 'bottom']:
             pi = self.plt.getPlotItem()
@@ -44,7 +45,7 @@ def main():
     app = QApplication(sys.argv)
     file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
     data = QcodesData(file_location)
-    ex = LineTrace(data.data["x"], data.data["y"])
+    ex = LineTrace(data)
     sys.exit(app.exec_())
 
 

@@ -4,6 +4,7 @@ class DataBuffer:
 
     def __init__(self, location):
         self.location = location
+        self.data = None
         self.matrix_dimensions = None
 
     def get_matrix_dimensions(self):
