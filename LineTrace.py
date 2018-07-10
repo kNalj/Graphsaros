@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
+from data_handlers.QcodesDataBuffer import QcodesData
 
 
 class LineTrace(BaseGraph):
@@ -41,7 +42,9 @@ class LineTrace(BaseGraph):
 
 def main():
     app = QApplication(sys.argv)
-    ex = LineTrace([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [23, 1, 12, 43, 5, 7, 8, 44, 63, 33])
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
+    data = QcodesData(file_location)
+    ex = LineTrace(data.data["x"], data.data["y"])
     sys.exit(app.exec_())
 
 

@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
+from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -20,7 +21,7 @@ sys.excepthook = trap_exc_during_debug
 
 class Heatmap(BaseGraph):
 
-    def __init__(self, data=None):
+    def __init__(self, data: DataBuffer):
         super().__init__()
 
         self.setWindowTitle("Heatmap window")
@@ -28,7 +29,8 @@ class Heatmap(BaseGraph):
         # need to keep track of number of opened windows and position the newly created one accordingly
         self.plt = pg.GraphicsView()
 
-        self.plt_data = data
+        self.data_buffer = data
+        self.plt_data = self.data_buffer.data["matrix"]
         self.active_data = self.plt_data
         self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (1, 4))
         self.display = "normal"
@@ -127,13 +129,13 @@ class Heatmap(BaseGraph):
 def main():
 
     app = QApplication(sys.argv)
-    data = np.random.normal(size=(200, 100))
-    data1 = np.zeros((200, 100))
-    for index, i in enumerate(data1):
-        new = np.linspace(0, 10*np.pi, 100)
-        # print(np.sin(new))
-        i += 10*np.exp(-index/50)*np.sin(new)
-    ex = Heatmap(data=data1)
+    # data = np.random.normal(size=(200, 100))
+    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+
+    # Daniels 3D measurement example
+    file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+    data = QcodesData(file_location)
+    ex = Heatmap(data=data)
     sys.exit(app.exec_())
 
 

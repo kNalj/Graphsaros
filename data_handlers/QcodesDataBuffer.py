@@ -3,7 +3,7 @@ import helpers
 import json
 import os
 
-from .DataBuffer import DataBuffer
+from data_handlers.DataBuffer import DataBuffer
 
 
 class QcodesData(DataBuffer):
@@ -11,23 +11,20 @@ class QcodesData(DataBuffer):
     def __init__(self, location):
         super().__init__(location)
 
-        self.matrix_dimensions = self.get_matrix_dimensions()
-        self.ndarray = self.create_ndarray()
+        self.matrix_dimensions = self.calculate_matrix_dimensions()
+        self.prepare_data()
 
-    def get_matrix_dimensions(self):
+    def calculate_matrix_dimensions(self):
         matrix_dimensions = []
         with open(self.location, "r") as file:
             for i, line in enumerate(file):
                 if i == 2:  # this line contains the format of the data matrix
                     matrix_dimensions = [int(number) for number in line[2:].strip("\n").split("\t")]
 
-        if matrix_dimensions:
-            return matrix_dimensions
-        else:
+        if not matrix_dimensions:
             raise ValueError("File does not contain matrix dimension data (AND IT SHOULD !)")
-
-    def get_number_of_dimension(self):
-        return len(self.matrix_dimensions)
+        else:
+            return matrix_dimensions
 
     def prepare_data(self):
         """
@@ -35,7 +32,11 @@ class QcodesData(DataBuffer):
 
         :return:
         """
-        pass
+
+        if self.get_number_of_dimension() == 2:
+            self.data = self.prepare_2d_data()
+        else:
+            self.data = self.prepare_3d_data()
 
     def prepare_3d_data(self):
         """
@@ -56,23 +57,32 @@ class QcodesData(DataBuffer):
         for i in range(self.matrix_dimensions[0]):
             x_axis_data.append(data[i * self.matrix_dimensions[1]][0])
             for j in range(self.matrix_dimensions[1]):
-                matrix_data[i][j] = data[i * 11 + j][2]
+                matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
                 if i == 0:
                     y_axis_data.append(data[j][2])
-        return [matrix_data, x_axis_data, y_axis_data]
+        return {"matrix": matrix_data, "x": x_axis_data, "y": y_axis_data}
 
     def prepare_2d_data(self):
-        pass
+        x_axis_data = []
+        y_axis_data = []
+        with open(self.location, "r") as file:
+            for i, line in enumerate(file):
+                if line[0] != "#":
+                    array = line.strip('\n').split('\t')
+                    if array != [""]:
+                        x_axis_data.append(float(array[0]))
+                        y_axis_data.append(float(array[1]))
 
-    def get_data_from_snapshot_file(self, matrix_file_location):
+        return {"x": x_axis_data, "y": y_axis_data}
+
+    def get_data_from_snapshot_file(self):
         """
         Function that gets a matrix file location as parameter, and looks for snapshot.json file within the same directory.
         If such file exists then get data from it, otherwise show an error msg saying that there is no such a file
 
-        :param matrix_file_location: string: absolute path to the matrix file
         :return: array: [x, y, z]
         """
-        snapshot_file_location = os.path.dirname(matrix_file_location) + "\\snapshot.json"
+        snapshot_file_location = os.path.dirname(self.location) + "\\snapshot.json"
         data_list = []
         if os.path.exists(snapshot_file_location):
             with open(snapshot_file_location) as file:
@@ -130,7 +140,13 @@ class QcodesData(DataBuffer):
 
 
 def main():
-    pass
+    # 3D
+    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+    # 2D
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
+
+    data = QcodesData(file_location)
+    data.prepare_2d_data()
 
 
 if __name__ == '__main__':
