@@ -12,7 +12,8 @@ class QcodesData(DataBuffer):
         super().__init__(location)
 
         self.matrix_dimensions = self.calculate_matrix_dimensions()
-        self.prepare_data()
+        self.data = self.prepare_data()
+        self.axis_values = self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
         matrix_dimensions = []
@@ -34,9 +35,9 @@ class QcodesData(DataBuffer):
         """
 
         if self.get_number_of_dimension() == 2:
-            self.data = self.prepare_2d_data()
+            return self.prepare_2d_data()
         else:
-            self.data = self.prepare_3d_data()
+            return self.prepare_3d_data()
 
     def prepare_3d_data(self):
         """
@@ -75,12 +76,12 @@ class QcodesData(DataBuffer):
 
         return {"x": x_axis_data, "y": y_axis_data}
 
-    def get_data_from_snapshot_file(self):
+    def get_axis_data(self):
         """
         Function that gets a matrix file location as parameter, and looks for snapshot.json file within the same directory.
         If such file exists then get data from it, otherwise show an error msg saying that there is no such a file
 
-        :return: array: [x, y, z]
+        :return: array: [x, y, z] or [x, y]
         """
         snapshot_file_location = os.path.dirname(self.location) + "\\snapshot.json"
         data_list = []
@@ -89,7 +90,11 @@ class QcodesData(DataBuffer):
                 data = json.load(file)
 
             data_list = self.get_sweep_param_data(data) + self.get_action_param_data(data)
-            return data_list
+            data_dict = {}
+            legend = {0: "x", 1: "y", 2: "z"}
+            for index in range(len(data_list)):
+                data_dict[legend[index]] = data_list[index]
+            return data_dict
         else:
             helpers.show_error_message("Warning", "Aborted, snapshot.json file does not exist for this measurement")
             return
@@ -141,12 +146,11 @@ class QcodesData(DataBuffer):
 
 def main():
     # 3D
-    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
     # 2D
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
+    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
 
     data = QcodesData(file_location)
-    data.prepare_2d_data()
 
 
 if __name__ == '__main__':

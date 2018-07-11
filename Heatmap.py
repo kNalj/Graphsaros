@@ -32,7 +32,7 @@ class Heatmap(BaseGraph):
         self.data_buffer = data
         self.plt_data = self.data_buffer.data["matrix"]
         self.active_data = self.plt_data
-        self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (1, 4))
+        self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (2, 2))
         self.display = "normal"
 
         self.plot_elements = {}
@@ -52,9 +52,13 @@ class Heatmap(BaseGraph):
         img = pg.ImageItem()
         img.setImage(self.plt_data)
         main_subplot.addItem(img)
+        legend = {"left": "y", "bottom": "x"}
         for side in ('left', 'bottom'):
             ax = main_subplot.getAxis(side)
             ax.setPen((60, 60, 60))
+            axis_data = self.data_buffer.axis_values[legend[side]]
+            labelStyle = {'font-size': '10pt'}
+            ax.setLabel(axis_data["name"], axis_data["unit"], **labelStyle)
 
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)
@@ -63,11 +67,13 @@ class Heatmap(BaseGraph):
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
         histogram.setFixedWidth(128)
+        axis_data = self.data_buffer.axis_values["z"]
+        histogram.axis.setLabel(axis_data["name"], axis_data["unit"])
 
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
         histogram.vb.setMouseEnabled(y=False)  # makes user interaction a little easier
-        isoLine.setValue(0.8)
+        isoLine.setValue(self.plt_data.mean())
         isoLine.setZValue(1000)  # bring iso line above contrast controls
         isoLine.sigDragged.connect(self.update_iso_curve)
 
@@ -78,9 +84,12 @@ class Heatmap(BaseGraph):
         central_item.nextRow()
         line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
+        legend = {"left": "z", "bottom": "x"}
         for axis in ["left", "bottom"]:
             ax = line_trace_graph.getAxis(axis)
             ax.setPen((60, 60, 60))
+            axis_data = self.data_buffer.axis_values[legend[axis]]
+            ax.setLabel(axis_data["name"], axis_data["unit"])
         self.plot_elements = {"central_item": central_item, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
