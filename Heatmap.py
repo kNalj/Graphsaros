@@ -2,7 +2,7 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 
-from PyQt5.QtWidgets import QAction, QApplication
+from PyQt5.QtWidgets import QAction, QApplication, QLabel, QSizePolicy
 from PyQt5.QtGui import QIcon
 
 from BaseGraph import BaseGraph
@@ -30,7 +30,7 @@ class Heatmap(BaseGraph):
         self.plt = pg.GraphicsView()
 
         self.data_buffer = data
-        self.plt_data = self.data_buffer.data["matrix"]
+        self.plt_data = self.data_buffer.get_matrix()
         self.active_data = self.plt_data
         self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (2, 2))
         self.display = "normal"
@@ -51,6 +51,9 @@ class Heatmap(BaseGraph):
         main_subplot = central_item.addPlot()
         img = pg.ImageItem()
         img.setImage(self.plt_data)
+        img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+        (x_scale, y_scale) = self.data_buffer.get_scale()
+        img.scale(x_scale, y_scale)
         main_subplot.addItem(img)
         legend = {"left": "y", "bottom": "x"}
         for side in ('left', 'bottom'):
@@ -94,6 +97,9 @@ class Heatmap(BaseGraph):
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
 
+        # proxy = pg.SignalProxy(main_subplot.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_moved)
+        main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
+
     def init_toolbar(self):
 
         self.tools = self.addToolBar("Tools")
@@ -106,7 +112,11 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
-        line_segmet_roi = pg.LineSegmentROI([[5, 5], [22, 22]], pen=(5, 9))
+        line_segmet_roi = pg.LineSegmentROI([[self.data_buffer.get_x_axis_values()[0],
+                                              self.data_buffer.get_y_axis_values()[0]],
+                                             [self.data_buffer.get_x_axis_values()[-1],
+                                              self.data_buffer.get_y_axis_values()[-1]]],
+                                            pen=(5, 9))
         line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
         self.line_segment_roi["ROI"] = line_segmet_roi
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
@@ -117,6 +127,7 @@ class Heatmap(BaseGraph):
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
         line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
+        # line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True, symbol="o")
 
     def gaussian_filter_action(self):
         if self.display != "gauss":
@@ -134,12 +145,23 @@ class Heatmap(BaseGraph):
     def update_iso_curve(self):
         self.plot_elements["iso"].setLevel(self.plot_elements["isoLine"].value())
 
+    def mouse_moved(self, evt):
+        pos = evt
+        if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
+            mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
+            index_x = int(mouse_point.x())
+            index_y = int(mouse_point.y())
+            if index_x and index_x < len(self.data_buffer.get_x_axis_values()) and \
+                    index_y and index_y < len(self.data_buffer.get_y_axis_values()):
+                self.label.setText()
+
+            string = str(int(mouse_point.x())) + ", " + str(int(mouse_point.y()))
+            self.statusBar().showMessage(string)
+
 
 def main():
 
     app = QApplication(sys.argv)
-    # data = np.random.normal(size=(200, 100))
-    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
 
     # Daniels 3D measurement example
     file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"

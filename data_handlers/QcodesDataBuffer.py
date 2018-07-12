@@ -60,7 +60,7 @@ class QcodesData(DataBuffer):
             for j in range(self.matrix_dimensions[1]):
                 matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
                 if i == 0:
-                    y_axis_data.append(data[j][2])
+                    y_axis_data.append(data[j][1])
         return {"matrix": matrix_data, "x": x_axis_data, "y": y_axis_data}
 
     def prepare_2d_data(self):
@@ -146,11 +146,16 @@ class QcodesData(DataBuffer):
 
 def main():
     # 3D
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+
     # 2D
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
 
+    # Daniels measurement example
+    file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+
     data = QcodesData(file_location)
+
 
 
 if __name__ == '__main__':
