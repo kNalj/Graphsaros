@@ -2,11 +2,14 @@ import pyqtgraph as pg
 import sys
 import numpy as np
 
-from PyQt5.QtWidgets import QAction, QApplication, QLabel, QSizePolicy
+from PyQt5.QtWidgets import QAction, QApplication, QMenu, QWidgetAction, QSlider
 from PyQt5.QtGui import QIcon
+from PyQt5 import QtCore
+
 
 from BaseGraph import BaseGraph
 from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
+from LineROI import LineROI
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -26,6 +29,7 @@ class Heatmap(BaseGraph):
 
         self.setWindowTitle("Heatmap window")
         self.setWindowIcon(QIcon("img/heatmapIcon.png"))
+        self.statusBar().showMessage("haha")
         # need to keep track of number of opened windows and position the newly created one accordingly
         self.plt = pg.GraphicsView()
 
@@ -112,11 +116,11 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
-        line_segmet_roi = pg.LineSegmentROI([[self.data_buffer.get_x_axis_values()[0],
-                                              self.data_buffer.get_y_axis_values()[0]],
-                                             [self.data_buffer.get_x_axis_values()[-1],
-                                              self.data_buffer.get_y_axis_values()[-1]]],
-                                            pen=(5, 9))
+        line_segmet_roi = LineROI([[self.data_buffer.get_x_axis_values()[0],
+                                    self.data_buffer.get_y_axis_values()[0]],
+                                   [self.data_buffer.get_x_axis_values()[-1],
+                                    self.data_buffer.get_y_axis_values()[0]]],
+                                  pen=(5, 9))
         line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
         self.line_segment_roi["ROI"] = line_segmet_roi
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
