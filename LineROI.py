@@ -2,11 +2,15 @@ import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMenu, QAction, QWidgetAction, QSlider
 
+from helpers import show_error_message
+
 
 class LineROI(pg.LineSegmentROI):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.temp_line = 0
 
     # On right-click, raise the context menu
     def mouseClickEvent(self, ev):
@@ -34,13 +38,13 @@ class LineROI(pg.LineSegmentROI):
 
             # //////////////////////// HORIZONTAL ////////////////////////
             horizontal = QMenu("Set horizontal", self.menu)
-            # horizontal.triggered.connect(self.set_horizontal)
             self.menu.horizontal = horizontal
             self.menu.addMenu(horizontal)
 
             h_line_up_by_point_a = QAction("Point A", horizontal)
-            h_line_up_by_point_a.hovered.connect(self.outline)
+            h_line_up_by_point_a.hovered.connect(lambda: self.hover_action(0, "horizontal"))
             h_line_up_by_point_b = QAction("Point B", horizontal)
+            h_line_up_by_point_b.hovered.connect(lambda: self.hover_action(1, "horizontal"))
 
             horizontal.addAction(h_line_up_by_point_a)
             horizontal.addAction(h_line_up_by_point_b)
@@ -52,11 +56,14 @@ class LineROI(pg.LineSegmentROI):
             self.menu.vertical = vertical
 
             v_line_up_by_point_a = QAction("Point A", self.menu.vertical)
+            v_line_up_by_point_a.hovered.connect(lambda: self.hover_action(0, "vertical"))
             v_line_up_by_point_b = QAction("Point B", self.menu.vertical)
+            v_line_up_by_point_b.hovered.connect(lambda: self.hover_action(1, "vertical"))
 
             vertical.addAction(v_line_up_by_point_a)
             vertical.addAction(v_line_up_by_point_b)
 
+            # //////////////////////// OTHER ////////////////////////
             angle = QWidgetAction(self.menu)
             angle_slider = QSlider()
             angle_slider.setOrientation(QtCore.Qt.Horizontal)
@@ -68,17 +75,39 @@ class LineROI(pg.LineSegmentROI):
             self.menu.angle = angle
             self.angle_slider = angle_slider
             self.menu.alphaSlider = angle_slider
+            self.menu.closeEvent = self.leave_menu_event
         return self.menu
 
-    def set_horizontal(self):
-        pass
+    def hover_action(self, point: int, orientation: str):
+        if orientation == "horizontal":
+            self.add_preview(self.getHandles()[point].pos().y(), orientation)
+        elif orientation == "vertical":
+            self.add_preview(self.getHandles()[point].pos().x(), orientation)
+        else:
+            show_error_message("Warning", "Non existent orientation. HOW THE HELL DID U MANAGE TO DO THIS !?")
 
-    def set_vertical(self):
-        pass
+    def add_preview(self, position, orientation):
+        if orientation == "vertical":
+            new_line = pg.InfiniteLine(angle=90, movable=False)
+            new_line.setPos(position)
+        elif orientation == "horizontal":
+            new_line = pg.InfiniteLine(angle=0, movable=False)
+            new_line.setPos(position)
+
+        if not self.temp_line:
+            self.temp_line = new_line
+            self.parentItem().addItem(self.temp_line)
+        else:
+            if not (self.temp_line.pos() == new_line.pos() and self.temp_line.angle == new_line.angle):
+                self.parentItem().scene().removeItem(self.temp_line)
+                self.temp_line = new_line
+                self.parentItem().addItem(self.temp_line)
 
     def set_angle(self):
         print(self.angle())
         self.setAngle(self.angle_slider.value())
 
-    def outline(self):
-        print("haha")
+    def leave_menu_event(self, event):
+        if self.temp_line:
+            self.parentItem().scene().removeItem(self.temp_line)
+

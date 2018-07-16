@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QAction, QApplication, QMenu, QWidgetAction, QSlider
 from PyQt5.QtGui import QIcon
 from PyQt5 import QtCore
 
-
 from BaseGraph import BaseGraph
 from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 from LineROI import LineROI
@@ -153,12 +152,6 @@ class Heatmap(BaseGraph):
         pos = evt
         if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
-            index_x = int(mouse_point.x())
-            index_y = int(mouse_point.y())
-            if index_x and index_x < len(self.data_buffer.get_x_axis_values()) and \
-                    index_y and index_y < len(self.data_buffer.get_y_axis_values()):
-                self.label.setText()
-
             string = str(int(mouse_point.x())) + ", " + str(int(mouse_point.y()))
             self.statusBar().showMessage(string)
 
