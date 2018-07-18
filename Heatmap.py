@@ -115,14 +115,16 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
-        line_segmet_roi = LineROI([[self.data_buffer.get_x_axis_values()[0],
-                                    self.data_buffer.get_y_axis_values()[0]],
-                                   [self.data_buffer.get_x_axis_values()[-1],
-                                    self.data_buffer.get_y_axis_values()[0]]],
+        line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
+                                              self.data_buffer.get_y_axis_values()[0]],
+                                             [self.data_buffer.get_x_axis_values()[-1],
+                                              self.data_buffer.get_y_axis_values()[0]]),
+                                  pos=(0, 0),
                                   pen=(5, 9))
         line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
         self.line_segment_roi["ROI"] = line_segmet_roi
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
+        line_segmet_roi.aligned.connect(self.update_line_trace_plot)
 
     def update_line_trace_plot(self):
         data = self.active_data
