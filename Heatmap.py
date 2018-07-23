@@ -4,6 +4,7 @@ import numpy as np
 
 from PyQt5.QtWidgets import QAction, QApplication, QMenu, QWidgetAction, QSlider
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import QRectF
 from PyQt5 import QtCore
 
 from BaseGraph import BaseGraph
@@ -83,7 +84,6 @@ class Heatmap(BaseGraph):
         isoLine.setZValue(1000)  # bring iso line above contrast controls
         isoLine.sigDragged.connect(self.update_iso_curve)
 
-        # histogram.axis.setLabel(get_label_from_json_data)
         central_item.addItem(histogram)
         self.plt.setCentralItem(central_item)
         self.plt.setBackground('w')
@@ -100,7 +100,6 @@ class Heatmap(BaseGraph):
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
 
-        # proxy = pg.SignalProxy(main_subplot.scene().sigMouseMoved, rateLimit=60, slot=self.mouse_moved)
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
     def init_toolbar(self):
@@ -120,7 +119,15 @@ class Heatmap(BaseGraph):
                                              [self.data_buffer.get_x_axis_values()[-1],
                                               self.data_buffer.get_y_axis_values()[0]]),
                                   pos=(0, 0),
-                                  pen=(5, 9))
+                                  pen=(5, 9),
+                                  # maxBounds=QRectF(self.data_buffer.get_x_axis_values()[0],
+                                  #                  self.data_buffer.get_y_axis_values()[0],
+                                  #                  self.data_buffer.get_x_axis_values()[-1],
+                                  #                  self.data_buffer.get_y_axis_values()[-1]),
+                                  edges=[self.data_buffer.get_x_axis_values()[0],
+                                         self.data_buffer.get_x_axis_values()[-1],
+                                         self.data_buffer.get_y_axis_values()[0],
+                                         self.data_buffer.get_y_axis_values()[-1]])
         line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
         self.line_segment_roi["ROI"] = line_segmet_roi
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
@@ -131,8 +138,14 @@ class Heatmap(BaseGraph):
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
-        line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
-        # line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True, symbol="o")
+        new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
+        # new_plot =  line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True, symbol="o")
+        point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point
+        coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        new_plot.translate(coords.x(), 0)
+        scale_x, scale_y = self.data_buffer.get_scale()
+        new_plot.scale(scale_x, 1)
 
     def gaussian_filter_action(self):
         if self.display != "gauss":
@@ -154,7 +167,7 @@ class Heatmap(BaseGraph):
         pos = evt
         if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
-            string = str(int(mouse_point.x())) + ", " + str(int(mouse_point.y()))
+            string = "[Position: {}, {}]".format(int(mouse_point.x()), int(mouse_point.y()))
             self.statusBar().showMessage(string)
 
 
