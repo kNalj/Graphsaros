@@ -16,20 +16,33 @@ class QcodesData(DataBuffer):
         self.axis_values = self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
+        """
+        Opens the file and calculates dimensions of the data matrix. Returns array representing dimensions of the matrix
+
+        In QCoDeS files dimensions of your measurement are stored in the third line of the output file and that is where
+        they are read from.
+
+        :return: array: [x, y]
+                        x - number of points on x axis
+                        y - number of points on y axis
+        """
         matrix_dimensions = []
         with open(self.location, "r") as file:
             for i, line in enumerate(file):
                 if i == 2:  # this line contains the format of the data matrix
                     matrix_dimensions = [int(number) for number in line[2:].strip("\n").split("\t")]
+                    break
 
         if not matrix_dimensions:
+            # this should probably try to do a backup way of calculating dimensions, should be implemented in the
+            # parrent class
             raise ValueError("File does not contain matrix dimension data (AND IT SHOULD !)")
         else:
             return matrix_dimensions
 
     def prepare_data(self):
         """
-        This bad boy should check if matrix dimensions is len of 2 or 3 and prepare the data accordingly
+        Reads the file line by line and saves data as np.array
 
         :return:
         """
@@ -41,7 +54,13 @@ class QcodesData(DataBuffer):
 
     def prepare_3d_data(self):
         """
+        This method is called if we are dealing with a 3D measurement. Walks through the file and get values for each
+        combination of x,y values. At the same time it saves x and y values (points) for further use.
 
+        :return: dictionary: containing keys matrix, x and y where:
+                                matrix: np.array representation of the measurement data
+                                x: values of points on x axis
+                                y: values of points on y axis
         """
         with open(self.location, "r") as file:
             data = []
@@ -64,6 +83,13 @@ class QcodesData(DataBuffer):
         return {"matrix": matrix_data, "x": x_axis_data, "y": y_axis_data}
 
     def prepare_2d_data(self):
+        """
+        This method is called when we are dealing with a 2D measurement. it reads out x and y values.
+
+        :return: dictionary: containing x and y where:
+                            x: values of points on x axis
+                            y: values of points on y axis
+        """
         x_axis_data = []
         y_axis_data = []
         with open(self.location, "r") as file:

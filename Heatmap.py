@@ -9,6 +9,7 @@ from PyQt5 import QtCore
 
 from BaseGraph import BaseGraph
 from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
+from data_handlers.QtLabDataBuffer import QtLabData
 from LineROI import LineROI
 
 
@@ -27,20 +28,37 @@ class Heatmap(BaseGraph):
     def __init__(self, data: DataBuffer):
         super().__init__()
 
+        # setting the window title, i would have never guessed its this
         self.setWindowTitle("Heatmap window")
+
+        # khm khm ... setting window icon ...
         self.setWindowIcon(QIcon("img/heatmapIcon.png"))
-        self.statusBar().showMessage("haha")
+
+        # set status bar msg to nothing, just to have it there, later its used to show coordinates of mouse
+        self.statusBar().showMessage("")
+
         # need to keep track of number of opened windows and position the newly created one accordingly
         self.plt = pg.GraphicsView()
 
+        # inastance of DataBuffer class, holds all data required to draw a graph
         self.data_buffer = data
+
+        # np.array, this is what pyqtgraph wants to draw stuff
         self.plt_data = self.data_buffer.get_matrix()
+
+        # to be able to switch between gauss, lorentz, normal, ...
         self.active_data = self.plt_data
+
+        # gauss data
         self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (2, 2))
+
+        # indicates currently displayed data
         self.display = "normal"
 
+        # references to all widgets in this window
         self.plot_elements = {}
 
+        # reference to ROI
         self.line_segment_roi = {}
 
         self.init_ui()
@@ -103,6 +121,11 @@ class Heatmap(BaseGraph):
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
     def init_toolbar(self):
+        """
+        Create toolbar and add actions to it
+
+        :return: NoneType
+        """
 
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
@@ -114,6 +137,13 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
+        """
+        Add a line segment region of interest (ROI) to the main subplot. Connect it to a function that updates line
+        trace graph anytime one of the handles or the ROI itself is moved.
+
+        :return:
+        """
+        # ROI instantiation
         line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
                                               self.data_buffer.get_y_axis_values()[0]],
                                              [self.data_buffer.get_x_axis_values()[-1],
@@ -128,9 +158,13 @@ class Heatmap(BaseGraph):
                                          self.data_buffer.get_x_axis_values()[-1],
                                          self.data_buffer.get_y_axis_values()[0],
                                          self.data_buffer.get_y_axis_values()[-1]])
+        # connect signal to a slot
         line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
+        # make a reference to this ROI so i can use it later
         self.line_segment_roi["ROI"] = line_segmet_roi
+        # add the ROI to main subplot
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
+        # connect signal to a slot, this signa
         line_segmet_roi.aligned.connect(self.update_line_trace_plot)
 
     def update_line_trace_plot(self):
@@ -139,7 +173,6 @@ class Heatmap(BaseGraph):
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
         new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
-        # new_plot =  line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True, symbol="o")
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -175,8 +208,12 @@ def main():
 
     app = QApplication(sys.argv)
 
-    # Daniels 3D measurement example
+    # Daniels 3D measurement example in QCoDeS
     file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+
+    # Josip 3D measurement example in QtLab
+    # file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat"
+    # data = QtLabData(file_location)
     data = QcodesData(file_location)
     ex = Heatmap(data=data)
     sys.exit(app.exec_())
