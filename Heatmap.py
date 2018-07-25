@@ -216,6 +216,7 @@ def main():
 
     # Matthias huge ass file
     file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\005802_GatevsGate_W3_1I03_NW-l_g3@2060_g5@2260_BZ_0T_-_3T_time.dat"
+
     data = QtLabData(file_location)
     # data = QcodesData(file_location)
     ex = Heatmap(data=data)
