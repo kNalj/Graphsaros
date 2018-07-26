@@ -47,60 +47,18 @@ class QcodesData(DataBuffer):
         :return:
         """
 
-        if self.get_number_of_dimension() == 2:
-            return self.prepare_2d_data()
-        else:
-            return self.prepare_3d_data()
+        data = np.loadtxt(self.location, dtype=float)
+        x_axis = np.unique([value[0] for value in data])
+        y_axis = np.unique([value[1] for value in data])
 
-    def prepare_3d_data(self):
-        """
-        This method is called if we are dealing with a 3D measurement. Walks through the file and get values for each
-        combination of x,y values. At the same time it saves x and y values (points) for further use.
+        if self.get_number_of_dimension() == 3:
+            matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
+            for i in range(self.matrix_dimensions[0]):
+                for j in range(self.matrix_dimensions[1]):
+                    matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
+            return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
 
-        :return: dictionary: containing keys matrix, x and y where:
-                                matrix: np.array representation of the measurement data
-                                x: values of points on x axis
-                                y: values of points on y axis
-        """
-        with open(self.location, "r") as file:
-            data = []
-            for i, line in enumerate(file):
-                if line[0] != "#":
-                    array = line.strip('\n').split('\t')
-                    if array != [""]:
-                        float_array = [float(value) for value in array]
-                        data.append(float_array)
-
-        x_axis_data = []
-        y_axis_data = []
-        matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
-        for i in range(self.matrix_dimensions[0]):
-            x_axis_data.append(data[i * self.matrix_dimensions[1]][0])
-            for j in range(self.matrix_dimensions[1]):
-                matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
-                if i == 0:
-                    y_axis_data.append(data[j][1])
-        return {"matrix": matrix_data, "x": x_axis_data, "y": y_axis_data}
-
-    def prepare_2d_data(self):
-        """
-        This method is called when we are dealing with a 2D measurement. it reads out x and y values.
-
-        :return: dictionary: containing x and y where:
-                            x: values of points on x axis
-                            y: values of points on y axis
-        """
-        x_axis_data = []
-        y_axis_data = []
-        with open(self.location, "r") as file:
-            for i, line in enumerate(file):
-                if line[0] != "#":
-                    array = line.strip('\n').split('\t')
-                    if array != [""]:
-                        x_axis_data.append(float(array[0]))
-                        y_axis_data.append(float(array[1]))
-
-        return {"x": x_axis_data, "y": y_axis_data}
+        return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):
         """
