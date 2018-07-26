@@ -1,4 +1,7 @@
 from helpers import show_error_message
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget
+
+import sys
 
 
 class DataBuffer:
@@ -50,3 +53,88 @@ class DataBuffer:
 
     def get_location(self):
         return self.location
+
+    def input_axis_values(self):
+        """
+        Open a PyQt window to input axis values (start, end, steps, name, unit)
+
+        :return: i dont know yet, but ill figure it out
+        """
+        pass
+
+
+class AxisWindow(QWidget):
+    def __init__(self, buffer: DataBuffer):
+        super().__init__()
+
+        self.buffer = buffer
+
+        self.controls = {}
+
+        self.init_ui()
+        self.show()
+
+    def init_ui(self):
+        # find dimensions of the monitor (screen)
+        _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
+
+        x_label = QLabel("X axis data")
+        x_start = QLineEdit("")
+        x_start.setPlaceholderText("start")
+        x_end = QLineEdit("")
+        x_end.setPlaceholderText("end")
+        x_name = QLineEdit("")
+        x_name.setPlaceholderText("name")
+        x_unit = QLineEdit("")
+        x_unit.setPlaceholderText("unit")
+        x_axis_controls = {"start": x_start, "end": x_end, "name": x_name, "unit": x_unit}
+        self.controls["x"] = x_axis_controls
+
+        y_label = QLabel("Y axis data")
+        y_start = QLineEdit("")
+        y_start.setPlaceholderText("start")
+        y_end = QLineEdit("")
+        y_end.setPlaceholderText("end")
+        y_name = QLineEdit("")
+        y_name.setPlaceholderText("name")
+        y_unit = QLineEdit("")
+        y_unit.setPlaceholderText("unit")
+        y_axis_controls = {"start": y_start, "end": y_end, "name": y_name, "unit": y_unit}
+        self.controls["y"] = y_axis_controls
+
+        z_label = QLabel("Z axis data")
+        z_name = QLineEdit("")
+        z_name.setPlaceholderText("name")
+        z_unit = QLineEdit("")
+        z_unit.setPlaceholderText("unit")
+        z_axis_controls = {"name": z_name, "unit": z_unit}
+        self.controls["z"] = z_axis_controls
+
+
+        layout = QGridLayout()
+        layout.addWidget(x_label, 0, 0, 1, 4)
+        layout.addWidget(x_start, 1, 0, 1, 1)
+        layout.addWidget(x_end, 1, 1, 1, 1)
+        layout.addWidget(x_name, 1, 2, 1, 1)
+        layout.addWidget(x_unit, 1, 3, 1, 1)
+        layout.addWidget(y_label, 2, 0, 1, 4)
+        layout.addWidget(y_start, 3, 0, 1, 1)
+        layout.addWidget(y_end, 3, 1, 1, 1)
+        layout.addWidget(y_name, 3, 2, 1, 1)
+        layout.addWidget(y_unit, 3, 3, 1, 1)
+        layout.addWidget(z_label, 4, 0, 1, 4)
+        layout.addWidget(z_name, 5, 0, 1, 2)
+        layout.addWidget(z_unit, 5, 2, 1, 2)
+
+        self.setLayout(layout)
+
+
+def main():
+    app = QApplication(sys.argv)
+    ex = AxisWindow("")
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
