@@ -1,5 +1,7 @@
 from helpers import show_error_message
-from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget
+from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget, QPushButton
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QIcon
 
 import sys
 
@@ -22,6 +24,7 @@ class DataBuffer:
 
         # list of values containing number of steps for x and y dimensions
         self.matrix_dimensions = None
+        self.input_axis_values()
 
     def get_matrix_dimensions(self):
         return self.matrix_dimensions
@@ -60,12 +63,16 @@ class DataBuffer:
 
         :return: i dont know yet, but ill figure it out
         """
-        pass
+        self.axis_window = AxisWindow(self)
+        self.axis_window.show()
 
 
 class AxisWindow(QWidget):
+
+    submitted = pyqtSignal(object)
+
     def __init__(self, buffer: DataBuffer):
-        super().__init__()
+        super(AxisWindow, self).__init__()
 
         self.buffer = buffer
 
@@ -78,6 +85,9 @@ class AxisWindow(QWidget):
         # find dimensions of the monitor (screen)
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
+
+        self.setWindowTitle("Input axis data")
+        self.setWindowIcon(QIcon("../img/axis.png"))
 
         x_label = QLabel("X axis data")
         x_start = QLineEdit("")
@@ -111,6 +121,9 @@ class AxisWindow(QWidget):
         z_axis_controls = {"name": z_name, "unit": z_unit}
         self.controls["z"] = z_axis_controls
 
+        self.submit_button = QPushButton("OK")
+        self.submit_button.clicked.connect(self.submit)
+
 
         layout = QGridLayout()
         layout.addWidget(x_label, 0, 0, 1, 4)
@@ -126,13 +139,36 @@ class AxisWindow(QWidget):
         layout.addWidget(z_label, 4, 0, 1, 4)
         layout.addWidget(z_name, 5, 0, 1, 2)
         layout.addWidget(z_unit, 5, 2, 1, 2)
+        layout.addWidget(self.submit_button, 6, 3, 1, 1)
 
         self.setLayout(layout)
+
+    def submit(self):
+
+        x_axis = {"start": self.controls["x"]["start"].text(),
+                  "end": self.controls["x"]["end"].text(),
+                  "name": self.controls["x"]["name"].text(),
+                  "unit": self.controls["x"]["unit"].text()}
+
+        y_axis = {"start": self.controls["y"]["start"].text(),
+                  "end": self.controls["y"]["end"].text(),
+                  "name": self.controls["y"]["name"].text(),
+                  "unit": self.controls["y"]["unit"].text()}
+
+        z_axis = {"name": self.controls["z"]["name"].text(),
+                  "unit": self.controls["z"]["unit"].text()}
+
+        data_dict = {"x": x_axis, "y": y_axis, "z": z_axis}
+        print(data_dict)
+
+        self.submitted.emit(data_dict)
 
 
 def main():
     app = QApplication(sys.argv)
-    ex = AxisWindow("")
+    file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat_matrix"
+    ex = DataBuffer(file_location)
+    # ex = AxisWindow("")
     sys.exit(app.exec_())
 
 

@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidg
     QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem
 from PyQt5 import QtCore, QtGui
 
+from data_handlers.DataBuffer import DataBuffer
+
 import sys
 import os
 
@@ -161,6 +163,7 @@ class MainWindow(QMainWindow):
 
     def open(self, file_type: str):
         print(file_type)
+        db = DataBuffer("C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat_matrix")
 
     def make_delete_file_from_list(self, name: str):
 
