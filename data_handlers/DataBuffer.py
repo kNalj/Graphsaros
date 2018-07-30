@@ -1,6 +1,6 @@
 from helpers import show_error_message
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget, QPushButton
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import sys
@@ -61,7 +61,7 @@ class AxisWindow(QWidget):
 
     submitted = pyqtSignal(object)
 
-    def __init__(self, buffer: DataBuffer):
+    def __init__(self, buffer):
         super(AxisWindow, self).__init__()
 
         self.buffer = buffer
@@ -152,12 +152,14 @@ class AxisWindow(QWidget):
 
         self.submitted.emit(data_dict)
 
+    def validate_input(self):
+        pass
+
 
 def main():
     app = QApplication(sys.argv)
     file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat_matrix"
     ex = DataBuffer(file_location)
-    # ex = AxisWindow("")
     sys.exit(app.exec_())
 
 
