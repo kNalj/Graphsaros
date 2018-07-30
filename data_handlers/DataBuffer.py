@@ -1,6 +1,6 @@
 from helpers import show_error_message
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget, QPushButton
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QIcon
 
 import sys
@@ -24,7 +24,6 @@ class DataBuffer:
 
         # list of values containing number of steps for x and y dimensions
         self.matrix_dimensions = None
-        self.input_axis_values()
 
     def get_matrix_dimensions(self):
         return self.matrix_dimensions
@@ -56,15 +55,6 @@ class DataBuffer:
 
     def get_location(self):
         return self.location
-
-    def input_axis_values(self):
-        """
-        Open a PyQt window to input axis values (start, end, steps, name, unit)
-
-        :return: i dont know yet, but ill figure it out
-        """
-        self.axis_window = AxisWindow(self)
-        self.axis_window.show()
 
 
 class AxisWindow(QWidget):
@@ -159,7 +149,6 @@ class AxisWindow(QWidget):
                   "unit": self.controls["z"]["unit"].text()}
 
         data_dict = {"x": x_axis, "y": y_axis, "z": z_axis}
-        print(data_dict)
 
         self.submitted.emit(data_dict)
 
