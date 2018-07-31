@@ -27,46 +27,106 @@ class DataBuffer:
         self.matrix_dimensions = None
 
     def get_matrix_dimensions(self):
+        """
+        Returns dimensions of the data set represented by this object. Returns number of points on each axis
+
+        :return: list: [length of x, length of y]
+        """
         return self.matrix_dimensions
 
     def get_number_of_dimension(self):
+        """
+        Method that returns number of dimensions of this measurement, for 3D measurement its 3, for 2D its 2 ... WOW
+
+        :return: int: number of dimensions
+        """
         return len(self.matrix_dimensions) + 1
 
     def calculate_matrix_dimensions(self):
+        """
+        To be implemented in child classes. This method is different for every type of file that can be opened, therefor
+        the method should be implemented in the child class.
+
+        Usually relies on np.loadtxt and np.unique to get x and y dimensions
+
+        :return: list: [len_of_x, len_of_y]
+        """
         raise NotImplementedError
 
     def prepare_data(self):
+        """
+        Should be implemented in child classes. Creates a matrix with calculate_matrix_dimensions shape and fills it
+        with data by walking through a file.
+
+        :return:
+        """
         raise NotImplementedError
 
     def get_axis_data(self):
+        """
+        Gets and saves data points of x and y axis. Should return name and unit for the axis so that it can be easily
+        reached when making a graph with this data buffer.
+
+        :return: dict: {x: {name: "example name", unit: "example unit"}, y: {name: "...", unit: "..."}, z: {}}
+        """
         raise NotImplementedError
 
     def get_scale(self):
+        """
+        Method that calculates distance between points of the matrix in x and y direction. Pyqtgraph draws each point
+        in distance of 1 from previous, to have correct data u need to scale your complete data and for that u need to
+        know what is calculated here.
+
+        :return: tuple: (scale_x, scale_y)
+        """
         return (self.data["x"][-1] - self.data["x"][0]) / (len(self.data["x"]) - 1), \
                (self.data["y"][-1] - self.data["y"][0]) / (len(self.data["y"]) - 1)
 
     def get_matrix(self):
+        """
+        Returns the matrix of this data buffer
+
+        :return: np.array: matrix (for 3D)
+        """
         return self.data["matrix"]
 
     def get_x_axis_values(self):
+        """
+        Method that returns points along the x axis where data points should be drawn
+
+        :return: list: [points on x axis]
+        """
         return self.data["x"]
 
     def get_y_axis_values(self):
+        """
+        Method that returns points along the y axis where data points should be drawn
+
+        :return: list: [points on y axis]
+        """
         return self.data["y"]
 
     def get_location(self):
+        """
+        Method that returns location of the file from which this data buffer was created
+
+        :return: string: location of the original file
+        """
         return self.location
 
 
 class AxisWindow(QWidget):
 
+    # Signal that is emitted when you click OK button. It signals DataBuffers that axis data has been submitted
     submitted = pyqtSignal(object)
 
     def __init__(self, buffer):
         super(AxisWindow, self).__init__()
 
+        # A reference to a buffer for which you are entering data
         self.buffer = buffer
 
+        # References to all QLineEdits
         self.controls = {}
 
         self.init_ui()
@@ -80,6 +140,7 @@ class AxisWindow(QWidget):
         self.setWindowTitle("Input axis data")
         self.setWindowIcon(QIcon("../img/axis.png"))
 
+        # Set of QLineEdits for defining x axis data
         x_label = QLabel("X axis data")
         x_start = QLineEdit("")
         x_start.setPlaceholderText("start")
@@ -92,6 +153,7 @@ class AxisWindow(QWidget):
         x_axis_controls = {"start": x_start, "end": x_end, "name": x_name, "unit": x_unit}
         self.controls["x"] = x_axis_controls
 
+        # Set of QLineEdits for defining y axis data
         y_label = QLabel("Y axis data")
         y_start = QLineEdit("")
         y_start.setPlaceholderText("start")
@@ -104,6 +166,7 @@ class AxisWindow(QWidget):
         y_axis_controls = {"start": y_start, "end": y_end, "name": y_name, "unit": y_unit}
         self.controls["y"] = y_axis_controls
 
+        # Set of QLineEdits for defining z axis data
         z_label = QLabel("Z axis data")
         z_name = QLineEdit("")
         z_name.setPlaceholderText("name")
@@ -112,6 +175,7 @@ class AxisWindow(QWidget):
         z_axis_controls = {"name": z_name, "unit": z_unit}
         self.controls["z"] = z_axis_controls
 
+        # Button for sending this data to data buffer
         self.submit_button = QPushButton("OK")
         self.submit_button.clicked.connect(self.submit)
 
@@ -135,6 +199,18 @@ class AxisWindow(QWidget):
         self.setLayout(layout)
 
     def submit(self):
+        """
+        Method that reads data from QLineEdits and saves it to a dictionary that is then passed to a DataBuffer object
+
+        If the input data does not pass validation (start and end have to be castable to a number) then this method
+        shows error message
+
+        :return: dict: {x: {start: "...", end: "...", name: "...", unit: "..."}, y: {}, z: {}}
+                            start: first point on specified axis
+                            end: last point on specified axis
+                            name: name of the parameter measured and displayed on that axis
+                            unit: measurement unit in which this parameter is measured
+        """
 
         x_axis = {"start": self.controls["x"]["start"].text(),
                   "end": self.controls["x"]["end"].text(),
@@ -159,6 +235,15 @@ class AxisWindow(QWidget):
             show_error_message(title, msg)
 
     def validate_input(self):
+        """
+        Validation for data that is being sent to a DataBuffer.
+
+        Rules:
+            start: has to be numeric
+            end: has to be numeric
+
+        :return: False if validation passes, string to display error message if something does not pass validation
+        """
         for axis, data in self.controls.items():
             for name, control in data.items():
                 if name in ["start", "end"]:

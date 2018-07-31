@@ -28,20 +28,45 @@ class MatrixData(DataBuffer):
         self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
+        """
+        Method that loads matrix and returns its dimensions (reason why id does both of this is because it is faster to
+        go through the file just once rather then going through the file again at a later stage to get the matrix
+
+        :return: list: [len_of_x, len_of_y]
+        """
         data = np.loadtxt(self.location, dtype=float)
         x, y = np.shape(data)
         self.data["matrix"] = data
         return [x, y]
 
     def prepare_data(self):
+        """
+        Not needed because the matrix is already parsed in the calculate_matrix_dimensions
+
+        :return:
+        """
         pass
 
     def get_axis_data(self):
+        """
+        Creates a Qt window that has fields for inputing axis data (start, end, name, unit)
+
+        :return: dict: {x: {start: "...", end: "...", name: "...", unit: "..."}, y: {}, z: {}}
+        """
         self.axis_window = AxisWindow(self)
         self.axis_window.submitted.connect(self.read_axis_data_from_widget)
         self.axis_window.show()
 
     def read_axis_data_from_widget(self, data_dict):
+        """
+        Method that creates arrays of data (measure poitns) for x and y axis using user input data.
+
+        This method is a slot and is being called when this class receives a signal from AxisWindow widget that the data
+        has been submitted.
+
+        :param data_dict: dictionary contining start, end, name, and unit for each axis
+        :return: NoneType
+        """
         x_start = float(data_dict["x"]["start"])
         x_end = float(data_dict["x"]["end"])
         step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)

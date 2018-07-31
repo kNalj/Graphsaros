@@ -6,6 +6,11 @@ from data_handlers.DataBuffer import DataBuffer
 class QtLabData(DataBuffer):
 
     def __init__(self, location):
+        """
+        A class for representing QtLab data. Holds all data needed to plot a graph in pyqtgraph
+
+        :param location: string: absolute path to the file which is being parsed by this DataBuffer
+        """
         self.legend = {0: "x", 1: "y", 2: "z"}
         super().__init__(location)
 
@@ -15,6 +20,11 @@ class QtLabData(DataBuffer):
         self.axis_values = self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
+        """
+        Takes first two columns of QtLab file (x and y) and looks for unique values.
+
+        :return: list: [len(x_axis_data), len(y_axis_data)]
+        """
         axis_data = np.loadtxt(self.location, dtype=float, usecols=(0, 1))
         if axis_data[0][1] == axis_data[1][1]:
             y_axis = np.unique([value[0] for value in axis_data])
@@ -29,6 +39,12 @@ class QtLabData(DataBuffer):
         return [len(x_axis), len(y_axis)]
 
     def prepare_data(self):
+        """
+        Method that creates np.array filled with data from file specified by location when instantiating this class.
+        Data is third column of numbers in that file.
+
+        :return: np.array: matrix
+        """
         if self.get_number_of_dimension() == 2:
             return
         else:
@@ -44,9 +60,9 @@ class QtLabData(DataBuffer):
 
     def get_axis_data(self):
         """
-        Axis data should contain keys "name" and "value"
+        Returns names and units that should be used on graph when plotting this DataBuffer
 
-        :return:
+        :return: dict: {x: {name: "...", unit: "..."}, y: {}, z: {}}
         """
         data_dict = {"x": {"name": "", "unit": ""}, "y": {"name": "", "unit": ""}, "z": {"name": "", "unit": ""}}
         index = -1
@@ -58,12 +74,12 @@ class QtLabData(DataBuffer):
                 elif i.lstrip("\t#").startswith("name:"):
                     data = i.strip("#\t\n").lstrip("name: ")
                     unit = data.split(" ")[-1].strip("()[]{}")
-                    for i in ["", "p", "n", "µ", "m", "k", "M", "G"]:
+                    for j in ["", "p", "n", "µ", "m", "k", "M", "G"]:
                         if valid_unit:
                             break
-                        for j in ["A", "V", "Ω", "Ohm", "W", "var", "VA", "F", "H", "S", "C", "Ah", "J", "Wh", "eV",
+                        for k in ["A", "V", "Ω", "Ohm", "W", "var", "VA", "F", "H", "S", "C", "Ah", "J", "Wh", "eV",
                                   "T", "G", "Wb", "Hz", "dB", "s"]:
-                            if unit == i+j:
+                            if unit == j+k:
                                 valid_unit = True
                                 break
                     if valid_unit:
