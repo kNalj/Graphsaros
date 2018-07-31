@@ -4,6 +4,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import sys
+from helpers import is_numeric
 
 
 class DataBuffer:
@@ -150,10 +151,22 @@ class AxisWindow(QWidget):
 
         data_dict = {"x": x_axis, "y": y_axis, "z": z_axis}
 
-        self.submitted.emit(data_dict)
+        if not self.validate_input():
+            self.submitted.emit(data_dict)
+            self.close()
+        else:
+            title, msg = self.validate_input()
+            show_error_message(title, msg)
 
     def validate_input(self):
-        pass
+        for axis, data in self.controls.items():
+            for name, control in data.items():
+                if name in ["start", "end"]:
+                    if is_numeric(control.text()):
+                        continue
+                    else:
+                        return "Warning", "Value [{}] of axis [{}] is not numeric".format(name, axis)
+        return False
 
 
 def main():

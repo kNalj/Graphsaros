@@ -1,9 +1,20 @@
 import numpy as np
 import sys
+from helpers import frange
 from PyQt5.QtWidgets import QApplication
 
 
 from data_handlers.DataBuffer import DataBuffer, AxisWindow
+
+
+def trap_exc_during_debug(exctype, value, traceback, *args):
+    # when app raises uncaught exception, print info
+    print(args)
+    print(exctype, value, traceback)
+
+
+# install exception hook: without this, uncaught exception would cause application to exit
+sys.excepthook = trap_exc_during_debug
 
 
 class MatrixData(DataBuffer):
@@ -12,6 +23,7 @@ class MatrixData(DataBuffer):
         super().__init__(location)
 
         self.data = {}
+        self.axis_values = {}
         self.matrix_dimensions = self.calculate_matrix_dimensions()
         self.get_axis_data()
 
@@ -30,11 +42,23 @@ class MatrixData(DataBuffer):
         self.axis_window.show()
 
     def read_axis_data_from_widget(self, data_dict):
-        x_start = data_dict["x"]["start"]
-        x_end = data_dict["x"]["end"]
+        x_start = float(data_dict["x"]["start"])
+        x_end = float(data_dict["x"]["end"])
         step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
-        x_axis_data = [x for x in range(x_start, x_end, step=step)]
-        print(x_axis_data)
+        x_axis_values = [x for x in np.arange(x_start, x_end, step=step)]
+        self.data["x"] = x_axis_values
+        x_axis_data = {"name": data_dict["x"]["name"], "unit": data_dict["x"]["unit"]}
+
+        y_start = float(data_dict["y"]["start"])
+        y_end = float(data_dict["y"]["end"])
+        step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
+        y_axis_values = [y for y in np.arange(y_start, y_end, step=step)]
+        self.data["y"] = y_axis_values
+        y_axis_data = {"name": data_dict["y"]["name"], "unit": data_dict["y"]["unit"]}
+
+        z_axis_data = {"name": data_dict["z"]["name"], "unit": data_dict["z"]["unit"]}
+
+        self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": z_axis_data}
 
 
 def main():

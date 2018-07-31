@@ -55,6 +55,26 @@ def show_error_message(title, message):
     msg_box.exec_()
 
 
+def is_numeric(value):
+    """
+    Function that quickly checks if some variable can be casted to float
+
+    :param value: check if this can be casted to float
+    :return:
+    """
+    try:
+        float(value)
+        return True
+    except:
+        return False
+
+
+def frange(start, end, step):
+    while start < end:
+        yield start
+        start += step
+
+
 class ProgressBarWidget(QDialog):
 
     def __init__(self):
