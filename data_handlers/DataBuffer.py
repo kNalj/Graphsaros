@@ -75,7 +75,7 @@ class DataBuffer:
         """
         Method that calculates distance between points of the matrix in x and y direction. Pyqtgraph draws each point
         in distance of 1 from previous, to have correct data u need to scale your complete data and for that u need to
-        know what is calculated here.
+        know the thing that is calculated here.
 
         :return: tuple: (scale_x, scale_y)
         """

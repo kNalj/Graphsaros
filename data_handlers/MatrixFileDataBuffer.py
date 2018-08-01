@@ -35,8 +35,9 @@ class MatrixData(DataBuffer):
         :return: list: [len_of_x, len_of_y]
         """
         data = np.loadtxt(self.location, dtype=float)
-        x, y = np.shape(data)
-        self.data["matrix"] = data
+        self.data["matrix"] = np.transpose(data)
+        y, x = np.shape(data)
+
         return [x, y]
 
     def prepare_data(self):
@@ -76,7 +77,7 @@ class MatrixData(DataBuffer):
 
         y_start = float(data_dict["y"]["start"])
         y_end = float(data_dict["y"]["end"])
-        step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
+        step = (y_end - y_start) / (self.matrix_dimensions[1] - 1)
         y_axis_values = [y for y in np.arange(y_start, y_end, step=step)]
         self.data["y"] = y_axis_values
         y_axis_data = {"name": data_dict["y"]["name"], "unit": data_dict["y"]["unit"]}

@@ -48,8 +48,12 @@ class QcodesData(DataBuffer):
         """
 
         data = np.loadtxt(self.location, dtype=float)
-        x_axis = np.unique([value[0] for value in data])
-        y_axis = np.unique([value[1] for value in data])
+        if self.get_number_of_dimension() == 3:
+            x_axis = np.unique([value[0] for value in data])
+            y_axis = np.unique([value[1] for value in data])
+        else:
+            x_axis = [value[0] for value in data]
+            y_axis = [value[1] for value in data]
 
         if self.get_number_of_dimension() == 3:
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))

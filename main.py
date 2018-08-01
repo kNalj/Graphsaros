@@ -6,7 +6,9 @@ from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.MatrixFileDataBuffer import MatrixData
-from helpers import show_error_message
+from helpers import show_error_message, is_numeric
+from Heatmap import Heatmap
+from LineTrace import LineTrace
 
 import sys
 import os
@@ -138,6 +140,7 @@ class MainWindow(QMainWindow):
         file_dialog = QFileDialog.getOpenFileNames()
 
         for file in file_dialog[0]:
+
             name = os.path.basename(file)
             rows = self.opened_datasets_tablewidget.rowCount()
             self.opened_datasets_tablewidget.insertRow(rows)
@@ -150,19 +153,37 @@ class MainWindow(QMainWindow):
             delete_current_file_btn = QPushButton("Delete")
             delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name_item))
             self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
-            type_item = QTableWidgetItem("smtn")
-            self.opened_datasets_tablewidget.setItem(rows, 3, type_item)
+
+            with open(file, "r") as current_file:
+                for i, line in enumerate(current_file):
+                    if i == 2:
+                        if line.strip(" \n") == "":
+                            self.datasets[name] = QtLabData(file)
+                            type_item = QTableWidgetItem("QtLab")
+                        elif line.startswith("#"):
+                            self.datasets[name] = QcodesData(file)
+                            type_item = QTableWidgetItem("QCoDeS")
+                        else:
+                            self.datasets[name] = MatrixData(file)
+                            type_item = QTableWidgetItem("Matrix")
+                        self.opened_datasets_tablewidget.setItem(rows, 3, type_item)
+
+                        break
 
     def display_dataset(self):
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
             location = item.text()
-            with open(location, "r") as file:
-                data = []
-                self.selected_dataset_textbrowser.clear()
-                for i, line in enumerate(file):
-                    self.selected_dataset_textbrowser.append(line.strip("\n"))
+            name = os.path.basename(location)
+            dataset = self.datasets[name]
+
+            if dataset.get_number_of_dimension() == 3:
+                self.hm = Heatmap(dataset)
+                self.hm.show()
+            else:
+                self.lt = LineTrace(dataset)
+                self.lt.show()
 
     def open(self, file_type: str):
         print(file_type)

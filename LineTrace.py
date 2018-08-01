@@ -43,9 +43,11 @@ class LineTrace(BaseGraph):
 
 def main():
     app = QApplication(sys.argv)
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\inst1_g1_set.dat"
     data = QcodesData(file_location)
-    ex = LineTrace(data)
+    print(data.get_x_axis_values())
+    print(data.get_y_axis_values())
+    # ex = LineTrace(data)
     sys.exit(app.exec_())
 
 

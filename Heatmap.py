@@ -215,18 +215,18 @@ def main():
     file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
 
     # Josip 3D measurement example in QtLab
-    # file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat"
+    file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat"
 
     # Josips 3D measurement example matrix file
-    file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat_matrix"
+    # file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat_matrix"
 
     # Matthias huge ass file
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\005802_GatevsGate_W3_1I03_NW-l_g3@2060_g5@2260_BZ_0T_-_3T_time.dat"
 
-    # data = QtLabData(file_location)
-    data = MatrixData(file_location)
+    data = QtLabData(file_location)
+    # data = MatrixData(file_location)
 
-    # ex = Heatmap(data=data)
+    ex = Heatmap(data=data)
     sys.exit(app.exec_())
 
 
