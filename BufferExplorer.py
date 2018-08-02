@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QGridLayout, QCheckBox, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QGridLayout, QCheckBox, QVBoxLayout, QLabel, QScrollArea
 from PyQt5.QtGui import QIcon
 
 from data_handlers.QcodesDataBuffer import QcodesData
@@ -19,6 +19,11 @@ class BufferExplorer(QWidget):
         self.root_folder = folder
         self.candidates = self.find_candidate_files()
         self.buffers = {}
+
+        """self.scroll = QScrollArea()
+        self.scroll.setWidget(self)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setMaximumSize(1200, 800)"""
 
         self.init_ui()
 

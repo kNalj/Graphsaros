@@ -57,9 +57,12 @@ class QcodesData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
+            num_of_elements = np.size(matrix_data)
             for i in range(self.matrix_dimensions[0]):
                 for j in range(self.matrix_dimensions[1]):
-                    matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
+                    if i * self.matrix_dimensions[1] + j < num_of_elements:
+                        # matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j]
+                        matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
             return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
 
         return {"x": x_axis, "y": y_axis}
