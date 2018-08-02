@@ -1,14 +1,15 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidget, QPushButton, QWidget, QTableWidget,\
-    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem
+    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy
 from PyQt5 import QtCore, QtGui
 
-from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.MatrixFileDataBuffer import MatrixData
-from helpers import show_error_message, is_numeric
+from BufferExplorer import BufferExplorer
 from Heatmap import Heatmap
 from LineTrace import LineTrace
+
+import pyqtgraph as pg
 
 import sys
 import os
@@ -74,6 +75,7 @@ class MainWindow(QMainWindow):
         self.open_dataset_btn.clicked.connect(self.display_dataset)
 
         self.opened_datasets_tablewidget = QTableWidget(0, 4)
+        self.opened_datasets_tablewidget.setMinimumSize(600, 200)
         self.opened_datasets_tablewidget.setHorizontalHeaderLabels(("Name", "Location", "Delete", "Type"))
         header = self.opened_datasets_tablewidget.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -81,15 +83,31 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.opened_datasets_tablewidget.setSelectionBehavior(QTableWidget.SelectRows)
+        self.opened_datasets_tablewidget.currentCellChanged.connect(self.update_mini_graph)
 
         self.selected_dataset_textbrowser = QTextBrowser()
+        self.selected_dataset_textbrowser.setMinimumSize(600, 200)
+        self.selected_dataset_textbrowser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        preview_plt = pg.GraphicsView()
+        mini_plot = pg.GraphicsLayout()
+        main_subplot = mini_plot.addPlot()
+        for axis in ["left", "bottom"]:
+            ax = main_subplot.getAxis(axis)
+            ax.setPen((60, 60, 60))
+
+        preview_plt.setCentralItem(mini_plot)
+        preview_plt.setBackground('w')
+
+        self.mini_plot_items = {"main_subplot": main_subplot}
 
         # position the elements within the grid layout
-        self.grid_layout.addWidget(self.selected_dataset_textbrowser, 0, 0, 3, 1)
-        self.grid_layout.addWidget(self.opened_datasets_tablewidget, 0, 1, 1, 2)
-        self.grid_layout.addWidget(self.add_to_list_btn, 1, 1, 1, 2)
-        self.grid_layout.addWidget(self.open_dataset_btn, 2, 1, 1, 1)
-        self.grid_layout.addWidget(self.exit_btn, 2, 2, 1, 1)
+        self.grid_layout.addWidget(self.opened_datasets_tablewidget, 0, 0, 1, 3)
+        self.grid_layout.addWidget(self.selected_dataset_textbrowser, 1, 0, 3, 1)
+        self.grid_layout.addWidget(preview_plt, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.add_to_list_btn, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.open_dataset_btn, 3, 1, 1, 1)
+        self.grid_layout.addWidget(self.exit_btn, 3, 2, 1, 1)
 
         # set the layout of the central widget
         self.centralWidget.setLayout(self.grid_layout)
@@ -119,11 +137,15 @@ class MainWindow(QMainWindow):
         open_action.addAction(open_qtlab)
         open_action.addAction(open_matrix)
 
+        open_folder_explorer = QAction("&Folder explorer", self)
+        open_folder_explorer.triggered.connect(self.open_folder_explorer)
+
         # create menu bar
         menu_bar = self.menuBar()
         # add submenu
         file_menu = menu_bar.addMenu("&File")
         # add action to the FILE submenu
+        file_menu.addAction(open_folder_explorer)
         file_menu.addMenu(open_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
@@ -194,6 +216,29 @@ class MainWindow(QMainWindow):
             self.opened_datasets_tablewidget.removeRow(self.opened_datasets_tablewidget.row(name))
 
         return delete_file_from_list
+
+    def update_mini_graph(self):
+        row = self.opened_datasets_tablewidget.currentRow()
+        if row != -1:
+            item = self.opened_datasets_tablewidget.item(row, 1)
+            location = item.text()
+            name = os.path.basename(location)
+            dataset = self.datasets[name]
+
+            if dataset.get_number_of_dimension() == 2:
+                self.mini_plot_items["main_subplot"].clear()
+                self.mini_plot_items["main_subplot"].plot(x=dataset.get_x_axis_values(),
+                                                          y=dataset.get_y_axis_values())
+            else:
+                self.mini_plot_items["main_subplot"].clear()
+                img = pg.ImageItem()
+                img.setImage(dataset.get_matrix())
+                self.mini_plot_items["main_subplot"].addItem(img)
+
+    def open_folder_explorer(self):
+        folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        if folder:
+            self.be = BufferExplorer(folder)
 
 
 def main():
