@@ -61,7 +61,8 @@ class QcodesData(DataBuffer):
             for i in range(self.matrix_dimensions[0]):
                 for j in range(self.matrix_dimensions[1]):
                     if i * self.matrix_dimensions[1] + j < num_of_elements:
-                        matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
+                        if len(data) > i * self.matrix_dimensions[1] + j:
+                            matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
             return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
 
         return {"x": x_axis, "y": y_axis}
