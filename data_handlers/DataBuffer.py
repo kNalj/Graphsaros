@@ -4,6 +4,8 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 
 import sys
+import subprocess
+import numpy as np
 from helpers import is_numeric
 
 
@@ -114,6 +116,44 @@ class DataBuffer:
         """
         return self.location
 
+    def read_axis_data_from_widget(self, data_dict):
+        """
+        Method that creates arrays of data (measure poitns) for x and y axis using user input data.
+
+        This method is a slot and is being called when this class receives a signal from AxisWindow widget that the data
+        has been submitted.
+
+        :param data_dict: dictionary contining start, end, name, and unit for each axis
+        :return: NoneType
+        """
+        x_start = float(data_dict["x"]["start"])
+        x_end = float(data_dict["x"]["end"])
+        step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
+        x_axis_values = [x for x in np.arange(x_start, x_end, step=step)]
+        self.data["x"] = x_axis_values
+        x_axis_data = {"name": data_dict["x"]["name"], "unit": data_dict["x"]["unit"]}
+
+        y_start = float(data_dict["y"]["start"])
+        y_end = float(data_dict["y"]["end"])
+        step = (y_end - y_start) / (self.matrix_dimensions[1] - 1)
+        y_axis_values = [y for y in np.arange(y_start, y_end, step=step)]
+        self.data["y"] = y_axis_values
+        y_axis_data = {"name": data_dict["y"]["name"], "unit": data_dict["y"]["unit"]}
+
+        z_axis_data = {"name": data_dict["z"]["name"], "unit": data_dict["z"]["unit"]}
+
+        self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": z_axis_data}
+
+    def is_data_ready(self):
+        if not self.matrix_dimensions:
+            return False
+        if "x" not in self.data or "y" not in self.data:
+            return False
+        if "x" not in self.axis_values or "y" not in self.axis_values:
+            return False
+
+        return True
+
 
 class AxisWindow(QWidget):
 
@@ -179,6 +219,9 @@ class AxisWindow(QWidget):
         self.submit_button = QPushButton("OK")
         self.submit_button.clicked.connect(self.submit)
 
+        self.what_is_this_btn = QPushButton("What is this ?")
+        self.what_is_this_btn.clicked.connect(self.go_to_location)
+
 
         layout = QGridLayout()
         layout.addWidget(x_label, 0, 0, 1, 4)
@@ -194,6 +237,7 @@ class AxisWindow(QWidget):
         layout.addWidget(z_label, 4, 0, 1, 4)
         layout.addWidget(z_name, 5, 0, 1, 2)
         layout.addWidget(z_unit, 5, 2, 1, 2)
+        layout.addWidget(self.what_is_this_btn, 6, 0, 1, 1)
         layout.addWidget(self.submit_button, 6, 3, 1, 1)
 
         self.setLayout(layout)
@@ -233,6 +277,12 @@ class AxisWindow(QWidget):
         else:
             title, msg = self.validate_input()
             show_error_message(title, msg)
+
+    def go_to_location(self):
+        location = self.buffer.get_location()
+        print(location)
+        exec_string = 'explorer /select,"{}"'.format(location)
+        subprocess.Popen(exec_string)
 
     def validate_input(self):
         """

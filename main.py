@@ -165,16 +165,6 @@ class MainWindow(QMainWindow):
 
             name = os.path.basename(file)
             rows = self.opened_datasets_tablewidget.rowCount()
-            self.opened_datasets_tablewidget.insertRow(rows)
-            name_item = QTableWidgetItem(name)
-            name_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.opened_datasets_tablewidget.setItem(rows, 0, name_item)
-            location_item = QTableWidgetItem(file)
-            location_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.opened_datasets_tablewidget.setItem(rows, 1, location_item)
-            delete_current_file_btn = QPushButton("Delete")
-            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name_item))
-            self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
 
             with open(file, "r") as current_file:
                 for i, line in enumerate(current_file):
@@ -191,6 +181,22 @@ class MainWindow(QMainWindow):
                         self.opened_datasets_tablewidget.setItem(rows, 3, type_item)
 
                         break
+            self.add_buffer_to_table(self.datasets[name])
+
+    def add_buffer_to_table(self, buffer):
+        if buffer.is_data_ready():
+            name = os.path.basename(buffer.get_location())
+            rows = self.opened_datasets_tablewidget.rowCount()
+            self.opened_datasets_tablewidget.insertRow(rows)
+            name_item = QTableWidgetItem(name)
+            name_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            self.opened_datasets_tablewidget.setItem(rows, 0, name_item)
+            location_item = QTableWidgetItem(buffer.get_location())
+            location_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            self.opened_datasets_tablewidget.setItem(rows, 1, location_item)
+            delete_current_file_btn = QPushButton("Delete")
+            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name_item))
+            self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
 
     def display_dataset(self):
         row = self.opened_datasets_tablewidget.currentRow()
@@ -239,6 +245,13 @@ class MainWindow(QMainWindow):
         folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder:
             self.be = BufferExplorer(folder)
+            self.be.submitted.connect(self.get_buffers_from_signal)
+
+    def get_buffers_from_signal(self, buffers):
+        for path, buffer in buffers.items():
+            self.add_buffer_to_table(buffer)
+            name = os.path.basename(buffer.get_location())
+            self.datasets[name] = buffer
 
 
 def main():

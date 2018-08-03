@@ -58,34 +58,6 @@ class MatrixData(DataBuffer):
         self.axis_window.submitted.connect(self.read_axis_data_from_widget)
         self.axis_window.show()
 
-    def read_axis_data_from_widget(self, data_dict):
-        """
-        Method that creates arrays of data (measure poitns) for x and y axis using user input data.
-
-        This method is a slot and is being called when this class receives a signal from AxisWindow widget that the data
-        has been submitted.
-
-        :param data_dict: dictionary contining start, end, name, and unit for each axis
-        :return: NoneType
-        """
-        x_start = float(data_dict["x"]["start"])
-        x_end = float(data_dict["x"]["end"])
-        step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
-        x_axis_values = [x for x in np.arange(x_start, x_end, step=step)]
-        self.data["x"] = x_axis_values
-        x_axis_data = {"name": data_dict["x"]["name"], "unit": data_dict["x"]["unit"]}
-
-        y_start = float(data_dict["y"]["start"])
-        y_end = float(data_dict["y"]["end"])
-        step = (y_end - y_start) / (self.matrix_dimensions[1] - 1)
-        y_axis_values = [y for y in np.arange(y_start, y_end, step=step)]
-        self.data["y"] = y_axis_values
-        y_axis_data = {"name": data_dict["y"]["name"], "unit": data_dict["y"]["unit"]}
-
-        z_axis_data = {"name": data_dict["z"]["name"], "unit": data_dict["z"]["unit"]}
-
-        self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": z_axis_data}
-
 
 def main():
     app = QApplication(sys.argv)

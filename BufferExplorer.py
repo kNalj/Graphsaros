@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QGridLayout, QCheckBox, QVBoxLayout, QLabel, QScrollArea
+from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QGridLayout, QCheckBox, QVBoxLayout, QLabel, \
+    QScrollArea, QPushButton
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSignal
 
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
@@ -13,12 +15,15 @@ import os
 
 class BufferExplorer(QWidget):
 
+    submitted = pyqtSignal(object)
+
     def __init__(self, folder):
         super(BufferExplorer, self).__init__()
 
         self.root_folder = folder
         self.candidates = self.find_candidate_files()
         self.buffers = {}
+        self.checkboxes = {}
 
         """self.scroll = QScrollArea()
         self.scroll.setWidget(self)
@@ -51,39 +56,45 @@ class BufferExplorer(QWidget):
 
                         break
 
-            preview_plt = pg.GraphicsView()
-            mini_plot = pg.GraphicsLayout()
-            main_subplot = mini_plot.addPlot()
-            for axis in ["left", "bottom"]:
-                ax = main_subplot.getAxis(axis)
-                ax.setPen((60, 60, 60))
+            if self.buffers[candidate].is_data_ready():
+                preview_plt = pg.GraphicsView()
+                mini_plot = pg.GraphicsLayout()
+                main_subplot = mini_plot.addPlot()
+                for axis in ["left", "bottom"]:
+                    ax = main_subplot.getAxis(axis)
+                    ax.setPen((60, 60, 60))
 
-            preview_plt.setCentralItem(mini_plot)
-            preview_plt.setBackground('w')
+                preview_plt.setCentralItem(mini_plot)
+                preview_plt.setBackground('w')
 
-            if self.buffers[candidate].get_number_of_dimension() == 2:
-                main_subplot.clear()
-                main_subplot.plot(x=self.buffers[candidate].get_x_axis_values(),
-                                  y=self.buffers[candidate].get_y_axis_values())
-            else:
-                main_subplot.clear()
-                img = pg.ImageItem()
-                img.setImage(self.buffers[candidate].get_matrix())
-                main_subplot.addItem(img)
+                if self.buffers[candidate].get_number_of_dimension() == 2:
+                    main_subplot.clear()
+                    main_subplot.plot(x=self.buffers[candidate].get_x_axis_values(),
+                                      y=self.buffers[candidate].get_y_axis_values())
+                else:
+                    main_subplot.clear()
+                    img = pg.ImageItem()
+                    img.setImage(self.buffers[candidate].get_matrix())
+                    main_subplot.addItem(img)
 
-            v_layout = QVBoxLayout()
-            v_layout.addWidget(QLabel(os.path.basename(candidate)[:30]))
-            v_layout.addWidget(QCheckBox(self))
-            v_layout.addWidget(preview_plt)
+                v_layout = QVBoxLayout()
+                v_layout.addWidget(QLabel(os.path.basename(candidate)[:30]))
+                checkbox = QCheckBox(self)
+                self.checkboxes[candidate] = checkbox
+                v_layout.addWidget(checkbox)
+                v_layout.addWidget(preview_plt)
 
-            layout.addLayout(v_layout, row, column, 1, 1)
-            if column == 2:
-                row += 1
-                column = 0
-            else:
-                column += 1
+                layout.addLayout(v_layout, row, column, 1, 1)
 
+                if column == 2:
+                    row += 1
+                    column = 0
+                else:
+                    column += 1
 
+        submit_btn = QPushButton("OK", self)
+        submit_btn.clicked.connect(self.submit)
+        layout.addWidget(submit_btn, row+1, 0, 1, 3)
         self.setLayout(layout)
 
         self.show()
@@ -96,6 +107,14 @@ class BufferExplorer(QWidget):
                     file = os.path.join(root, file)
                     candidates.append(file)
         return candidates
+
+    def submit(self):
+        selected = {}
+        for candidate, checkbox in self.checkboxes.items():
+            if checkbox.checkState():
+                selected[candidate] = self.buffers[candidate]
+
+        self.submitted.emit(selected)
 
 def main():
     app = QApplication(sys.argv)

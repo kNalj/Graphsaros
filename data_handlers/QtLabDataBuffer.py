@@ -1,6 +1,7 @@
 import numpy as np
 
-from data_handlers.DataBuffer import DataBuffer
+from data_handlers.DataBuffer import DataBuffer, AxisWindow
+from helpers import show_error_message
 
 
 class QtLabData(DataBuffer):
@@ -16,8 +17,9 @@ class QtLabData(DataBuffer):
 
         self.data = {}
         self.matrix_dimensions = self.calculate_matrix_dimensions()
-        self.prepare_data()
-        self.axis_values = self.get_axis_data()
+        if self.matrix_dimensions:
+            self.prepare_data()
+            self.axis_values = self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
         """
@@ -25,18 +27,27 @@ class QtLabData(DataBuffer):
 
         :return: list: [len(x_axis_data), len(y_axis_data)]
         """
-        axis_data = np.loadtxt(self.location, dtype=float, usecols=(0, 1))
-        if axis_data[0][1] == axis_data[1][1]:
-            y_axis = np.unique([value[0] for value in axis_data])
-            x_axis = np.unique([value[1] for value in axis_data])
-            self.legend[0] = "y"
-            self.legend[1] = "x"
-        elif axis_data[0][0] == axis_data[1][0]:
-            x_axis = np.unique([value[0] for value in axis_data])
-            y_axis = np.unique([value[1] for value in axis_data])
-        self.data["x"] = x_axis
-        self.data["y"] = y_axis
-        return [len(x_axis), len(y_axis)]
+        axis_data = np.loadtxt(self.location, dtype=float)
+        if len(axis_data) < 2:
+            show_error_message("Warning", "Seems like data for file {} is incomplete".format(self.location))
+        else:
+            if axis_data[0][1] == axis_data[1][1]:
+                y_axis = np.unique([value[0] for value in axis_data])
+                x_axis = np.unique([value[1] for value in axis_data])
+                self.legend[0] = "y"
+                self.legend[1] = "x"
+            elif axis_data[0][0] == axis_data[1][0]:
+                x_axis = np.unique([value[0] for value in axis_data])
+                y_axis = np.unique([value[1] for value in axis_data])
+            else:
+                x_axis = [value[0] for value in axis_data]
+                y_axis = [value[1] for value in axis_data]
+                self.data["x"] = x_axis
+                self.data["y"] = y_axis
+                return [len(x_axis)]
+            self.data["x"] = x_axis
+            self.data["y"] = y_axis
+            return [len(x_axis), len(y_axis)]
 
     def prepare_data(self):
         """
@@ -82,10 +93,11 @@ class QtLabData(DataBuffer):
                             if unit == j+k:
                                 valid_unit = True
                                 break
+
+                    name = data
+                    data_dict[self.legend[index]]["name"] = name
                     if valid_unit:
-                        name = data
                         data_dict[self.legend[index]]["unit"] = unit
-                        data_dict[self.legend[index]]["name"] = name
                 else:
                     if i[0].isdigit() or (i.startswith("-") and i[1].isdigit()):
                         break

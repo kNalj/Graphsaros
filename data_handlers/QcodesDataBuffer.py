@@ -52,8 +52,8 @@ class QcodesData(DataBuffer):
             x_axis = np.unique([value[0] for value in data])
             y_axis = np.unique([value[1] for value in data])
         else:
-            x_axis = [value[0] for value in data]
-            y_axis = [value[1] for value in data]
+            x_axis = np.array([value[0] for value in data])
+            y_axis = np.array([value[1] for value in data])
 
         if self.get_number_of_dimension() == 3:
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
@@ -61,7 +61,6 @@ class QcodesData(DataBuffer):
             for i in range(self.matrix_dimensions[0]):
                 for j in range(self.matrix_dimensions[1]):
                     if i * self.matrix_dimensions[1] + j < num_of_elements:
-                        # matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j]
                         matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
             return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
 
