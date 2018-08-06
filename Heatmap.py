@@ -85,8 +85,8 @@ class Heatmap(BaseGraph):
             ax = main_subplot.getAxis(side)
             ax.setPen((60, 60, 60))
             axis_data = self.data_buffer.axis_values[legend[side]]
-            labelStyle = {'font-size': '10pt'}
-            ax.setLabel(axis_data["name"], axis_data["unit"], **labelStyle)
+            label_style = {'font-size': '10pt'}
+            ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)

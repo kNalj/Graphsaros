@@ -47,7 +47,7 @@ def main():
     data = QcodesData(file_location)
     print(data.get_x_axis_values())
     print(data.get_y_axis_values())
-    # ex = LineTrace(data)
+    ex = LineTrace(data)
     sys.exit(app.exec_())
 
 

@@ -25,20 +25,22 @@ class BufferExplorer(QWidget):
         self.buffers = {}
         self.checkboxes = {}
 
-        """self.scroll = QScrollArea()
-        self.scroll.setWidget(self)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setMaximumSize(1200, 800)"""
-
         self.init_ui()
 
     def init_ui(self):
         # find dimensions of the monitor (screen)
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
-        self.setGeometry(int(0.2 * width), int(0.2 * height), 600, 400)
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 800, 600)
 
         self.setWindowTitle("Browse files")
         self.setWindowIcon(QIcon("img/dataStructure.png"))
+
+        self.scroll = QScrollArea(self)
+        self.scroll.setWidgetResizable(True)
+        scroll_content = QWidget(self.scroll)
+
+        main_layout = QGridLayout(self)
+        main_layout.addWidget(self.scroll)
 
         layout = QGridLayout()
         row, column = 0, 0
@@ -57,6 +59,9 @@ class BufferExplorer(QWidget):
                         break
 
             if self.buffers[candidate].is_data_ready():
+                mini_plot_widget = QWidget(self)
+                mini_plot_widget.setMinimumHeight(250)
+
                 preview_plt = pg.GraphicsView()
                 mini_plot = pg.GraphicsLayout()
                 main_subplot = mini_plot.addPlot()
@@ -70,7 +75,8 @@ class BufferExplorer(QWidget):
                 if self.buffers[candidate].get_number_of_dimension() == 2:
                     main_subplot.clear()
                     main_subplot.plot(x=self.buffers[candidate].get_x_axis_values(),
-                                      y=self.buffers[candidate].get_y_axis_values())
+                                      y=self.buffers[candidate].get_y_axis_values(),
+                                      pen=(60, 60, 60))
                 else:
                     main_subplot.clear()
                     img = pg.ImageItem()
@@ -83,8 +89,9 @@ class BufferExplorer(QWidget):
                 self.checkboxes[candidate] = checkbox
                 v_layout.addWidget(checkbox)
                 v_layout.addWidget(preview_plt)
-
-                layout.addLayout(v_layout, row, column, 1, 1)
+                mini_plot_widget.setLayout(v_layout)
+                # layout.addLayout(v_layout, row, column, 1, 1)
+                layout.addWidget(mini_plot_widget, row, column, 1, 1)
 
                 if column == 2:
                     row += 1
@@ -94,8 +101,10 @@ class BufferExplorer(QWidget):
 
         submit_btn = QPushButton("OK", self)
         submit_btn.clicked.connect(self.submit)
-        layout.addWidget(submit_btn, row+1, 0, 1, 3)
-        self.setLayout(layout)
+        main_layout.addWidget(submit_btn, row+1, 0, 1, 3)
+        scroll_content.setLayout(layout)
+        self.scroll.setWidget(scroll_content)
+        self.setLayout(main_layout)
 
         self.show()
 

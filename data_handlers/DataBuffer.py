@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabe
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QIcon
 
+import os
 import sys
 import subprocess
 import numpy as np
@@ -280,9 +281,9 @@ class AxisWindow(QWidget):
 
     def go_to_location(self):
         location = self.buffer.get_location()
-        print(location)
-        exec_string = 'explorer /select,"{}"'.format(location)
-        subprocess.Popen(exec_string)
+        folder = os.path.dirname(location)
+        # unfortunately this thing only works on windows :((((
+        os.startfile(folder)
 
     def validate_input(self):
         """

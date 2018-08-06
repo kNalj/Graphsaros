@@ -10,6 +10,7 @@ from Heatmap import Heatmap
 from LineTrace import LineTrace
 
 import pyqtgraph as pg
+import numpy as np
 
 import sys
 import os
@@ -99,6 +100,17 @@ class MainWindow(QMainWindow):
         preview_plt.setCentralItem(mini_plot)
         preview_plt.setBackground('w')
 
+        """colors = [
+            (0, 0, 0),
+            (45, 5, 61),
+            (84, 42, 55),
+            (150, 87, 60),
+            (208, 171, 141),
+            (255, 255, 255)
+        ]
+        cmap = pg.ColorMap(pos=np.linspace(0.0, 1.0, 6), color=colors)
+        WHAT_THE_FUCK.setColorMap(cmap)"""
+
         self.mini_plot_items = {"main_subplot": main_subplot}
 
         # position the elements within the grid layout
@@ -111,7 +123,7 @@ class MainWindow(QMainWindow):
 
         # set the layout of the central widget
         self.centralWidget.setLayout(self.grid_layout)
-        # set central widget to be THE CENTRAL WIDGET (QMainWindow predefind element)
+        # set central widget to be THE CENTRAL WIDGET (QMainWindow predefined element)
         self.setCentralWidget(self.centralWidget)
 
     def init_manu_bar(self):
@@ -234,12 +246,14 @@ class MainWindow(QMainWindow):
             if dataset.get_number_of_dimension() == 2:
                 self.mini_plot_items["main_subplot"].clear()
                 self.mini_plot_items["main_subplot"].plot(x=dataset.get_x_axis_values(),
-                                                          y=dataset.get_y_axis_values())
+                                                          y=dataset.get_y_axis_values(),
+                                                          pen=(60, 60, 60))
             else:
                 self.mini_plot_items["main_subplot"].clear()
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix())
                 self.mini_plot_items["main_subplot"].addItem(img)
+
 
     def open_folder_explorer(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
