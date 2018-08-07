@@ -1,6 +1,6 @@
 from helpers import show_error_message
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget, QPushButton
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
 
 import os
@@ -10,9 +10,12 @@ import numpy as np
 from helpers import is_numeric
 
 
-class DataBuffer:
+class DataBuffer(QObject):
+
+    ready = pyqtSignal()
 
     def __init__(self, location):
+        super().__init__()
 
         # location is absolute path to a location of the file on the disk
         self.location = location
@@ -144,6 +147,9 @@ class DataBuffer:
         z_axis_data = {"name": data_dict["z"]["name"], "unit": data_dict["z"]["unit"]}
 
         self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": z_axis_data}
+
+        self.ready.emit()
+
 
     def is_data_ready(self):
         if not self.matrix_dimensions:

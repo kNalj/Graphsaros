@@ -1,8 +1,7 @@
 import numpy as np
 import sys
-from helpers import frange
 from PyQt5.QtWidgets import QApplication
-
+from PyQt5.QtCore import pyqtSignal
 
 from data_handlers.DataBuffer import DataBuffer, AxisWindow
 

@@ -1,18 +1,12 @@
 import pyqtgraph as pg
 import sys
-import time
-import numpy as np
 
-from PyQt5.QtWidgets import QAction, QApplication, QMenu, QWidgetAction, QSlider
+from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QRectF
-from PyQt5 import QtCore
 
-from BaseGraph import BaseGraph
+from graphs.BaseGraph import BaseGraph
 from data_handlers.DataBuffer import DataBuffer
-from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
-from data_handlers.MatrixFileDataBuffer import MatrixData
 from LineROI import LineROI
 
 
@@ -35,7 +29,7 @@ class Heatmap(BaseGraph):
         self.setWindowTitle("Heatmap window")
 
         # khm khm ... setting window icon ...
-        self.setWindowIcon(QIcon("img/heatmapIcon.png"))
+        self.setWindowIcon(QIcon("../img/heatmapIcon.png"))
 
         # set status bar msg to nothing, just to have it there, later its used to show coordinates of mouse
         self.statusBar().showMessage("")
@@ -94,6 +88,7 @@ class Heatmap(BaseGraph):
 
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
+        histogram.gradient.loadPreset("thermal")
         histogram.setFixedWidth(128)
         axis_data = self.data_buffer.axis_values["z"]
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"])
@@ -132,12 +127,14 @@ class Heatmap(BaseGraph):
 
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
-        self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace")
+        self.line_trace_btn = QAction(QIcon("../img/lineGraph"), "Line_Trace", self)
         self.tools.addAction(self.line_trace_btn)
-        self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter")
+        self.gaussian_filter_btn = QAction(QIcon("../img/gaussianIcon.png"), "Gaussian_filter", self)
         self.tools.addAction(self.gaussian_filter_btn)
-        self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit")
+        self.exit_action_btn = QAction(QIcon("../img/closeIcon.png"), "Exit", self)
         self.tools.addAction(self.exit_action_btn)
+        self.customize_font_btn = QAction(QIcon("../img/editFontIcon.png"), "Font", self)
+        self.tools.addAction(self.customize_font_btn)
 
     def line_trace_action(self):
         """
@@ -169,6 +166,14 @@ class Heatmap(BaseGraph):
         self.plot_elements["main_subplot"].addItem(line_segmet_roi)
         # connect signal to a slot, this signa
         line_segmet_roi.aligned.connect(self.update_line_trace_plot)
+
+    def font_action(self):
+        for side in ('left', 'bottom'):
+            ax = self.plot_elements["main_subplot"].getAxis(side)
+            label_style = {'font-size': '18pt'}
+            ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
+
+
 
     def update_line_trace_plot(self):
         data = self.active_data

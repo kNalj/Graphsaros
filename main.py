@@ -6,11 +6,10 @@ from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.MatrixFileDataBuffer import MatrixData
 from BufferExplorer import BufferExplorer
-from Heatmap import Heatmap
-from LineTrace import LineTrace
+from graphs.Heatmap import Heatmap
+from graphs.LineTrace import LineTrace
 
 import pyqtgraph as pg
-import numpy as np
 
 import sys
 import os
@@ -100,17 +99,6 @@ class MainWindow(QMainWindow):
         preview_plt.setCentralItem(mini_plot)
         preview_plt.setBackground('w')
 
-        """colors = [
-            (0, 0, 0),
-            (45, 5, 61),
-            (84, 42, 55),
-            (150, 87, 60),
-            (208, 171, 141),
-            (255, 255, 255)
-        ]
-        cmap = pg.ColorMap(pos=np.linspace(0.0, 1.0, 6), color=colors)
-        WHAT_THE_FUCK.setColorMap(cmap)"""
-
         self.mini_plot_items = {"main_subplot": main_subplot}
 
         # position the elements within the grid layout
@@ -183,17 +171,25 @@ class MainWindow(QMainWindow):
                     if i == 2:
                         if line.strip(" \n") == "":
                             self.datasets[name] = QtLabData(file)
+                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("QtLab")
                         elif line.startswith("#"):
                             self.datasets[name] = QcodesData(file)
+                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("QCoDeS")
                         else:
                             self.datasets[name] = MatrixData(file)
+                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("Matrix")
                         self.opened_datasets_tablewidget.setItem(rows, 3, type_item)
 
                         break
             self.add_buffer_to_table(self.datasets[name])
+
+    def make_add_to_table(self, buffer):
+        def add_to_table():
+            self.add_buffer_to_table(buffer)
+        return add_to_table
 
     def add_buffer_to_table(self, buffer):
         if buffer.is_data_ready():
@@ -209,6 +205,8 @@ class MainWindow(QMainWindow):
             delete_current_file_btn = QPushButton("Delete")
             delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name_item))
             self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
+        else:
+            print("WHY")
 
     def display_dataset(self):
         row = self.opened_datasets_tablewidget.currentRow()
@@ -252,14 +250,20 @@ class MainWindow(QMainWindow):
                 self.mini_plot_items["main_subplot"].clear()
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix())
+                histogram = pg.HistogramLUTItem()
+                histogram.setImageItem(img)
+                histogram.gradient.loadPreset("thermal")
                 self.mini_plot_items["main_subplot"].addItem(img)
 
+    def update_text_display(self):
+        pass
 
     def open_folder_explorer(self):
         folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder:
             self.be = BufferExplorer(folder)
             self.be.submitted.connect(self.get_buffers_from_signal)
+            self.be.add_requested.connect(self.get_buffers_from_signal)
 
     def get_buffers_from_signal(self, buffers):
         for path, buffer in buffers.items():

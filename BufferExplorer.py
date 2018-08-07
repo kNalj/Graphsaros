@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QApplication, QDesktopWidget, QGridLayout, QCheckBox, QVBoxLayout, QLabel, \
-    QScrollArea, QPushButton
+    QScrollArea, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
 
@@ -16,6 +16,7 @@ import os
 class BufferExplorer(QWidget):
 
     submitted = pyqtSignal(object)
+    add_requested = pyqtSignal(object)
 
     def __init__(self, folder):
         super(BufferExplorer, self).__init__()
@@ -81,16 +82,26 @@ class BufferExplorer(QWidget):
                     main_subplot.clear()
                     img = pg.ImageItem()
                     img.setImage(self.buffers[candidate].get_matrix())
+                    histogram = pg.HistogramLUTItem()
+                    histogram.setImageItem(img)
+                    histogram.gradient.loadPreset("thermal")
                     main_subplot.addItem(img)
 
                 v_layout = QVBoxLayout()
                 v_layout.addWidget(QLabel(os.path.basename(candidate)[:30]))
+                h_layout = QHBoxLayout()
                 checkbox = QCheckBox(self)
+                what_btn = QPushButton("What is this", self)
+                what_btn.clicked.connect(self.make_go_to_location(self.buffers[candidate]))
+                add_btn = QPushButton("Quick add", self)
+                add_btn.clicked.connect(self.make_quick_add(candidate))
                 self.checkboxes[candidate] = checkbox
-                v_layout.addWidget(checkbox)
+                h_layout.addWidget(checkbox)
+                h_layout.addWidget(what_btn)
+                h_layout.addWidget(add_btn)
+                v_layout.addLayout(h_layout)
                 v_layout.addWidget(preview_plt)
                 mini_plot_widget.setLayout(v_layout)
-                # layout.addLayout(v_layout, row, column, 1, 1)
                 layout.addWidget(mini_plot_widget, row, column, 1, 1)
 
                 if column == 2:
@@ -124,6 +135,19 @@ class BufferExplorer(QWidget):
                 selected[candidate] = self.buffers[candidate]
 
         self.submitted.emit(selected)
+
+    def make_quick_add(self, candidate):
+        def quick_add():
+            self.add_requested.emit({candidate: self.buffers[candidate]})
+        return quick_add
+
+    def make_go_to_location(self, buffer):
+        def go_to_location():
+            location = buffer.get_location()
+            folder = os.path.dirname(location)
+            # unfortunately this thing only works on windows :((((
+            os.startfile(folder)
+        return go_to_location
 
 def main():
     app = QApplication(sys.argv)
