@@ -15,7 +15,7 @@ class LineTrace(BaseGraph):
 
         self.data_buffer = data
         self.setWindowTitle("Line trace window")
-        self.setWindowIcon(QIcon("../img/lineGraph.png"))
+        self.setWindowIcon(QIcon("img/lineGraph.png"))
         self.plt = pg.PlotWidget(x=self.data_buffer.data["x"], y=self.data_buffer.data["y"], pen=(60, 60, 60))
         self.plt.setBackground('w')
         for axis in ['left', 'bottom']:
@@ -34,7 +34,7 @@ class LineTrace(BaseGraph):
 
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
-        self.exit_action_Btn = QAction(QIcon("../img/closeIcon.png"), "Exit")
+        self.exit_action_Btn = QAction(QIcon("img/closeIcon.png"), "Exit")
         self.tools.addAction(self.exit_action_Btn)
 
     def define_plot_parameters(self):

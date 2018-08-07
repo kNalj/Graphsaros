@@ -1,8 +1,4 @@
-import pyqtgraph as pg
-import sys
-
-from PyQt5.QtWidgets import QAction, QMainWindow, QApplication
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow
 
 
 class BaseGraph(QMainWindow):

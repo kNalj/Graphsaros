@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox
+from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget
 from PyQt5.QtGui import QIcon
 
 import numpy as np
@@ -96,15 +96,38 @@ class ProgressBarWidget(QDialog):
         self.progressBar.setProperty("value", val)
 
 
+class EditAxisWidget(QWidget):
+    def __init__(self, graph):
+        super(EditAxisWidget, self).__init__()
+
+        self.graph = graph
+
+        self.init_ui()
+
+    def init_ui(self):
+        # find dimensions of the monitor (screen)
+        _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
+
+        self.setWindowTitle("Edit axis data")
+        self.setWindowIcon(QIcon("img/dataStructure.png"))
+
+        layout = QGridLayout()
+
+        self.setLayout(layout)
+        self.show()
+
+
 def main():
 
     app = QApplication(sys.argv)
-    ex = ProgressBarWidget()
+    """ex = ProgressBarWidget()
     for i in range(0, 100):
         time.sleep(0.05)
         ex.setValue(((i + 1) / 100) * 100)
         QApplication.processEvents()
-    ex.close()
+    ex.close()"""
+    ex = EditAxisWidget("")
     sys.exit(app.exec_())
 
 

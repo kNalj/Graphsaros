@@ -29,7 +29,7 @@ class Heatmap(BaseGraph):
         self.setWindowTitle("Heatmap window")
 
         # khm khm ... setting window icon ...
-        self.setWindowIcon(QIcon("../img/heatmapIcon.png"))
+        self.setWindowIcon(QIcon("img/heatmapIcon.png"))
 
         # set status bar msg to nothing, just to have it there, later its used to show coordinates of mouse
         self.statusBar().showMessage("")
@@ -37,7 +37,7 @@ class Heatmap(BaseGraph):
         # need to keep track of number of opened windows and position the newly created one accordingly
         self.plt = pg.GraphicsView()
 
-        # inastance of DataBuffer class, holds all data required to draw a graph
+        # instance of DataBuffer class, holds all data required to draw a graph
         self.data_buffer = data
 
         # np.array, this is what pyqtgraph wants to draw stuff
@@ -127,13 +127,13 @@ class Heatmap(BaseGraph):
 
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
-        self.line_trace_btn = QAction(QIcon("../img/lineGraph"), "Line_Trace", self)
+        self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
         self.tools.addAction(self.line_trace_btn)
-        self.gaussian_filter_btn = QAction(QIcon("../img/gaussianIcon.png"), "Gaussian_filter", self)
+        self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter", self)
         self.tools.addAction(self.gaussian_filter_btn)
-        self.exit_action_btn = QAction(QIcon("../img/closeIcon.png"), "Exit", self)
+        self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
         self.tools.addAction(self.exit_action_btn)
-        self.customize_font_btn = QAction(QIcon("../img/editFontIcon.png"), "Font", self)
+        self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
         self.tools.addAction(self.customize_font_btn)
 
     def line_trace_action(self):
