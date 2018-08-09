@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.MatrixFileDataBuffer import MatrixData
+from helpers import InfoWidget
 
 import pyqtgraph as pg
 
@@ -31,7 +32,7 @@ class BufferExplorer(QWidget):
     def init_ui(self):
         # find dimensions of the monitor (screen)
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
-        self.setGeometry(int(0.2 * width), int(0.2 * height), 800, 600)
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 900, 600)
 
         self.setWindowTitle("Browse files")
         self.setWindowIcon(QIcon("img/dataStructure.png"))
@@ -82,21 +83,35 @@ class BufferExplorer(QWidget):
                     main_subplot.clear()
                     img = pg.ImageItem()
                     img.setImage(self.buffers[candidate].get_matrix())
+                    (x_scale, y_scale) = self.buffers[candidate].get_scale()
+                    img.translate(self.buffers[candidate].get_x_axis_values()[0],
+                                  self.buffers[candidate].get_y_axis_values()[0])
+                    img.scale(x_scale, y_scale)
                     histogram = pg.HistogramLUTItem()
                     histogram.setImageItem(img)
                     histogram.gradient.loadPreset("thermal")
                     main_subplot.addItem(img)
+                    legend = {"left": "y", "bottom": "x"}
+                    for side in ('left', 'bottom'):
+                        ax = main_subplot.getAxis(side)
+                        ax.setPen((60, 60, 60))
+                        axis_data = self.buffers[candidate].axis_values[legend[side]]
+                        label_style = {'font-size': '7pt'}
+                        ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
                 v_layout = QVBoxLayout()
                 v_layout.addWidget(QLabel(os.path.basename(candidate)[:30]))
                 h_layout = QHBoxLayout()
                 checkbox = QCheckBox(self)
+                info_btn = QPushButton("Info", self)
+                info_btn.clicked.connect(self.make_show_buffer_info(self.buffers[candidate]))
                 what_btn = QPushButton("What is this", self)
                 what_btn.clicked.connect(self.make_go_to_location(self.buffers[candidate]))
                 add_btn = QPushButton("Quick add", self)
                 add_btn.clicked.connect(self.make_quick_add(candidate))
                 self.checkboxes[candidate] = checkbox
                 h_layout.addWidget(checkbox)
+                h_layout.addWidget(info_btn)
                 h_layout.addWidget(what_btn)
                 h_layout.addWidget(add_btn)
                 v_layout.addLayout(h_layout)
@@ -148,6 +163,12 @@ class BufferExplorer(QWidget):
             # unfortunately this thing only works on windows :((((
             os.startfile(folder)
         return go_to_location
+
+    def make_show_buffer_info(self, buffer):
+        def show_buffer_info():
+            self.iw = InfoWidget(buffer)
+            self.iw.show()
+        return show_buffer_info
 
 def main():
     app = QApplication(sys.argv)

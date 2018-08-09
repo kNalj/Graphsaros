@@ -1,6 +1,6 @@
 import numpy as np
 
-from data_handlers.DataBuffer import DataBuffer, AxisWindow
+from data_handlers.DataBuffer import DataBuffer
 from helpers import show_error_message
 
 

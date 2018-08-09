@@ -250,10 +250,21 @@ class MainWindow(QMainWindow):
                 self.mini_plot_items["main_subplot"].clear()
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix())
+                (x_scale, y_scale) = dataset.get_scale()
+                img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0])
+                img.scale(x_scale, y_scale)
                 histogram = pg.HistogramLUTItem()
                 histogram.setImageItem(img)
                 histogram.gradient.loadPreset("thermal")
                 self.mini_plot_items["main_subplot"].addItem(img)
+
+                legend = {"left": "y", "bottom": "x"}
+                for side in ('left', 'bottom'):
+                    ax = self.mini_plot_items["main_subplot"].getAxis(side)
+                    ax.setPen((60, 60, 60))
+                    axis_data = self.datasets[name].axis_values[legend[side]]
+                    label_style = {'font-size': '7pt'}
+                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
     def update_text_display(self):
         pass

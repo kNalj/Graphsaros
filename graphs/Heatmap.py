@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
+import helpers
 from graphs.BaseGraph import BaseGraph
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
@@ -81,6 +82,7 @@ class Heatmap(BaseGraph):
             axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            # ax.setTickSpacing(major=500, minor=250)
 
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)
@@ -91,7 +93,8 @@ class Heatmap(BaseGraph):
         histogram.gradient.loadPreset("thermal")
         histogram.setFixedWidth(128)
         axis_data = self.data_buffer.axis_values["z"]
-        histogram.axis.setLabel(axis_data["name"], axis_data["unit"])
+        label_style = {'font-size': '8pt'}
+        histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
@@ -111,7 +114,8 @@ class Heatmap(BaseGraph):
             ax = line_trace_graph.getAxis(axis)
             ax.setPen((60, 60, 60))
             axis_data = self.data_buffer.axis_values[legend[axis]]
-            ax.setLabel(axis_data["name"], axis_data["unit"])
+            label_style = {'font-size': '9pt'}
+            ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
         self.plot_elements = {"central_item": central_item, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
@@ -168,12 +172,12 @@ class Heatmap(BaseGraph):
         line_segmet_roi.aligned.connect(self.update_line_trace_plot)
 
     def font_action(self):
-        for side in ('left', 'bottom'):
+        """for side in ('left', 'bottom'):
             ax = self.plot_elements["main_subplot"].getAxis(side)
             label_style = {'font-size': '18pt'}
-            ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
-
-
+            ax.setLabel(ax.labelText, ax.labelUnits, **label_style)"""
+        self.eaw = helpers.EditAxisWidget(self)
+        self.eaw.show()
 
     def update_line_trace_plot(self):
         data = self.active_data

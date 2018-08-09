@@ -28,6 +28,7 @@ class LineTrace(BaseGraph):
 
         self.setGeometry(50, 50, 640, 400)
         self.setCentralWidget(self.plt)
+
         self.show()
 
     def init_toolbar(self):

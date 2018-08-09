@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget
+from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
+    QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox
 from PyQt5.QtGui import QIcon
 
 import numpy as np
@@ -6,6 +7,7 @@ import os
 import time
 import sys
 import json
+import graphs
 
 
 def split_location_string(location: str):
@@ -97,10 +99,10 @@ class ProgressBarWidget(QDialog):
 
 
 class EditAxisWidget(QWidget):
-    def __init__(self, graph):
+    def __init__(self, window):
         super(EditAxisWidget, self).__init__()
 
-        self.graph = graph
+        self.window = window
 
         self.init_ui()
 
@@ -114,9 +116,92 @@ class EditAxisWidget(QWidget):
 
         layout = QGridLayout()
 
+        if isinstance(self.window, graphs.LineTrace.LineTrace):
+            pass
+        elif isinstance(self.window, graphs.Heatmap.Heatmap):
+            for element in ["main_subplot", "line_trace_graph"]:
+                box = QGroupBox(self)
+                h_layout = QHBoxLayout()
+                plot_label = QLabel(element.capitalize().replace("_", " "), self)
+                layout.addWidget(plot_label)
+
+                for side in ('left', 'bottom'):
+                    # this one contains all elements of one axis of one plot
+                    v_layout = QVBoxLayout()
+
+                    axis = self.window.plot_elements[element].getAxis(side)
+
+                    plot_axis_text = axis.labelText
+                    plot_text = QLineEdit(plot_axis_text)
+                    plot_current_unit = axis.labelUnits
+                    plot_unit = QLineEdit(plot_current_unit)
+                    plot_current_font_size = axis.labelStyle["font-size"]
+                    plot_font_size = QLineEdit(plot_current_font_size)
+                    tick_spacing_major = QLineEdit()
+                    tick_spacing_major.setPlaceholderText("Major ticks")
+                    tick_spacing_minor = QLineEdit()
+                    tick_spacing_minor.setPlaceholderText("Minor ticks")
+                    tick_h_layout = QHBoxLayout()
+                    tick_h_layout.addWidget(tick_spacing_major)
+                    tick_h_layout.addWidget(tick_spacing_minor)
+
+                    v_layout.addWidget(QLabel(side.capitalize()))
+                    v_layout.addWidget(plot_text)
+                    v_layout.addWidget(plot_unit)
+                    v_layout.addWidget(plot_font_size)
+                    v_layout.addLayout(tick_h_layout)
+                    h_layout.addLayout(v_layout)
+
+                box.setLayout(h_layout)
+                layout.addWidget(box)
+
+            plot_label = QLabel("Histogram")
+            layout.addWidget(plot_label)
+
+            hist_axis = self.window.plot_elements["histogram"].axis
+            box = QGroupBox()
+            h_layout = QHBoxLayout()
+            v_layout = QVBoxLayout()
+            plot_axis_text = hist_axis.labelText
+            plot_text = QLineEdit(plot_axis_text)
+            plot_current_unit = hist_axis.labelUnits
+            plot_unit = QLineEdit(plot_current_unit)
+            plot_current_font_size = hist_axis.labelStyle["font-size"]
+            plot_font_size = QLineEdit(plot_current_font_size)
+            tick_spacing_major = QLineEdit()
+            tick_spacing_major.setPlaceholderText("Major ticks")
+            tick_spacing_minor = QLineEdit()
+            tick_spacing_minor.setPlaceholderText("Minor ticks")
+            tick_h_layout = QHBoxLayout()
+            tick_h_layout.addWidget(tick_spacing_major)
+            tick_h_layout.addWidget(tick_spacing_minor)
+            v_layout.addWidget(QLabel("Left"))
+            v_layout.addWidget(plot_text)
+            v_layout.addWidget(plot_unit)
+            v_layout.addWidget(plot_font_size)
+            v_layout.addLayout(tick_h_layout)
+            h_layout.addLayout(v_layout)
+            box.setLayout(h_layout)
+            layout.addWidget(box)
+
         self.setLayout(layout)
         self.show()
 
+
+class InfoWidget(QWidget):
+    def __init__(self, buffer):
+        super(InfoWidget, self).__init__()
+
+        self.buffer = buffer
+
+        self.init_ui()
+
+    def init_ui(self):
+        # find dimensions of the monitor (screen)
+        _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
+
+        self.show()
 
 def main():
 
