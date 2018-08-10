@@ -270,6 +270,12 @@ class MainWindow(QMainWindow):
         pass
 
     def open_folder_explorer(self):
+        """
+        Method that opens a file explorer widget and lets you select one folder from it. It instantiates a
+        BufferExplorer widget with files found within the selected folder.
+
+        :return: NoneType
+        """
         folder = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         if folder:
             self.be = BufferExplorer(folder)
@@ -277,6 +283,13 @@ class MainWindow(QMainWindow):
             self.be.add_requested.connect(self.get_buffers_from_signal)
 
     def get_buffers_from_signal(self, buffers):
+        """
+        Slot that gets data from BufferExplorers signals and adds buffers to the main window opened_datasets_table
+
+        :param buffers: dictionary: contins key: string representation of the buffers location on file system
+                                            value: instance of DataBuffer
+        :return: NoneType
+        """
         for path, buffer in buffers.items():
             self.add_buffer_to_table(buffer)
             name = os.path.basename(buffer.get_location())

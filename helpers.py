@@ -99,13 +99,38 @@ class ProgressBarWidget(QDialog):
 
 
 class EditAxisWidget(QWidget):
+    """
+    Base class for widget that displays buffer info
+
+    Buffer info is:
+        dimensions: dimensions of the matrix
+        x axis: start, end, steps
+        y axis: start, end, steps
+    """
     def __init__(self):
         super(EditAxisWidget, self).__init__()
 
     def init_ui(self):
+        """
+        Should be implemented in the child classes
+        :return:
+        """
         raise NotImplementedError
 
     def data_submitted(self):
+        """
+        Should be implemented in the child classes
+        :return:
+        """
+        raise NotImplementedError
+
+    def validate(self):
+        """
+        Should be implemented in the child classes.
+        Checks if data submitted is correct.
+
+        :return: boolean: True if data is valid, False if data is not valid
+        """
         raise NotImplementedError
 
 
@@ -117,6 +142,9 @@ class Edit2DAxisWidget(EditAxisWidget):
         pass
 
     def data_submitted(self):
+        pass
+
+    def validate(self):
         pass
 
 
@@ -208,6 +236,9 @@ class Edit3DAxisWidget(EditAxisWidget):
         self.show()
 
     def data_submitted(self):
+        pass
+
+    def validate(self):
         pass
 
 
