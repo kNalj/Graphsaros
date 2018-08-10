@@ -19,6 +19,14 @@ class BufferExplorer(QWidget):
     submitted = pyqtSignal(object)
     add_requested = pyqtSignal(object)
 
+    """
+    Buffer explorer is a widget that accepts a string representation of a floder on a file system and walks through that
+    folder finding all .dat files within it and its subfolders (recursively) and adds mini graph representation of them
+    to self along some additional data about them.
+    
+    It is used to quickly browse through a large set of datasets and gives you an
+    """
+
     def __init__(self, folder):
         super(BufferExplorer, self).__init__()
 
@@ -135,6 +143,11 @@ class BufferExplorer(QWidget):
         self.show()
 
     def find_candidate_files(self):
+        """
+        Walks throught the folder and its subfolders and returns a list of all files that have extension .dat
+
+        :return:
+        """
         candidates = []
         for root, dirs, files in os.walk(self.root_folder):
             for file in files:
@@ -144,6 +157,12 @@ class BufferExplorer(QWidget):
         return candidates
 
     def submit(self):
+        """
+        Prepare data for signal to be sent to the main window. Create a dict with locations as keys and buffers as
+        values. and emit a signal with that dictionary as data.
+
+        :return:
+        """
         selected = {}
         for candidate, checkbox in self.checkboxes.items():
             if checkbox.checkState():
@@ -152,11 +171,26 @@ class BufferExplorer(QWidget):
         self.submitted.emit(selected)
 
     def make_quick_add(self, candidate):
+        """
+        Function factory:
+        Quickly add one buffer to the main window . Method is called when a button above the buffers mini graph is
+        clicked
+
+        :param candidate: string:
+        :return: pointer to a function that emits a signal to add a single buffer to the main window
+        """
         def quick_add():
             self.add_requested.emit({candidate: self.buffers[candidate]})
         return quick_add
 
     def make_go_to_location(self, buffer):
+        """
+        Function factory:
+        Makes functions that open a file explorer to a location where the buffer was taken from (parrent directory)
+
+        :param buffer: DataBuffer: a reference to one of the data buffers displayed in the window
+        :return:
+        """
         def go_to_location():
             location = buffer.get_location()
             folder = os.path.dirname(location)
@@ -165,10 +199,18 @@ class BufferExplorer(QWidget):
         return go_to_location
 
     def make_show_buffer_info(self, buffer):
+        """
+        Function factory
+        Creates a function that opens a InfoWidget widget for a specific buffer displayed in this window
+
+        :param buffer: reference to one of the buffers in this widget
+        :return: pointer to a function that opens a new InfoWidget
+        """
         def show_buffer_info():
             self.iw = InfoWidget(buffer)
             self.iw.show()
         return show_buffer_info
+
 
 def main():
     app = QApplication(sys.argv)

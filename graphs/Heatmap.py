@@ -180,6 +180,13 @@ class Heatmap(BaseGraph):
         self.eaw.show()
 
     def update_line_trace_plot(self):
+        """
+        Each time a line trace is moved this method is called to update the line trace graph element of the Heatmap
+        widget.
+
+        :return: NoneType
+        """
+
         data = self.active_data
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
@@ -193,6 +200,16 @@ class Heatmap(BaseGraph):
         new_plot.scale(scale_x, 1)
 
     def gaussian_filter_action(self):
+        """
+        Following the naming convention set in the base class of the graph widgets this method is called after an action
+        in the toolbar called "gaussian_filter" and it gets called when that action is triggered. Method applies
+        gaussian filter to your dataset and displays it.
+
+        If the gaussian filter data is the active data, then upon calling this method the dataset is set back to the
+        default dataset. (Works like ON / OFF switch)
+
+        :return: NoneType
+        """
         if self.display != "gauss":
             self.plot_elements["img"].setImage(self.plt_data_gauss)
             self.active_data = self.plt_data_gauss
@@ -203,12 +220,32 @@ class Heatmap(BaseGraph):
             self.active_data = self.plt_data
 
     def lorentzian_filter_action(self):
+        """
+        I dont think i will actually need this but whatever
+
+        :return:
+        """
         pass
 
     def update_iso_curve(self):
+        """
+        When iso line element of the histogram is moved update the data on the main plot according to the value of the
+        iso line on the histogram plot.
+
+        :return: NoneType
+        """
         self.plot_elements["iso"].setLevel(self.plot_elements["isoLine"].value())
 
     def mouse_moved(self, evt):
+        """
+        When moving a mouse check if the current mouse position is within the main plot of the Heatmap window. If it is
+        then change the values in the status bar to the values of the point under the mouse cursor relative to the main
+        plot of the Heatmap window (basically coordinates of the mouse cursor in the main plot)
+
+        :param evt: signal that gets emitted when mouse is moved passes position of the mouse to the slot that gets that
+        signal
+        :return: NoneType
+        """
         pos = evt
         if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)

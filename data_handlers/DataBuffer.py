@@ -152,6 +152,11 @@ class DataBuffer(QObject):
 
 
     def is_data_ready(self):
+        """
+        Method that checks if all data required to plot a graph (Heatmap or LineTrace) is accessible in this buffer
+
+        :return: boolean: True if all data required to plot a graph is ready, False if its not ready
+        """
         if not self.matrix_dimensions:
             return False
         if "x" not in self.data or "y" not in self.data:

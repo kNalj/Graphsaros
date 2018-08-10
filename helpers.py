@@ -99,8 +99,30 @@ class ProgressBarWidget(QDialog):
 
 
 class EditAxisWidget(QWidget):
-    def __init__(self, window):
+    def __init__(self):
         super(EditAxisWidget, self).__init__()
+
+    def init_ui(self):
+        raise NotImplementedError
+
+    def data_submitted(self):
+        raise NotImplementedError
+
+
+class Edit2DAxisWidget(EditAxisWidget):
+    def __init__(self):
+        super(Edit2DAxisWidget, self).__init__()
+
+    def init_ui(self):
+        pass
+
+    def data_submitted(self):
+        pass
+
+
+class Edit3DAxisWidget(EditAxisWidget):
+    def __init__(self, window):
+        super(Edit3DAxisWidget, self).__init__()
 
         self.window = window
 
@@ -116,44 +138,42 @@ class EditAxisWidget(QWidget):
 
         layout = QGridLayout()
 
-        if isinstance(self.window, graphs.LineTrace.LineTrace):
-            pass
-        elif isinstance(self.window, graphs.Heatmap.Heatmap):
-            for element in ["main_subplot", "line_trace_graph"]:
-                box = QGroupBox(self)
-                h_layout = QHBoxLayout()
-                plot_label = QLabel(element.capitalize().replace("_", " "), self)
-                layout.addWidget(plot_label)
 
-                for side in ('left', 'bottom'):
-                    # this one contains all elements of one axis of one plot
-                    v_layout = QVBoxLayout()
+        for element in ["main_subplot", "line_trace_graph"]:
+            box = QGroupBox(self)
+            h_layout = QHBoxLayout()
+            plot_label = QLabel(element.capitalize().replace("_", " "), self)
+            layout.addWidget(plot_label)
 
-                    axis = self.window.plot_elements[element].getAxis(side)
+            for side in ('left', 'bottom'):
+                # this one contains all elements of one axis of one plot
+                v_layout = QVBoxLayout()
 
-                    plot_axis_text = axis.labelText
-                    plot_text = QLineEdit(plot_axis_text)
-                    plot_current_unit = axis.labelUnits
-                    plot_unit = QLineEdit(plot_current_unit)
-                    plot_current_font_size = axis.labelStyle["font-size"]
-                    plot_font_size = QLineEdit(plot_current_font_size)
-                    tick_spacing_major = QLineEdit()
-                    tick_spacing_major.setPlaceholderText("Major ticks")
-                    tick_spacing_minor = QLineEdit()
-                    tick_spacing_minor.setPlaceholderText("Minor ticks")
-                    tick_h_layout = QHBoxLayout()
-                    tick_h_layout.addWidget(tick_spacing_major)
-                    tick_h_layout.addWidget(tick_spacing_minor)
+                axis = self.window.plot_elements[element].getAxis(side)
 
-                    v_layout.addWidget(QLabel(side.capitalize()))
-                    v_layout.addWidget(plot_text)
-                    v_layout.addWidget(plot_unit)
-                    v_layout.addWidget(plot_font_size)
-                    v_layout.addLayout(tick_h_layout)
-                    h_layout.addLayout(v_layout)
+                plot_axis_text = axis.labelText
+                plot_text = QLineEdit(plot_axis_text)
+                plot_current_unit = axis.labelUnits
+                plot_unit = QLineEdit(plot_current_unit)
+                plot_current_font_size = axis.labelStyle["font-size"]
+                plot_font_size = QLineEdit(plot_current_font_size)
+                tick_spacing_major = QLineEdit()
+                tick_spacing_major.setPlaceholderText("Major ticks")
+                tick_spacing_minor = QLineEdit()
+                tick_spacing_minor.setPlaceholderText("Minor ticks")
+                tick_h_layout = QHBoxLayout()
+                tick_h_layout.addWidget(tick_spacing_major)
+                tick_h_layout.addWidget(tick_spacing_minor)
 
-                box.setLayout(h_layout)
-                layout.addWidget(box)
+                v_layout.addWidget(QLabel(side.capitalize()))
+                v_layout.addWidget(plot_text)
+                v_layout.addWidget(plot_unit)
+                v_layout.addWidget(plot_font_size)
+                v_layout.addLayout(tick_h_layout)
+                h_layout.addLayout(v_layout)
+
+            box.setLayout(h_layout)
+            layout.addWidget(box)
 
             plot_label = QLabel("Histogram")
             layout.addWidget(plot_label)
@@ -187,12 +207,16 @@ class EditAxisWidget(QWidget):
         self.setLayout(layout)
         self.show()
 
+    def data_submitted(self):
+        pass
+
 
 class InfoWidget(QWidget):
     def __init__(self, buffer):
         super(InfoWidget, self).__init__()
 
         self.buffer = buffer
+        self.data = {}
 
         self.init_ui()
 
@@ -201,7 +225,57 @@ class InfoWidget(QWidget):
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
 
+        layout = QGridLayout()
+        v_layout = QVBoxLayout()
+        dimensions_h_layout = QHBoxLayout()
+
+        dimensions_label = QLabel("Dimensions: ")
+        dimensions_h_layout.addWidget(dimensions_label)
+        dimensions_line_edit = QLineEdit(str(self.buffer.get_matrix_dimensions()))
+        dimensions_line_edit.setDisabled(True)
+        dimensions_h_layout.addWidget(dimensions_line_edit)
+        v_layout.addLayout(dimensions_h_layout)
+
+        v_layout.addWidget(QLabel("X"))
+
+        x_axis_h_layout = QHBoxLayout()
+        x_start_label = QLabel("Start")
+        x_start_line_edit = QLineEdit(str(self.buffer.data["x"][0]))
+        x_start_line_edit.setDisabled(True)
+        x_end_label = QLabel("End")
+        x_end_line_edit = QLineEdit(str(self.buffer.data["x"][-1]))
+        x_end_line_edit.setDisabled(True)
+        x_step_label = QLabel("Step")
+        x_step_line_edit = QLineEdit(str((self.buffer.data["x"][-1] - self.buffer.data["x"][0]) / (len(self.buffer.data["x"]) - 1)))
+        x_step_line_edit.setDisabled(True)
+        x_axis = [x_start_label, x_start_line_edit, x_end_label, x_end_line_edit, x_step_label, x_step_line_edit]
+        for e in x_axis:
+            x_axis_h_layout.addWidget(e)
+        v_layout.addLayout(x_axis_h_layout)
+
+        v_layout.addWidget(QLabel("Y"))
+
+        y_axis_h_layout = QHBoxLayout()
+        y_start_label = QLabel("Start")
+        y_start_line_edit = QLineEdit(str(self.buffer.data["y"][0]))
+        y_start_line_edit.setDisabled(True)
+        y_end_label = QLabel("End")
+        y_end_line_edit = QLineEdit(str(self.buffer.data["y"][-1]))
+        y_end_line_edit.setDisabled(True)
+        y_step_label = QLabel("Step")
+        y_step_line_edit = QLineEdit(
+            str((self.buffer.data["y"][-1] - self.buffer.data["y"][0]) / (len(self.buffer.data["y"]) - 1)))
+        y_step_line_edit.setDisabled(True)
+        y_axis = [y_start_label, y_start_line_edit, y_end_label, y_end_line_edit, y_step_label, y_step_line_edit]
+        for e in y_axis:
+            y_axis_h_layout.addWidget(e)
+        v_layout.addLayout(y_axis_h_layout)
+
+        layout.addLayout(v_layout, 0, 0)
+        self.setLayout(layout)
+
         self.show()
+
 
 def main():
 
