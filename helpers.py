@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
-    QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox
+    QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton
 from PyQt5.QtGui import QIcon
 
 import numpy as np
@@ -166,7 +166,6 @@ class Edit3DAxisWidget(EditAxisWidget):
 
         layout = QGridLayout()
 
-
         for element in ["main_subplot", "line_trace_graph"]:
             box = QGroupBox(self)
             h_layout = QHBoxLayout()
@@ -181,10 +180,13 @@ class Edit3DAxisWidget(EditAxisWidget):
 
                 plot_axis_text = axis.labelText
                 plot_text = QLineEdit(plot_axis_text)
+                plot_text.setPlaceholderText("Label")
                 plot_current_unit = axis.labelUnits
                 plot_unit = QLineEdit(plot_current_unit)
+                plot_unit.setPlaceholderText("Unit")
                 plot_current_font_size = axis.labelStyle["font-size"]
                 plot_font_size = QLineEdit(plot_current_font_size)
+                plot_font_size.setPlaceholderText("Font size")
                 tick_spacing_major = QLineEdit()
                 tick_spacing_major.setPlaceholderText("Major ticks")
                 tick_spacing_minor = QLineEdit()
@@ -203,40 +205,51 @@ class Edit3DAxisWidget(EditAxisWidget):
             box.setLayout(h_layout)
             layout.addWidget(box)
 
-            plot_label = QLabel("Histogram")
-            layout.addWidget(plot_label)
+        plot_label = QLabel("Histogram")
+        layout.addWidget(plot_label)
 
-            hist_axis = self.window.plot_elements["histogram"].axis
-            box = QGroupBox()
-            h_layout = QHBoxLayout()
-            v_layout = QVBoxLayout()
-            plot_axis_text = hist_axis.labelText
-            plot_text = QLineEdit(plot_axis_text)
-            plot_current_unit = hist_axis.labelUnits
-            plot_unit = QLineEdit(plot_current_unit)
-            plot_current_font_size = hist_axis.labelStyle["font-size"]
-            plot_font_size = QLineEdit(plot_current_font_size)
-            tick_spacing_major = QLineEdit()
-            tick_spacing_major.setPlaceholderText("Major ticks")
-            tick_spacing_minor = QLineEdit()
-            tick_spacing_minor.setPlaceholderText("Minor ticks")
-            tick_h_layout = QHBoxLayout()
-            tick_h_layout.addWidget(tick_spacing_major)
-            tick_h_layout.addWidget(tick_spacing_minor)
-            v_layout.addWidget(QLabel("Left"))
-            v_layout.addWidget(plot_text)
-            v_layout.addWidget(plot_unit)
-            v_layout.addWidget(plot_font_size)
-            v_layout.addLayout(tick_h_layout)
-            h_layout.addLayout(v_layout)
-            box.setLayout(h_layout)
-            layout.addWidget(box)
+        hist_axis = self.window.plot_elements["histogram"].axis
+        box = QGroupBox()
+        h_layout = QHBoxLayout()
+        v_layout = QVBoxLayout()
+        plot_axis_text = hist_axis.labelText
+        plot_text = QLineEdit(plot_axis_text)
+        plot_text.setPlaceholderText("Label")
+        plot_current_unit = hist_axis.labelUnits
+        plot_unit = QLineEdit(plot_current_unit)
+        plot_unit.setPlaceholderText("Unit")
+        plot_current_font_size = hist_axis.labelStyle["font-size"]
+        plot_font_size = QLineEdit(plot_current_font_size)
+        plot_font_size.setPlaceholderText("Font size")
+        tick_spacing_major = QLineEdit()
+        tick_spacing_major.setPlaceholderText("Major ticks")
+        tick_spacing_minor = QLineEdit()
+        tick_spacing_minor.setPlaceholderText("Minor ticks")
+        tick_h_layout = QHBoxLayout()
+        tick_h_layout.addWidget(tick_spacing_major)
+        tick_h_layout.addWidget(tick_spacing_minor)
+        v_layout.addWidget(QLabel("Left"))
+        v_layout.addWidget(plot_text)
+        v_layout.addWidget(plot_unit)
+        v_layout.addWidget(plot_font_size)
+        v_layout.addLayout(tick_h_layout)
+        h_layout.addLayout(v_layout)
+        box.setLayout(h_layout)
+        layout.addWidget(box)
+
+        submit_btn = QPushButton("OK", self)
+        submit_btn.clicked.connect(self.data_submitted)
+        layout.addWidget(submit_btn)
 
         self.setLayout(layout)
         self.show()
 
     def data_submitted(self):
         pass
+        """for side in ('left', 'bottom'):
+        ax = self.plot_elements["main_subplot"].getAxis(side)
+        label_style = {'font-size': '18pt'}
+        ax.setLabel(ax.labelText, ax.labelUnits, **label_style)"""
 
     def validate(self):
         pass

@@ -1,8 +1,9 @@
 import pyqtgraph as pg
+import numpy as np
 import sys
 
 from PyQt5.QtWidgets import QAction, QApplication
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 
 import helpers
 from graphs.BaseGraph import BaseGraph
@@ -122,6 +123,20 @@ class Heatmap(BaseGraph):
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
+        # histogram.hide()
+        """gl = pg.GradientLegend((15, 200), (-5, -20))
+        gl.gradient.setColorAt(0, QColor(0, 0, 0))
+        gl.gradient.setColorAt(1, QColor(255, 255, 255))
+        gl.gradient.setColorAt(0.33, QColor(255, 0, 0))
+        gl.gradient.setColorAt(0.66, QColor(255, 255, 0))
+        low_value = self.data_buffer.get_matrix().min()
+        high_value = self.data_buffer.get_matrix().max()
+        first_third = low_value + ((high_value - low_value) * 0.33)
+        second_third = low_value + ((high_value - low_value) * 0.66)
+        gl.setLabels({str(round(low_value, 3)): 0, str(round(first_third, 3)): 0.33,
+                      str(round(second_third, 3)): 0.66, str(round(high_value, 3)): 1})
+        gl.setParentItem(central_item)"""
+
     def init_toolbar(self):
         """
         Create toolbar and add actions to it
@@ -139,6 +154,8 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.exit_action_btn)
         self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
         self.tools.addAction(self.customize_font_btn)
+        self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
+        self.tools.addAction(self.create_matrix_file_btn)
 
     def line_trace_action(self):
         """
@@ -154,10 +171,6 @@ class Heatmap(BaseGraph):
                                               self.data_buffer.get_y_axis_values()[0]]),
                                   pos=(0, 0),
                                   pen=(5, 9),
-                                  # maxBounds=QRectF(self.data_buffer.get_x_axis_values()[0],
-                                  #                  self.data_buffer.get_y_axis_values()[0],
-                                  #                  self.data_buffer.get_x_axis_values()[-1],
-                                  #                  self.data_buffer.get_y_axis_values()[-1]),
                                   edges=[self.data_buffer.get_x_axis_values()[0],
                                          self.data_buffer.get_x_axis_values()[-1],
                                          self.data_buffer.get_y_axis_values()[0],
@@ -172,11 +185,12 @@ class Heatmap(BaseGraph):
         line_segmet_roi.aligned.connect(self.update_line_trace_plot)
 
     def font_action(self):
-        """for side in ('left', 'bottom'):
-            ax = self.plot_elements["main_subplot"].getAxis(side)
-            label_style = {'font-size': '18pt'}
-            ax.setLabel(ax.labelText, ax.labelUnits, **label_style)"""
-        self.eaw = helpers.EditAxisWidget(self)
+        """
+        Opens a new widget that allows user to modify font sizes on axis of all graphs in this window
+
+        :return: NoneType
+        """
+        self.eaw = helpers.Edit3DAxisWidget(self)
         self.eaw.show()
 
     def update_line_trace_plot(self):
@@ -226,6 +240,9 @@ class Heatmap(BaseGraph):
         :return:
         """
         pass
+
+    def matrix_action(self):
+        self.data_buffer.create_matrix_file()
 
     def update_iso_curve(self):
         """
