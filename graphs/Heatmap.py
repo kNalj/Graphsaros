@@ -2,11 +2,12 @@ import pyqtgraph as pg
 import numpy as np
 import sys
 
-from PyQt5.QtWidgets import QAction, QApplication
-from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget
+from PyQt5.QtGui import QIcon
 
 import helpers
 from graphs.BaseGraph import BaseGraph
+from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
 from LineROI import LineROI
@@ -67,6 +68,9 @@ class Heatmap(BaseGraph):
         self.setGeometry(50, 50, 640, 400)
         self.setCentralWidget(self.plt)
         self.show()
+        # proxy = QGraphicsProxyWidget()
+        # line_trace_button = QPushButton("Line trace")
+        # proxy.setWidget(line_trace_button)
 
         central_item = pg.GraphicsLayout()
         main_subplot = central_item.addPlot()
@@ -150,12 +154,15 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.line_trace_btn)
         self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter", self)
         self.tools.addAction(self.gaussian_filter_btn)
-        self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
-        self.tools.addAction(self.exit_action_btn)
         self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
         self.tools.addAction(self.customize_font_btn)
         self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
         self.tools.addAction(self.create_matrix_file_btn)
+        self.open_2D = QAction(QIcon("img/2d_icon.png"), "Show_2d", self)
+        self.tools.addAction(self.open_2D)
+
+        self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
+        self.tools.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
         """
@@ -243,6 +250,16 @@ class Heatmap(BaseGraph):
 
     def matrix_action(self):
         self.data_buffer.create_matrix_file()
+
+    def show_2d_action(self):
+        data = self.active_data
+        img = self.plot_elements["img"]
+        selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
+        point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point
+        coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        line_trace_window = LineTrace(axis_data={"y": selected})
+        print(selected)
 
     def update_iso_curve(self):
         """
