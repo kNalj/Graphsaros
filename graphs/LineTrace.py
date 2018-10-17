@@ -1,14 +1,13 @@
 import pyqtgraph as pg
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
 
 from PyQt5.QtWidgets import QAction, QApplication
 from PyQt5.QtGui import QIcon
 
 from scipy.optimize import curve_fit
 from scipy import array
-from scipy import asarray as ar, exp
+from scipy import exp
 from graphs.BaseGraph import BaseGraph
 from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
@@ -25,17 +24,14 @@ class LineTrace(BaseGraph):
         else:
             self.x_values = axis_data["x"]
             self.y_values = axis_data["y"]
-        self.setWindowTitle("Line trace window")
-        self.setWindowIcon(QIcon("../img/lineGraph.png"))
-        self.central_item = pg.GraphicsLayout()
-        self.plt = pg.PlotWidget(x=self.x_values, y=self.y_values, pen=(60, 60, 60))
-        # self.plt.set
 
-        self.plt.setBackground('w')
-        for axis in ['left', 'bottom']:
-            pi = self.plt.getPlotItem()
-            ax = pi.getAxis(axis)
-            ax.setPen((60, 60, 60))
+        self.plt = pg.GraphicsView()
+
+        self.central_item = pg.GraphicsLayout()
+
+        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.y_values, pen=(60, 60, 60))
+
+        self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
 
         self.modes = {"fit": False}
 
@@ -44,7 +40,23 @@ class LineTrace(BaseGraph):
     def init_ui(self):
 
         self.setGeometry(50, 50, 640, 400)
+        self.setWindowTitle("Line trace window")
+        self.setWindowIcon(QIcon("../img/lineGraph.png"))
         self.setCentralWidget(self.plt)
+
+        self.plt.setBackground("w")
+        self.plt.setCentralWidget(self.central_item)
+
+        self.central_item.addItem(self.main_subplot, colspan=2)
+        for plot_item in [self.main_subplot, self.fit_plot]:
+            for axis in ['left', 'bottom']:
+                pi = plot_item
+                ax = pi.getAxis(axis)
+                ax.setPen((60, 60, 60))
+
+        self.central_item.nextRow()
+        self.central_item.addItem(self.fit_plot)
+        self.fit_plot.hide()
 
         self.show()
 
@@ -69,15 +81,20 @@ class LineTrace(BaseGraph):
 
         if self.modes["fit"]:
             self.modes["fit"] = False
-            self.plt.plotItem.removeItem(self.region_select)
+            self.main_subplot.removeItem(self.region_select)
             del self.region_select
+            self.fit_plot.hide()
+            self.fit_plot.clear()
         else:
             self.modes["fit"] = True
             self.region_select = pg.LinearRegionItem([0, 1])
             self.region_select.sigRegionChanged.connect(self.update_selected_region)
             self.region_select.setZValue(10)
-            self.region_select.setRegion([5, 6])
-            self.plt.plotItem.addItem(self.region_select, ignoreBounds=True)
+            self.region_select.setRegion([self.x_values[0], self.x_values[-1]])
+            self.main_subplot.addItem(self.region_select, ignoreBounds=True)
+            self.fit_plot.show()
+            # add only selected data to graph
+
     def gaussian_fit_action(self):
 
         x = self.x_values
@@ -92,11 +109,12 @@ class LineTrace(BaseGraph):
         popt, pcov = curve_fit(gauss, x, y, p0=p0)
         plot_item = pg.PlotDataItem(x, gauss(x, *popt))
         plot_item.setPen(255, 0, 0)
-        self.plt.addItem(plot_item)
+        self.fit_plot.addItem(plot_item)
+        # has to also be removed
 
     def update_selected_region(self):
-        minX, maxX = self.region_select.getRegion()
-        print(minX, maxX)
+        min_x, max_x = self.region_select.getRegion()
+        self.fit_plot.setXRange(min_x, max_x)
 
 
 

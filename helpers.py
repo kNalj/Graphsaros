@@ -152,7 +152,10 @@ class Edit3DAxisWidget(EditAxisWidget):
     def __init__(self, window):
         super(Edit3DAxisWidget, self).__init__()
 
+        # Reference to a window that is being changed
         self.window = window
+
+        self.elements = {}
 
         self.init_ui()
 
@@ -171,8 +174,10 @@ class Edit3DAxisWidget(EditAxisWidget):
             h_layout = QHBoxLayout()
             plot_label = QLabel(element.capitalize().replace("_", " "), self)
             layout.addWidget(plot_label)
+            self.elements[element] = {}
 
             for side in ('left', 'bottom'):
+                self.elements[element][side] = {}
                 # this one contains all elements of one axis of one plot
                 v_layout = QVBoxLayout()
 
@@ -181,16 +186,21 @@ class Edit3DAxisWidget(EditAxisWidget):
                 plot_axis_text = axis.labelText
                 plot_text = QLineEdit(plot_axis_text)
                 plot_text.setPlaceholderText("Label")
+                self.elements[element][side]["label"] = plot_text
                 plot_current_unit = axis.labelUnits
                 plot_unit = QLineEdit(plot_current_unit)
                 plot_unit.setPlaceholderText("Unit")
+                self.elements[element][side]["unit"] = plot_unit
                 plot_current_font_size = axis.labelStyle["font-size"]
                 plot_font_size = QLineEdit(plot_current_font_size)
                 plot_font_size.setPlaceholderText("Font size")
+                self.elements[element][side]["font_size"] = plot_font_size
                 tick_spacing_major = QLineEdit()
                 tick_spacing_major.setPlaceholderText("Major ticks")
+                self.elements[element][side]["major_ticks"] = tick_spacing_major
                 tick_spacing_minor = QLineEdit()
                 tick_spacing_minor.setPlaceholderText("Minor ticks")
+                self.elements[element][side]["minor_ticks"] = tick_spacing_minor
                 tick_h_layout = QHBoxLayout()
                 tick_h_layout.addWidget(tick_spacing_major)
                 tick_h_layout.addWidget(tick_spacing_minor)
@@ -207,6 +217,7 @@ class Edit3DAxisWidget(EditAxisWidget):
 
         plot_label = QLabel("Histogram")
         layout.addWidget(plot_label)
+        self.elements["histogram"] = {}
 
         hist_axis = self.window.plot_elements["histogram"].axis
         box = QGroupBox()
@@ -215,16 +226,21 @@ class Edit3DAxisWidget(EditAxisWidget):
         plot_axis_text = hist_axis.labelText
         plot_text = QLineEdit(plot_axis_text)
         plot_text.setPlaceholderText("Label")
+        self.elements["histogram"]["label"] = plot_text
         plot_current_unit = hist_axis.labelUnits
         plot_unit = QLineEdit(plot_current_unit)
         plot_unit.setPlaceholderText("Unit")
+        self.elements["histogram"]["unit"] = plot_unit
         plot_current_font_size = hist_axis.labelStyle["font-size"]
         plot_font_size = QLineEdit(plot_current_font_size)
         plot_font_size.setPlaceholderText("Font size")
+        self.elements["histogram"]["font_size"] = plot_font_size
         tick_spacing_major = QLineEdit()
         tick_spacing_major.setPlaceholderText("Major ticks")
+        self.elements["histogram"]["major_ticks"] = tick_spacing_major
         tick_spacing_minor = QLineEdit()
         tick_spacing_minor.setPlaceholderText("Minor ticks")
+        self.elements["histogram"]["minor_ticks"] = tick_spacing_minor
         tick_h_layout = QHBoxLayout()
         tick_h_layout.addWidget(tick_spacing_major)
         tick_h_layout.addWidget(tick_spacing_minor)
@@ -245,11 +261,17 @@ class Edit3DAxisWidget(EditAxisWidget):
         self.show()
 
     def data_submitted(self):
-        pass
-        """for side in ('left', 'bottom'):
-        ax = self.plot_elements["main_subplot"].getAxis(side)
-        label_style = {'font-size': '18pt'}
-        ax.setLabel(ax.labelText, ax.labelUnits, **label_style)"""
+        """
+        When data is submited apply changes to graphs in the heatmap window. Grab data from dict and change appearance
+        of the heatmap window.
+
+        :return: NoneType
+        """
+        for element in ["main_subplot", "line_trace_graph"]:
+            for side in ('left', 'bottom'):
+                ax = self.window.plot_elements[element].getAxis(side)
+                label_style = {'font-size': self.elements[element][side]["font_size"].text()}
+                ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
 
     def validate(self):
         pass

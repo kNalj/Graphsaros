@@ -61,6 +61,9 @@ class Heatmap(BaseGraph):
         # reference to ROI
         self.line_segment_roi = {}
 
+        # dictionary to keep track of options that have been turned on/off
+        self.modes = {"ROI": False}
+
         self.init_ui()
 
     def init_ui(self):
@@ -171,25 +174,30 @@ class Heatmap(BaseGraph):
 
         :return:
         """
-        # ROI instantiation
-        line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
-                                              self.data_buffer.get_y_axis_values()[0]],
-                                             [self.data_buffer.get_x_axis_values()[-1],
-                                              self.data_buffer.get_y_axis_values()[0]]),
-                                  pos=(0, 0),
-                                  pen=(5, 9),
-                                  edges=[self.data_buffer.get_x_axis_values()[0],
-                                         self.data_buffer.get_x_axis_values()[-1],
-                                         self.data_buffer.get_y_axis_values()[0],
-                                         self.data_buffer.get_y_axis_values()[-1]])
-        # connect signal to a slot
-        line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
-        # make a reference to this ROI so i can use it later
-        self.line_segment_roi["ROI"] = line_segmet_roi
-        # add the ROI to main subplot
-        self.plot_elements["main_subplot"].addItem(line_segmet_roi)
-        # connect signal to a slot, this signa
-        line_segmet_roi.aligned.connect(self.update_line_trace_plot)
+        if self.modes["ROI"] == False:
+            self.modes["ROI"] = True
+
+            # ROI instantiation
+            line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
+                                                  self.data_buffer.get_y_axis_values()[0]],
+                                                 [self.data_buffer.get_x_axis_values()[-1],
+                                                  self.data_buffer.get_y_axis_values()[0]]),
+                                      pos=(0, 0),
+                                      pen=(5, 9),
+                                      edges=[self.data_buffer.get_x_axis_values()[0],
+                                             self.data_buffer.get_x_axis_values()[-1],
+                                             self.data_buffer.get_y_axis_values()[0],
+                                             self.data_buffer.get_y_axis_values()[-1]])
+            # connect signal to a slot
+            line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
+            # make a reference to this ROI so i can use it later
+            self.line_segment_roi["ROI"] = line_segmet_roi
+            # add the ROI to main subplot
+            self.plot_elements["main_subplot"].addItem(line_segmet_roi)
+            # connect signal to a slot, this signa
+            line_segmet_roi.aligned.connect(self.update_line_trace_plot)
+        else:
+            self.plot_elements["line_trace_graph"].clear()
 
     def font_action(self):
         """
@@ -217,8 +225,25 @@ class Heatmap(BaseGraph):
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
         new_plot.translate(coords.x(), 0)
-        scale_x, scale_y = self.data_buffer.get_scale()
-        new_plot.scale(scale_x, 1)
+        # scale_x, scale_y = self.data_buffer.get_scale()
+        # new_plot.scale(scale_x, 1)
+
+        point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point1
+        start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = point2
+        end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+
+        # had the scale figured out wrong, this is the correct way of doing it
+        scale = end_coords.x() - start_coords.x()
+        num_of_points = (len(selected) - 1) or 1
+        new_plot.scale(scale/num_of_points, 1)
+        print(scale)
+
+        print(start_coords.x(), end_coords.x())
+
+        # real_scale =
 
     def gaussian_filter_action(self):
         """
@@ -249,17 +274,34 @@ class Heatmap(BaseGraph):
         pass
 
     def matrix_action(self):
+        """
+        Creates the matrix file version of this data in the same folder where the original file is located
+
+        :return: NoneType
+        """
         self.data_buffer.create_matrix_file()
 
     def show_2d_action(self):
+        """
+        Opens a line trace graph window for a line trace selected by line_trace_roi
+
+        :return:
+        """
         data = self.active_data
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
-        point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
-        _, scene_coords = point
-        coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        line_trace_window = LineTrace(axis_data={"y": selected})
-        print(selected)
+        first_point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = first_point
+        start = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        start_x = start.x()
+        last_point = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = last_point
+        end = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        end_x = end.x()
+
+        x = np.linspace(start_x, end_x, len(selected))
+
+        self.line_trace_window = LineTrace(axis_data={"y": selected, "x": x})
 
     def update_iso_curve(self):
         """
