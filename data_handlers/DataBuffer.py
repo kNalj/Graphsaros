@@ -150,7 +150,6 @@ class DataBuffer(QObject):
 
         self.ready.emit()
 
-
     def is_data_ready(self):
         """
         Method that checks if all data required to plot a graph (Heatmap or LineTrace) is accessible in this buffer

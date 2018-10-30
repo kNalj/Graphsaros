@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import helpers
 import json
 import os
@@ -49,8 +50,8 @@ class QcodesData(DataBuffer):
 
         data = np.loadtxt(self.location, dtype=float)
         if self.get_number_of_dimension() == 3:
-            x_axis = np.unique([value[0] for value in data])
-            y_axis = np.unique([value[1] for value in data])
+            x_axis = pd.unique([value[0] for value in data])
+            y_axis = pd.unique([value[1] for value in data])
         else:
             x_axis = np.array([value[0] for value in data])
             y_axis = np.array([value[1] for value in data])
@@ -63,6 +64,9 @@ class QcodesData(DataBuffer):
                     if i * self.matrix_dimensions[1] + j < num_of_elements:
                         if len(data) > i * self.matrix_dimensions[1] + j:
                             matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
+                        else:
+                            pass
+                            # matrix_data[i][j] = float("NaN")
             return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
 
         return {"x": x_axis, "y": y_axis}

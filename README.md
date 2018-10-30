@@ -6,3 +6,4 @@
     - PyQt5
     - pyqtgraph
     - NumPy
+    - pandas
