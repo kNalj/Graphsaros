@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
     QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSignal, QObject
+
 
 import numpy as np
 import os
@@ -343,6 +345,43 @@ class InfoWidget(QWidget):
         self.show()
 
 
+class InputData(QWidget):
+
+    submitted = pyqtSignal(object)
+
+    def __init__(self, msg):
+        super(InputData, self).__init__()
+
+        self.display_msg = msg
+
+        self.init_ui()
+
+    def init_ui(self):
+        _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
+        self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
+
+        v_layout = QVBoxLayout()
+        self.explanation_text_label = QLabel(self.display_msg)
+        v_layout.addWidget(self.explanation_text_label)
+        self.textbox_input_value = QLineEdit("")
+        v_layout.addWidget(self.textbox_input_value)
+        self.submit_btn = QPushButton("OK")
+        self.submit_btn.clicked.connect(self.submit_data)
+        v_layout.addWidget(self.submit_btn)
+
+        self.setLayout(v_layout)
+
+        self.show()
+
+    def submit_data(self):
+
+        if is_numeric(self.textbox_input_value.text()):
+            self.submitted.emit(self.textbox_input_value.text())
+            self.close()
+        else:
+            show_error_message("Warning", "Input data has to be numeric")
+
+
 def main():
 
     app = QApplication(sys.argv)
@@ -352,7 +391,7 @@ def main():
         ex.setValue(((i + 1) / 100) * 100)
         QApplication.processEvents()
     ex.close()"""
-    ex = EditAxisWidget("")
+    ex = InputData("gfsukdfg")
     sys.exit(app.exec_())
 
 

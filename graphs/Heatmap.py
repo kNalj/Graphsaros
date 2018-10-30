@@ -2,7 +2,7 @@ import pyqtgraph as pg
 import numpy as np
 import sys
 
-from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget
+from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget, QToolBar
 from PyQt5.QtGui import QIcon
 
 import helpers
@@ -157,15 +157,32 @@ class Heatmap(BaseGraph):
         self.tools.addAction(self.line_trace_btn)
         self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter", self)
         self.tools.addAction(self.gaussian_filter_btn)
-        self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
-        self.tools.addAction(self.customize_font_btn)
-        self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
-        self.tools.addAction(self.create_matrix_file_btn)
-        self.open_2D = QAction(QIcon("img/2d_icon.png"), "Show_2d", self)
-        self.tools.addAction(self.open_2D)
+        self.der_x = QAction(QIcon(), "xDerivative")
+        self.tools.addAction(self.der_x)
+        self.der_y = QAction(QIcon(), "yDerivative")
+        self.tools.addAction(self.der_y)
 
+        self.matrix_manipulation_toolbar = QToolBar("Matrix manipulation")
+        self.matrix_manipulation_toolbar.actionTriggered[QAction].connect(self.perform_action)
+        self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
+        self.matrix_manipulation_toolbar.addAction(self.create_matrix_file_btn)
+        self.data_correction_action = QAction(QIcon("img/line-chart.png"), "Correct_data", self)
+        self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
+
+        self.addToolBar(self.matrix_manipulation_toolbar)
+
+        self.window_toolbar = QToolBar("Window toolbar")
+        self.window_toolbar.actionTriggered[QAction].connect(self.perform_action)
+        self.addToolBar(self.window_toolbar)
+        self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
+        self.customize_font_btn.setToolTip("Open a widget that allows user to customise font and axis values")
+        self.window_toolbar.addAction(self.customize_font_btn)
+        self.open_2D = QAction(QIcon("img/2d_icon.png"), "Show_2d", self)
+        self.open_2D.setToolTip("Open a selected line trace in new window that allows manipulation and transformations")
+        self.window_toolbar.addAction(self.open_2D)
         self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
-        self.tools.addAction(self.exit_action_btn)
+        self.exit_action_btn.setToolTip("Close this heatmap window")
+        self.window_toolbar.addAction(self.exit_action_btn)
 
     def line_trace_action(self):
         """
@@ -302,6 +319,54 @@ class Heatmap(BaseGraph):
         x = np.linspace(start_x, end_x, len(selected))
 
         self.line_trace_window = LineTrace(axis_data={"y": selected, "x": x})
+
+    def xderivative_action(self):
+        """
+        Replace data by derivative of the data along x axis
+
+        :return: NoneType
+        """
+
+        der_x_data = np.diff(self.plt_data, 1, 0)
+        self.plot_elements["img"].setImage(der_x_data)
+
+    def yderivative_action(self):
+        """
+        Replace data by derivative of the data along y axis.
+
+        :return: NoneType
+        """
+
+        der_x_data = np.diff(self.plt_data, 1, 1)
+        self.plot_elements["img"].setImage(der_x_data)
+
+    def correct_data_action(self):
+        """
+        Ask user for input. After user inputs resistance, recalculate the values of the y axis. Additionally interpolate
+        data to create values on the same setpoints with the new (corrected) data.
+
+        :return: NoneType
+        """
+        self.input = helpers.InputData("Please input the resistance something something to correct your data")
+        self.input.submitted.connect(self.proccess_data)
+
+    def proccess_data(self, data):
+        self.correction_resistance = float(data)
+
+        dimensions = self.data_buffer.get_matrix_dimensions()
+        matrix = self.data_buffer.get_matrix()
+        y_data = self.data_buffer.get_y_axis_values()
+        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
+
+        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
+
+        for row in range(dimensions[0]):
+            column = matrix[row, :]
+            corrected_voltages = (abs(y_data) - abs(self.correction_resistance * column)) * biases
+
+        print(y_data)
+        print(column)
+        print(corrected_voltages)
 
     def update_iso_curve(self):
         """
