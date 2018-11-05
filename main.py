@@ -249,7 +249,7 @@ class MainWindow(QMainWindow):
             else:
                 self.mini_plot_items["main_subplot"].clear()
                 img = pg.ImageItem()
-                img.setImage(dataset.get_matrix())
+                img.setImage(dataset.get_matrix(index=0))
                 (x_scale, y_scale) = dataset.get_scale()
                 img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0])
                 img.scale(x_scale, y_scale)

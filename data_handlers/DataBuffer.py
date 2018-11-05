@@ -29,6 +29,10 @@ class DataBuffer(QObject):
         #       x and y same as in 3D
         self.data = None
 
+        self.number_of_set_parameters = None
+
+        self.number_of_measured_parameters = None
+
         # list of values containing number of steps for x and y dimensions
         self.matrix_dimensions = None
 
@@ -88,13 +92,19 @@ class DataBuffer(QObject):
         return (self.data["x"][-1] - self.data["x"][0]) / (len(self.data["x"]) - 1), \
                (self.data["y"][-1] - self.data["y"][0]) / (len(self.data["y"]) - 1)
 
-    def get_matrix(self):
+    def get_matrix(self, index=None):
         """
-        Returns the matrix of this data buffer
+        Returns the specified matrix of this data buffer
+
+        :param index: specify index of the matrix to be returned. (Single data buffer may have multiple matrices as a
+         result of measuring more then one parameter.)
 
         :return: np.array: matrix (for 3D)
         """
-        return self.data["matrix"]
+        if index is not None:
+            return self.data["matrix"][index]
+        else:
+            return self.data["matrix"]
 
     def get_x_axis_values(self):
         """

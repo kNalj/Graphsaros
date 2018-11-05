@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from data_handlers.DataBuffer import DataBuffer
 from helpers import show_error_message
@@ -32,13 +33,13 @@ class QtLabData(DataBuffer):
             show_error_message("Warning", "Seems like data for file {} is incomplete".format(self.location))
         else:
             if axis_data[0][1] == axis_data[1][1]:
-                y_axis = np.unique([value[0] for value in axis_data])
-                x_axis = np.unique([value[1] for value in axis_data])
+                y_axis = pd.unique([value[0] for value in axis_data])
+                x_axis = pd.unique([value[1] for value in axis_data])
                 self.legend[0] = "y"
                 self.legend[1] = "x"
             elif axis_data[0][0] == axis_data[1][0]:
-                x_axis = np.unique([value[0] for value in axis_data])
-                y_axis = np.unique([value[1] for value in axis_data])
+                x_axis = pd.unique([value[0] for value in axis_data])
+                y_axis = pd.unique([value[1] for value in axis_data])
             else:
                 x_axis = [value[0] for value in axis_data]
                 y_axis = [value[1] for value in axis_data]
@@ -56,18 +57,25 @@ class QtLabData(DataBuffer):
 
         :return: np.array: matrix
         """
+
         if self.get_number_of_dimension() == 2:
             return
         else:
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
-            z = np.loadtxt(self.location, dtype=float, usecols=2)
-            num_of_elements = np.size(z)
-            for i in range(self.matrix_dimensions[0]):
-                for j in range(self.matrix_dimensions[1]):
-                    if i * self.matrix_dimensions[1] + j < num_of_elements:
-                        matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j]
+            matrices = []
+            z = np.loadtxt(self.location, dtype=float)
+            number_of_set_columns = self.get_number_of_dimension() - 1
+            number_of_measured_columns = np.shape(z)[1] - number_of_set_columns
+            num_of_elements = np.shape(z)[0]
+            print(num_of_elements)
+            for index in range(number_of_set_columns, number_of_set_columns + number_of_measured_columns):
+                for i in range(self.matrix_dimensions[0]):
+                    for j in range(self.matrix_dimensions[1]):
+                        if i * self.matrix_dimensions[1] + j < num_of_elements:
+                            matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j][index]
+                    matrices.append(matrix_data)
 
-        self.data["matrix"] = matrix_data
+        self.data["matrix"] = matrices
 
     def get_axis_data(self):
         """

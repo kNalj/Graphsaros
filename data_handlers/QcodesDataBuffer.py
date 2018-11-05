@@ -49,6 +49,9 @@ class QcodesData(DataBuffer):
         """
 
         data = np.loadtxt(self.location, dtype=float)
+        number_of_set_columns = self.get_number_of_dimension() - 1
+        number_of_measured_columns = np.shape(data)[1] - number_of_set_columns
+
         if self.get_number_of_dimension() == 3:
             x_axis = pd.unique([value[0] for value in data])
             y_axis = pd.unique([value[1] for value in data])
@@ -57,17 +60,20 @@ class QcodesData(DataBuffer):
             y_axis = np.array([value[1] for value in data])
 
         if self.get_number_of_dimension() == 3:
-            matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
-            num_of_elements = np.size(matrix_data)
-            for i in range(self.matrix_dimensions[0]):
-                for j in range(self.matrix_dimensions[1]):
-                    if i * self.matrix_dimensions[1] + j < num_of_elements:
-                        if len(data) > i * self.matrix_dimensions[1] + j:
-                            matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][2]
-                        else:
-                            pass
-                            # matrix_data[i][j] = float("NaN")
-            return {"x": x_axis, "y": y_axis, "matrix": matrix_data}
+            matrices = []
+            for matrix in range(number_of_set_columns, number_of_set_columns + number_of_measured_columns):
+                matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
+                num_of_elements = np.size(matrix_data)
+                for i in range(self.matrix_dimensions[0]):
+                    for j in range(self.matrix_dimensions[1]):
+                        if i * self.matrix_dimensions[1] + j < num_of_elements:
+                            if len(data) > i * self.matrix_dimensions[1] + j:
+                                matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][matrix]
+                            else:
+                                pass
+                                # matrix_data[i][j] = float("NaN")
+                matrices.append(matrix_data)
+            return {"x": x_axis, "y": y_axis, "matrix": matrices}
 
         return {"x": x_axis, "y": y_axis}
 
