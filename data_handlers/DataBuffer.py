@@ -33,6 +33,8 @@ class DataBuffer(QObject):
 
         self.number_of_measured_parameters = None
 
+        self.textual = None
+
         # list of values containing number of steps for x and y dimensions
         self.matrix_dimensions = None
 
@@ -186,6 +188,10 @@ class DataBuffer(QObject):
         raw_data = np.transpose(self.get_matrix(index))
         np.savetxt(file, raw_data, delimiter="\t")
         file.close()
+
+    def textual_data_representation(self):
+
+        return self.textual
 
 
 class AxisWindow(QWidget):

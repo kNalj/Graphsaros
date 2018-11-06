@@ -83,7 +83,6 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.opened_datasets_tablewidget.setSelectionBehavior(QTableWidget.SelectRows)
-        self.opened_datasets_tablewidget.currentCellChanged.connect(self.update_mini_graph)
 
         self.selected_dataset_textbrowser = QTextBrowser()
         self.selected_dataset_textbrowser.setMinimumSize(600, 200)
@@ -108,6 +107,8 @@ class MainWindow(QMainWindow):
         self.grid_layout.addWidget(self.add_to_list_btn, 2, 1, 1, 2)
         self.grid_layout.addWidget(self.open_dataset_btn, 3, 1, 1, 1)
         self.grid_layout.addWidget(self.exit_btn, 3, 2, 1, 1)
+
+        self.opened_datasets_tablewidget.currentCellChanged.connect(self.refresh_main_view)
 
         # set the layout of the central widget
         self.centralWidget.setLayout(self.grid_layout)
@@ -233,6 +234,10 @@ class MainWindow(QMainWindow):
 
         return delete_file_from_list
 
+    def refresh_main_view(self):
+        self.update_mini_graph()
+        self.update_text_display()
+
     def update_mini_graph(self):
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:
@@ -267,7 +272,19 @@ class MainWindow(QMainWindow):
                     ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
     def update_text_display(self):
-        pass
+
+        self.selected_dataset_textbrowser.clear()
+        row = self.opened_datasets_tablewidget.currentRow()
+        if row != -1:
+            item = self.opened_datasets_tablewidget.item(row, 1)
+            location = item.text()
+            name = os.path.basename(location)
+            dataset = self.datasets[name]
+
+            self.selected_dataset_textbrowser.append("X [Step: {}]\tY [Step: {}]".format(
+                dataset.get_x_axis_values()[1] - dataset.get_x_axis_values()[0],
+                dataset.get_y_axis_values()[1] - dataset.get_y_axis_values()[0]))
+            self.selected_dataset_textbrowser.append(dataset.textual_data_representation())
 
     def open_folder_explorer(self):
         """

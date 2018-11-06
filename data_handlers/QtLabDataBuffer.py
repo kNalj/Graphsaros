@@ -29,6 +29,7 @@ class QtLabData(DataBuffer):
         :return: list: [len(x_axis_data), len(y_axis_data)]
         """
         axis_data = np.loadtxt(self.location, dtype=float)
+        self.textual = np.array2string(axis_data)
         if len(axis_data) < 2:
             show_error_message("Warning", "Seems like data for file {} is incomplete".format(self.location))
         else:

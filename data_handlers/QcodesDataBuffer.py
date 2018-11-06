@@ -47,8 +47,8 @@ class QcodesData(DataBuffer):
 
         :return:
         """
-
         data = np.loadtxt(self.location, dtype=float)
+        self.textual = np.array2string(data)
         self.number_of_set_parameters = self.get_number_of_dimension() - 1
         self.number_of_measured_parameters = np.shape(data)[1] - self.number_of_set_parameters
 
