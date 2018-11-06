@@ -175,18 +175,16 @@ class DataBuffer(QObject):
 
         return True
 
-    def create_matrix_file(self):
+    def create_matrix_file(self, index):
         """
         Creates a naked matrix file from any kind of data buffer file
 
         :return:
         """
         name = self.location + "_matrix"
-        print(name)
         file = open(name, "w")
-        raw_data = np.transpose(self.get_matrix())
+        raw_data = np.transpose(self.get_matrix(index))
         np.savetxt(file, raw_data, delimiter="\t")
-        print(raw_data)
         file.close()
 
 

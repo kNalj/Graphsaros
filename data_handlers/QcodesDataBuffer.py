@@ -49,8 +49,8 @@ class QcodesData(DataBuffer):
         """
 
         data = np.loadtxt(self.location, dtype=float)
-        number_of_set_columns = self.get_number_of_dimension() - 1
-        number_of_measured_columns = np.shape(data)[1] - number_of_set_columns
+        self.number_of_set_parameters = self.get_number_of_dimension() - 1
+        self.number_of_measured_parameters = np.shape(data)[1] - self.number_of_set_parameters
 
         if self.get_number_of_dimension() == 3:
             x_axis = pd.unique([value[0] for value in data])
@@ -61,7 +61,8 @@ class QcodesData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             matrices = []
-            for matrix in range(number_of_set_columns, number_of_set_columns + number_of_measured_columns):
+            for matrix in range(self.number_of_set_parameters,
+                                self.number_of_set_parameters + self.number_of_measured_parameters):
                 matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
                 num_of_elements = np.size(matrix_data)
                 for i in range(self.matrix_dimensions[0]):

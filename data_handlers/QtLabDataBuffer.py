@@ -64,16 +64,16 @@ class QtLabData(DataBuffer):
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
             matrices = []
             z = np.loadtxt(self.location, dtype=float)
-            number_of_set_columns = self.get_number_of_dimension() - 1
-            number_of_measured_columns = np.shape(z)[1] - number_of_set_columns
+            self.number_of_set_parameters = self.get_number_of_dimension() - 1
+            self.number_of_measured_parameters = np.shape(z)[1] - self.number_of_set_parameters
             num_of_elements = np.shape(z)[0]
-            print(num_of_elements)
-            for index in range(number_of_set_columns, number_of_set_columns + number_of_measured_columns):
+            for matrix in range(self.number_of_set_parameters,
+                                self.number_of_set_parameters + self.number_of_measured_parameters):
                 for i in range(self.matrix_dimensions[0]):
                     for j in range(self.matrix_dimensions[1]):
                         if i * self.matrix_dimensions[1] + j < num_of_elements:
-                            matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j][index]
-                    matrices.append(matrix_data)
+                            matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j][matrix]
+                matrices.append(matrix_data)
 
         self.data["matrix"] = matrices
 
