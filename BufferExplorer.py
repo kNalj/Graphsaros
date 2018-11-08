@@ -90,7 +90,7 @@ class BufferExplorer(QWidget):
                 else:
                     main_subplot.clear()
                     img = pg.ImageItem()
-                    img.setImage(self.buffers[candidate].get_matrix())
+                    img.setImage(self.buffers[candidate].get_matrix(index=0))
                     (x_scale, y_scale) = self.buffers[candidate].get_scale()
                     img.translate(self.buffers[candidate].get_x_axis_values()[0],
                                   self.buffers[candidate].get_y_axis_values()[0])

@@ -61,6 +61,8 @@ class LineTrace(BaseGraph):
         self.central_item.addItem(self.fit_plot)
         self.fit_plot.hide()
 
+        self.init_toolbar()
+
         self.show()
 
     def init_toolbar(self):

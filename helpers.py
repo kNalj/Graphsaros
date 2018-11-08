@@ -109,6 +109,8 @@ class EditAxisWidget(QWidget):
         x axis: start, end, steps
         y axis: start, end, steps
     """
+    submitted = pyqtSignal(object)
+
     def __init__(self):
         super(EditAxisWidget, self).__init__()
 
@@ -222,7 +224,7 @@ class Edit3DAxisWidget(EditAxisWidget):
         self.elements["histogram"] = {}
 
         hist_axis = self.window.plot_elements["histogram"].axis
-        box = QGroupBox()
+        box = QGroupBox(self)
         h_layout = QHBoxLayout()
         v_layout = QVBoxLayout()
         plot_axis_text = hist_axis.labelText
@@ -269,11 +271,26 @@ class Edit3DAxisWidget(EditAxisWidget):
 
         :return: NoneType
         """
+
+        data = {"main_subplot": {"left": {}, "bottom": {}},
+                "line_trace_graph": {"left": {}, "bottom": {}},
+                "histogram": {"name": None, "unit": None, "label_style": None, "ticks": None}}
+
         for element in ["main_subplot", "line_trace_graph"]:
             for side in ('left', 'bottom'):
-                ax = self.window.plot_elements[element].getAxis(side)
-                label_style = {'font-size': self.elements[element][side]["font_size"].text()}
-                ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
+                data[element][side] = {"name": self.elements[element][side]["label"].text(),
+                                       "unit": self.elements[element][side]["unit"].text(),
+                                       "label_style": {'font-size': self.elements[element][side]["font_size"].text()},
+                                       "ticks": {"minor": self.elements[element][side]["minor_ticks"].text(),
+                                                 "major": self.elements[element][side]["major_ticks"].text()}}
+        data["histogram"] = {"name": self.elements["histogram"]["label"].text(),
+                             "unit": self.elements["histogram"]["unit"].text(),
+                             "label_style": {'font-size': self.elements["histogram"]["font_size"].text()},
+                             "ticks": {"minor": self.elements["histogram"]["minor_ticks"].text(),
+                                       "major": self.elements["histogram"]["major_ticks"].text()}}
+                # ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
+
+        self.submitted.emit(data)
 
     def validate(self):
         pass

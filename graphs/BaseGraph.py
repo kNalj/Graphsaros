@@ -13,7 +13,6 @@ class BaseGraph(QMainWindow):
 
         # plot object, can be 2D or 3D
         self.plt = None
-        self.init_toolbar()
 
     def init_ui(self):
         """
