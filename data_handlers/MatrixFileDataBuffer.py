@@ -19,11 +19,25 @@ sys.excepthook = trap_exc_during_debug
 class MatrixData(DataBuffer):
 
     def __init__(self, location):
+        """
+        Inherits: DataBuffer()
+
+        Specific data buffer for matrix file type of data (only contains matrix with the results of the measurement)
+
+        :param location: location of the file on hard disk
+        """
         super().__init__(location)
 
+        # Contains values of x (np.array) and y (np.array) (and z [np.ndarray()) axis.
         self.data = {}
+
+        # contains data about units, name of the parameter, ...
         self.axis_values = {}
+
+        # member variable with dimensions of the data (either list with length of 1 [for 2D measurement] or 2 [fpr 3D
+        # measurement])
         self.matrix_dimensions = self.calculate_matrix_dimensions()
+
         self.get_axis_data()
 
     def calculate_matrix_dimensions(self):

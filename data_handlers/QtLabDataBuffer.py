@@ -53,10 +53,10 @@ class QtLabData(DataBuffer):
 
     def prepare_data(self):
         """
-        Method that creates np.array filled with data from file specified by location when instantiating this class.
-        Data is third column of numbers in that file.
+        Method that creates list of np.ndarrays filled with data from file specified by location when instantiating this
+        class. Data is results of the measured parameter(s).
 
-        :return: np.array: matrix
+        :return: list [np.ndarray] : matrices that hold results of measurement
         """
 
         if self.get_number_of_dimension() == 2:

@@ -29,10 +29,19 @@ class DataBuffer(QObject):
         #       x and y same as in 3D
         self.data = None
 
+        # Not all measurements have the same numbers of parameters that are being set. We might have a measurement that
+        # sets two different parameters and measures one, also a measurement that is a loop in a loop which also sets
+        # two parameters and measures one but its not the same thing. Also there might be more then one measured
+        # parameter
         self.number_of_set_parameters = None
 
+        # Same as number of set parameters. Its usefull to have this number available at all times. its usefull to some
+        # other windows when displaying data to know how many columns are set parameters, and how many columns are data
+        # to be displayed. (Example: Loop in a loop measurement has 2 parameters that are being measured. In this case
+        # we want to give user to option to chose which measured parameter is displayed as a graph)
         self.number_of_measured_parameters = None
 
+        # Textual representetion of data set. Enables wuick overview of the data in the main window
         self.textual = None
 
         # list of values containing number of steps for x and y dimensions
@@ -99,7 +108,8 @@ class DataBuffer(QObject):
         Returns the specified matrix of this data buffer
 
         :param index: specify index of the matrix to be returned. (Single data buffer may have multiple matrices as a
-         result of measuring more then one parameter.)
+                    result of measuring more then one parameter). If index is set to None return a list of all matrices
+                    that this data set contains.
 
         :return: np.array: matrix (for 3D)
         """
@@ -179,9 +189,12 @@ class DataBuffer(QObject):
 
     def create_matrix_file(self, index):
         """
-        Creates a naked matrix file from any kind of data buffer file
+        Create a matrix file for the specified matrix of this data set.
 
-        :return:
+        :param index: Specify the zero based index of the matrix in this buffer. For measurements that measure more then
+                    one parameter.
+
+        :return: NoneType
         """
         name = self.location + "_matrix"
         file = open(name, "w")
@@ -190,6 +203,12 @@ class DataBuffer(QObject):
         file.close()
 
     def textual_data_representation(self):
+        """
+        Method that returns textual representation of the data from this data buffer. Text is created at the same time
+        when data is being parsed from the source file of the buffer.
+
+        :return: string: string representation of this buffers data
+        """
 
         return self.textual
 
@@ -200,6 +219,12 @@ class AxisWindow(QWidget):
     submitted = pyqtSignal(object)
 
     def __init__(self, buffer):
+        """
+        Used to obtain data about x (and y) axis data values for buffers that do not have those (usually only matrix
+        files)
+
+        :param buffer: DataBuffer(): A reference to a data buffer for which the data is being edited
+        """
         super(AxisWindow, self).__init__()
 
         # A reference to a buffer for which you are entering data
@@ -258,10 +283,11 @@ class AxisWindow(QWidget):
         self.submit_button = QPushButton("OK")
         self.submit_button.clicked.connect(self.submit)
 
+        # Button to open folder browser to the location of this file
         self.what_is_this_btn = QPushButton("What is this ?")
         self.what_is_this_btn.clicked.connect(self.go_to_location)
 
-
+        # add all elements to a layout
         layout = QGridLayout()
         layout.addWidget(x_label, 0, 0, 1, 4)
         layout.addWidget(x_start, 1, 0, 1, 1)
@@ -318,6 +344,12 @@ class AxisWindow(QWidget):
             show_error_message(title, msg)
 
     def go_to_location(self):
+        """
+        Method that gets the location of the DataBuffer for which the axis data is being edited and opens that location
+        in folder explorer (allowing user to see the data in question)
+
+        :return: NoneType
+        """
         location = self.buffer.get_location()
         folder = os.path.dirname(location)
         # unfortunately this thing only works on windows :((((

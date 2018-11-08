@@ -14,10 +14,20 @@ from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
 
 class LineTrace(BaseGraph):
-
     def __init__(self, data: DataBuffer=None, axis_data=None):
+        """
+        Inherits: BaseGraph()
+
+        Used to display 2D type of graphs. Enables user to to transformations to 2D type of data (x, y)
+
+        :param data: DataBuffer(): If DataBuffer is being opened, this is a reference to that data buffer
+        :param axis_data [Optional]: If what is being open is a line trace created from Heatmap window, then there is
+                                    no actual data buffer rather just x and y axis data
+        """
         super().__init__()
 
+        # Axis data exists when what is being opened is a line trace created by Heatmap window. In that case no
+        # reference to data buffer is made.
         if axis_data is None:
             self.data_buffer = data
             self.x_values = self.data_buffer.data["x"]
@@ -26,22 +36,24 @@ class LineTrace(BaseGraph):
             self.x_values = axis_data["x"]
             self.y_values = axis_data["y"]
 
+        # Elements for ploting data
         self.plt = pg.GraphicsView()
-
         self.central_item = pg.GraphicsLayout()
-
         self.main_subplot = pg.PlotItem(x=self.x_values, y=self.y_values, pen=(60, 60, 60))
-
         self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
 
+        # indicates in which modes the window is currently working.
         self.modes = {"fit": False}
 
+        # used in fit mode of this window, holds data about created fit curves to enable hiding and displaying them at
+        # any point
         self.fit_curves = {}
 
         self.init_ui()
 
     def init_ui(self):
 
+        # set dimensions, title and icon of the window
         self.setGeometry(50, 50, 640, 400)
         self.setWindowTitle("Line trace window")
         self.setWindowIcon(QIcon("../img/lineGraph.png"))
@@ -66,7 +78,11 @@ class LineTrace(BaseGraph):
         self.show()
 
     def init_toolbar(self):
+        """
+        Create toolbar of the line trace window
 
+        :return: NoneType
+        """
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
 
@@ -80,6 +96,11 @@ class LineTrace(BaseGraph):
         self.init_fit_toolbar()
 
     def init_fit_toolbar(self):
+        """
+        Additional toolbar that is displayed when window is operating in "fit" mode
+
+        :return: NoneType
+        """
         self.fit_toolbar = QToolBar("Fitting options")
         self.fit_toolbar.actionTriggered[QAction].connect(self.perform_action)
 
@@ -98,6 +119,12 @@ class LineTrace(BaseGraph):
         pass
 
     def fit_mode_action(self):
+        """
+        Called when user clicks on an action that activates fit mode of the window. Shows / hides additional toolbar
+        used to fit different kinds of curves to the displayed data.
+
+        :return: NoneType
+        """
 
         if self.modes["fit"]:
             self.modes["fit"] = False
@@ -119,6 +146,12 @@ class LineTrace(BaseGraph):
             # add only selected data to graph
 
     def set_initial_fit_graph_state(self):
+        """
+        Default state of the fit mode displays only mirrored source of the data. Other fits need to be manually turned
+        on for them to be displayed.
+
+        :return: NoneType
+        """
 
         self.fit_plot.clear()
         plot_item = pg.PlotDataItem(self.x_values, self.y_values)
@@ -130,7 +163,14 @@ class LineTrace(BaseGraph):
         self.gauss.setChecked(False)
 
     def gaussian_fit_action(self):
+        """
+        As suggested by the name of the function, it tries to apply gaussian fit the the selected data. Data is then
+        added and displayed in the graph for fir curves.
 
+        Turning of this function removes curve from the graph
+
+        :return:
+        """
         def gauss(x, a, x0, sigma):
             return a * exp(-(x - x0) ** 2 / (2 * sigma ** 2))
 
@@ -151,7 +191,12 @@ class LineTrace(BaseGraph):
             self.fit_plot.removeItem(self.fit_curves["gauss"])
 
     def default_graph_action(self):
+        """
+        Mirror the source data of the window to the graph for fits. Turning off this action removes the curve from graph
+        for displaying fit curves.
 
+        :return: NoneType
+        """
         if self.default_graph.isChecked():
             x = self.x_values
             y = self.y_values
@@ -163,9 +208,14 @@ class LineTrace(BaseGraph):
             self.fit_plot.removeItem(self.fit_curves["default"])
 
     def update_selected_region(self):
+        """
+        Event that upon changing bounds of regen select element changes limits of the fit graph in a way that it only
+        displays the selected portion of the data.
+
+        :return: NoneType
+        """
         min_x, max_x = self.region_select.getRegion()
         self.fit_plot.setXRange(min_x, max_x)
-
 
 
 def main():

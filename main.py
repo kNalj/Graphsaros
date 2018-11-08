@@ -27,6 +27,10 @@ sys.excepthook = trap_exc_during_debug
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        """
+        Starting window of Graphsaros app. Enables user to load and select among loaded DataBuffers.
+
+        """
         super().__init__()
 
         # define title of the window
@@ -41,6 +45,7 @@ class MainWindow(QMainWindow):
         # to create central widget and set grid layout to it, then we can do what we want
         self.centralWidget = QWidget()
 
+        # dict of data sets that have been loaded into the main program
         self.datasets = {}
 
         # call to a method that builds user interface
@@ -68,12 +73,15 @@ class MainWindow(QMainWindow):
         self.add_to_list_btn = QPushButton("Open")
         self.add_to_list_btn.clicked.connect(self.open_file_dialog)
 
+        # button for closing the application and all of its windows
         self.exit_btn = QPushButton("Exit")
         self.exit_btn.clicked.connect(self.exit)
 
+        # Button for opening detailed view of the specified data set
         self.open_dataset_btn = QPushButton("Plot")
         self.open_dataset_btn.clicked.connect(self.display_dataset)
 
+        # table widget containing all loaded data sets
         self.opened_datasets_tablewidget = QTableWidget(0, 4)
         self.opened_datasets_tablewidget.setMinimumSize(600, 200)
         self.opened_datasets_tablewidget.setHorizontalHeaderLabels(("Name", "Location", "Delete", "Type"))
@@ -84,10 +92,12 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.opened_datasets_tablewidget.setSelectionBehavior(QTableWidget.SelectRows)
 
+        # text browser for displaying samo basic data about the selected data set
         self.selected_dataset_textbrowser = QTextBrowser()
         self.selected_dataset_textbrowser.setMinimumSize(600, 200)
         self.selected_dataset_textbrowser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # miniature plot that displays data of the selected buffer
         preview_plt = pg.GraphicsView()
         mini_plot = pg.GraphicsLayout()
         main_subplot = mini_plot.addPlot()
@@ -108,6 +118,8 @@ class MainWindow(QMainWindow):
         self.grid_layout.addWidget(self.open_dataset_btn, 3, 1, 1, 1)
         self.grid_layout.addWidget(self.exit_btn, 3, 2, 1, 1)
 
+        # connect changing a selected set in the table to a method that displays correct data in the text browser and
+        # in the mini plot
         self.opened_datasets_tablewidget.currentCellChanged.connect(self.refresh_main_view)
 
         # set the layout of the central widget
@@ -116,6 +128,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.centralWidget)
 
     def init_manu_bar(self):
+        """
+        Initialize menu bar of main window.
+
+        :return: NoneType
+        """
 
         # create action for closing the program
         exit_action = QAction("&Exit", self)
@@ -125,8 +142,10 @@ class MainWindow(QMainWindow):
         # connect action to exit method
         exit_action.triggered.connect(self.exit)
 
+        # menu entry for opening different data (buffer) types
         open_action = QMenu("&Open", self)
 
+        # set of actions each one used to open a specific data (buffer) type
         open_qcodes = QAction("&Open QCoDeS", self)
         open_qcodes.triggered.connect(lambda: self.open("qcodes"))
         open_qtlab = QAction("&Open QtLab", self)
@@ -138,6 +157,7 @@ class MainWindow(QMainWindow):
         open_action.addAction(open_qtlab)
         open_action.addAction(open_matrix)
 
+        # action that opens a window that enables user to load multiple buffers from within a folder
         open_folder_explorer = QAction("&Folder explorer", self)
         open_folder_explorer.triggered.connect(self.open_folder_explorer)
 
@@ -152,14 +172,32 @@ class MainWindow(QMainWindow):
         file_menu.addAction(exit_action)
 
     def exit(self):
+        """
+        Method called upon closing main window. Closes all other windows belongig to this application
+
+        :return:
+        """
         app = QtGui.QGuiApplication.instance()
         app.closeAllWindows()
         self.close()
 
     def closeEvent(self, *args, **kwargs):
+        """
+        Event that is triggered upon closing main window. Calls a method that closes all windows belongig to this app.
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
         self.exit()
 
     def open_file_dialog(self):
+        """
+        Opens a file dialog for selecting file to load into application. Depending on type of file the headers of the
+        files differ allowing to recognize which type of DataBuffer needs to be instantiated.
+
+        :return: NoneType
+        """
         file_dialog = QFileDialog.getOpenFileNames()
 
         for file in file_dialog[0]:
@@ -188,11 +226,23 @@ class MainWindow(QMainWindow):
             self.add_buffer_to_table(self.datasets[name])
 
     def make_add_to_table(self, buffer):
+        """
+        Function factory used to create functions enable adding a loaded data buffer to a table of data buffers
+
+        :param buffer:
+        :return: pointer to a function created in this function factory
+        """
         def add_to_table():
             self.add_buffer_to_table(buffer)
         return add_to_table
 
     def add_buffer_to_table(self, buffer):
+        """
+        Actual method that creates a row in the table in the main window and adds the data buffer to that table.
+
+        :param buffer: DataBuffer(): instance of data buffer that is being added to the table in the main window
+        :return: NoneType
+        """
         if buffer.is_data_ready():
             name = os.path.basename(buffer.get_location())
             rows = self.opened_datasets_tablewidget.rowCount()
@@ -210,6 +260,11 @@ class MainWindow(QMainWindow):
             print("WHY")
 
     def display_dataset(self):
+        """
+        A method that opens LineTrace or Heatmap window depending on number of dimension that the selected buffer has.
+
+        :return: NoneType
+        """
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
@@ -225,9 +280,21 @@ class MainWindow(QMainWindow):
                 self.lt.show()
 
     def open(self, file_type: str):
+        """
+        Needs to be implemented, opens a speciified type of file
+
+        :param file_type: string: specifies the type of file that we are trying to open
+        :return: I DONT KNOW WHAT WILL IT DO YET, HAVENT REALLY TOUGHT ABOUT IT
+        """
         print(file_type)
 
     def make_delete_file_from_list(self, name: str):
+        """
+        Function factory that creates and returns a function that removes a databuffer from databuffer table
+
+        :param name: name of the data buffer ( one used in the table )
+        :return: Pointer to a function that removes a row from the table
+        """
 
         def delete_file_from_list():
             self.opened_datasets_tablewidget.removeRow(self.opened_datasets_tablewidget.row(name))
@@ -235,10 +302,22 @@ class MainWindow(QMainWindow):
         return delete_file_from_list
 
     def refresh_main_view(self):
+        """
+        Helper method that calls all necessary method needed to update display of the main window once different data
+        buffer was selected from table of data buffers.
+
+        :return: NonType
+        """
         self.update_mini_graph()
         self.update_text_display()
 
     def update_mini_graph(self):
+        """
+        Updates displayed data in the miniature graph area on the main window to display data of the selected data
+        buffer. It is called upon changing selection in the table of buffers in main window.
+
+        :return: NoneType
+        """
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
@@ -272,7 +351,12 @@ class MainWindow(QMainWindow):
                     ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
     def update_text_display(self):
+        """
+        Updates displayed data in the text browser area of the main window to display data of the selected data buffer.
+        It is called upon changing selection in the table of buffers in main window.
 
+        :return: NoneType
+        """
         self.selected_dataset_textbrowser.clear()
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:

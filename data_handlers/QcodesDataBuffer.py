@@ -10,10 +10,22 @@ from data_handlers.DataBuffer import DataBuffer
 class QcodesData(DataBuffer):
 
     def __init__(self, location):
+        """
+        Inherits: DataBuffer()
+
+        Data buffer for qcodes files.
+
+        :param location: string: location of the file on the disk
+        """
         super().__init__(location)
 
+        # dimensions of the matrix  (basically number of points on x and y axis)
         self.matrix_dimensions = self.calculate_matrix_dimensions()
+
+        # get data from the file (read x, y and z data and save it as a member variable)
         self.data = self.prepare_data()
+
+        # from snapshot.json file get data about names, units, etc. of the each individual axis
         self.axis_values = self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
@@ -43,9 +55,13 @@ class QcodesData(DataBuffer):
 
     def prepare_data(self):
         """
-        Reads the file line by line and saves data as np.array
+        Reads the file line by line and saves data as list of np.arrays (some measurements measure more then just one
+        parameter, which is why it was necessary to enable savig multiple matrices)
 
-        :return:
+        :return: dict: {x: np.array, y: np.array, z: [np.ndarray]}
+                        x: contains set values of parameter that represents x axis on the graph
+                        y: contains set values of parameter that represents y axis on the graph
+                        z: contains list of ndarrays, which represent results of measured parameters
         """
         data = np.loadtxt(self.location, dtype=float)
         self.textual = np.array2string(data)
@@ -124,6 +140,7 @@ class QcodesData(DataBuffer):
                             snapshot.json and is located in the same directory as the mesurement output file (matrix file)
         :param depth: boolean that is FALSE by default, unless there is a recursive call to self when its set to True to
                         signify that we are using a LINL
+
         :return: array: containing one or two dictionaries (depending if its 2D or 3D measurement) containing data for all
                         action parameters
         """

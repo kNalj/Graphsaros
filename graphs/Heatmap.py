@@ -26,6 +26,13 @@ sys.excepthook = trap_exc_during_debug
 class Heatmap(BaseGraph):
 
     def __init__(self, data: DataBuffer):
+        """
+        Inherits: BaseGraph()
+
+        Used to display and manipulate data obtained by 3D measurements (Loop in a loop)
+
+        :param data: DataBuffer(): Reference to a DataBuffer object that is being displayed in this window
+        """
         super().__init__()
 
         # setting the window title, i would have never guessed its this
