@@ -2,7 +2,7 @@ import pyqtgraph as pg
 import numpy as np
 import sys
 
-from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget, QToolBar
+from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget, QToolBar, QComboBox
 from PyQt5.QtGui import QIcon
 
 import helpers
@@ -46,11 +46,24 @@ class Heatmap(BaseGraph):
         # np.array, this is what pyqtgraph wants to draw stuff
         self.plt_data = self.data_buffer.get_matrix()
 
-        # to be able to switch between gauss, lorentz, normal, ...
-        self.active_data = self.plt_data
+        # saving transformations on main data buffer matrices, so that i dont need to recalculate them next time i need
+        # them, gotta save that 0.1 sec bro
+        self.plt_data_options = {}
+        for i in range(len(self.plt_data)):
+            name = "matrix" + str(i)
+            self.plt_data_options[name] = {"xDer": None,
+                                           "yDer": None,
+                                           "corrected": None,
+                                           "gauss": None}
 
-        # gauss data
-        self.plt_data_gauss = pg.gaussianFilter(self.plt_data, (2, 2))
+        # to be able to switch between gauss, lorentz, normal, ...
+        self.active_data = self.plt_data[0]
+
+        self.active_data_name = "matrix0"
+
+        self.active_data_index = 0
+
+        self.displayed_data_set = self.active_data
 
         # indicates currently displayed data
         self.display = "normal"
@@ -59,13 +72,24 @@ class Heatmap(BaseGraph):
         self.plot_elements = {}
 
         # reference to ROI
-        self.line_segment_roi = {}
+        self.line_segment_roi = {"ROI": None}
 
         # dictionary to keep track of options that have been turned on/off
-        self.modes = {"ROI": False}
+        self.modes = {"ROI": False, "Side-by-side": False}
+
+        # if data correction has been called at least once, this will not be None
+        # need to move this to plt data options
+        self.corrected_data = None
+
+        self.unit_correction = 1000
 
         self.init_ui()
 
+    """
+    ################################
+    ######## User interface ########
+    ################################
+    """
     def init_ui(self):
 
         self.setGeometry(50, 50, 640, 400)
@@ -76,9 +100,11 @@ class Heatmap(BaseGraph):
         # proxy.setWidget(line_trace_button)
 
         central_item = pg.GraphicsLayout()
-        main_subplot = central_item.addPlot()
+        frame_layout = pg.GraphicsLayout()
+        central_item.addItem(frame_layout)
+        main_subplot = frame_layout.addPlot()
         img = pg.ImageItem()
-        img.setImage(self.plt_data)
+        img.setImage(self.displayed_data_set)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
         (x_scale, y_scale) = self.data_buffer.get_scale()
         img.scale(x_scale, y_scale)
@@ -90,11 +116,10 @@ class Heatmap(BaseGraph):
             axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-            # ax.setTickSpacing(major=500, minor=250)
 
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)
-        iso.setData(pg.gaussianFilter(self.plt_data, (2, 2)))
+        iso.setData(pg.gaussianFilter(self.active_data, (2, 2)))
 
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
@@ -107,7 +132,7 @@ class Heatmap(BaseGraph):
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
         histogram.vb.setMouseEnabled(y=False)  # makes user interaction a little easier
-        isoLine.setValue(self.plt_data.mean())
+        isoLine.setValue(self.active_data.mean())
         isoLine.setZValue(1000)  # bring iso line above contrast controls
         isoLine.sigDragged.connect(self.update_iso_curve)
 
@@ -124,25 +149,13 @@ class Heatmap(BaseGraph):
             axis_data = self.data_buffer.axis_values[legend[axis]]
             label_style = {'font-size': '9pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-        self.plot_elements = {"central_item": central_item, "main_subplot": main_subplot,
+        self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
                               "iso": iso, "isoLine": isoLine}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
-        # histogram.hide()
-        """gl = pg.GradientLegend((15, 200), (-5, -20))
-        gl.gradient.setColorAt(0, QColor(0, 0, 0))
-        gl.gradient.setColorAt(1, QColor(255, 255, 255))
-        gl.gradient.setColorAt(0.33, QColor(255, 0, 0))
-        gl.gradient.setColorAt(0.66, QColor(255, 255, 0))
-        low_value = self.data_buffer.get_matrix().min()
-        high_value = self.data_buffer.get_matrix().max()
-        first_third = low_value + ((high_value - low_value) * 0.33)
-        second_third = low_value + ((high_value - low_value) * 0.66)
-        gl.setLabels({str(round(low_value, 3)): 0, str(round(first_third, 3)): 0.33,
-                      str(round(second_third, 3)): 0.66, str(round(high_value, 3)): 1})
-        gl.setParentItem(central_item)"""
+        self.init_toolbar()
 
     def init_toolbar(self):
         """
@@ -154,22 +167,36 @@ class Heatmap(BaseGraph):
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
         self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
+        self.line_trace_btn.setCheckable(True)
         self.tools.addAction(self.line_trace_btn)
         self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter", self)
         self.tools.addAction(self.gaussian_filter_btn)
-        self.der_x = QAction(QIcon(), "xDerivative")
+        self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative")
+        self.der_x.setCheckable(True)
         self.tools.addAction(self.der_x)
-        self.der_y = QAction(QIcon(), "yDerivative")
+        self.der_y = QAction(QIcon("img/yDer.png"), "yDerivative")
+        self.der_y.setCheckable(True)
         self.tools.addAction(self.der_y)
+        self.matrix_selection_combobox = QComboBox()
+        for index, matrix in enumerate(self.data_buffer.get_matrix()):
+            display_member = "matrix{}".format(index)
+            value_member = matrix
+            self.matrix_selection_combobox.addItem(display_member, value_member)
+        display_member = "Side-by-side"
+        value_member = None
+        self.matrix_selection_combobox.addItem(display_member, value_member)
+        self.matrix_selection_combobox.currentIndexChanged.connect(lambda: self.change_active_set(
+            index=self.matrix_selection_combobox.currentIndex()))
+
+        self.tools.addWidget(self.matrix_selection_combobox)
 
         self.matrix_manipulation_toolbar = QToolBar("Matrix manipulation")
         self.matrix_manipulation_toolbar.actionTriggered[QAction].connect(self.perform_action)
+        self.addToolBar(self.matrix_manipulation_toolbar)
         self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
         self.matrix_manipulation_toolbar.addAction(self.create_matrix_file_btn)
         self.data_correction_action = QAction(QIcon("img/line-chart.png"), "Correct_data", self)
         self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
-
-        self.addToolBar(self.matrix_manipulation_toolbar)
 
         self.window_toolbar = QToolBar("Window toolbar")
         self.window_toolbar.actionTriggered[QAction].connect(self.perform_action)
@@ -184,6 +211,55 @@ class Heatmap(BaseGraph):
         self.exit_action_btn.setToolTip("Close this heatmap window")
         self.window_toolbar.addAction(self.exit_action_btn)
 
+    """
+    ##################################
+    ######## Helper functions ########
+    ##################################
+    """
+    def change_active_set(self, index):
+        if index == self.data_buffer.number_of_measured_parameters:
+            self.modes["Side-by-side"] = True
+            self.plot_elements["frame"].clear()
+            for matrix in self.plt_data:
+                img = pg.ImageItem()
+                img.setImage(matrix)
+                (x_scale, y_scale) = self.data_buffer.get_scale()
+                img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+                img.scale(x_scale, y_scale)
+                histogram = pg.HistogramLUTItem()
+                histogram.setImageItem(img)
+                histogram.gradient.loadPreset("thermal")
+                plot = self.plot_elements["frame"].addPlot()
+                plot.addItem(img)
+
+                for axis in ["left", "bottom"]:
+                    ax = plot.getAxis(axis)
+                    ax.setPen((60, 60, 60))
+        else:
+            if self.modes["Side-by-side"]:
+                self.plot_elements["frame"].clear()
+                self.modes["Side-by-side"] = False
+                self.plot_elements["frame"].addItem(self.plot_elements["main_subplot"])
+            if index > self.data_buffer.number_of_measured_parameters:
+                index -= 1
+            self.active_data = self.plt_data[index]
+            index = self.matrix_selection_combobox.currentIndex()
+            name = self.matrix_selection_combobox.currentText()
+            self.active_data_name = name
+            self.active_data_index = index
+            self.change_displayed_data_set(self.active_data)
+
+    def change_displayed_data_set(self, data_set):
+        self.displayed_data_set = data_set
+        self.plot_elements["img"].setImage(self.displayed_data_set)
+        if self.modes["ROI"]:
+            self.update_line_trace_plot()
+
+    """
+    #########################
+    ######## Actions ########
+    #########################
+    """
     def line_trace_action(self):
         """
         Add a line segment region of interest (ROI) to the main subplot. Connect it to a function that updates line
@@ -194,27 +270,32 @@ class Heatmap(BaseGraph):
         if self.modes["ROI"] == False:
             self.modes["ROI"] = True
 
-            # ROI instantiation
-            line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
-                                                  self.data_buffer.get_y_axis_values()[0]],
-                                                 [self.data_buffer.get_x_axis_values()[-1],
-                                                  self.data_buffer.get_y_axis_values()[0]]),
-                                      pos=(0, 0),
-                                      pen=(5, 9),
-                                      edges=[self.data_buffer.get_x_axis_values()[0],
-                                             self.data_buffer.get_x_axis_values()[-1],
-                                             self.data_buffer.get_y_axis_values()[0],
-                                             self.data_buffer.get_y_axis_values()[-1]])
-            # connect signal to a slot
-            line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
-            # make a reference to this ROI so i can use it later
-            self.line_segment_roi["ROI"] = line_segmet_roi
-            # add the ROI to main subplot
-            self.plot_elements["main_subplot"].addItem(line_segmet_roi)
-            # connect signal to a slot, this signa
-            line_segmet_roi.aligned.connect(self.update_line_trace_plot)
+            if self.line_segment_roi["ROI"] is None:
+                # ROI instantiation
+                line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
+                                                      self.data_buffer.get_y_axis_values()[0]],
+                                                     [self.data_buffer.get_x_axis_values()[-1],
+                                                      self.data_buffer.get_y_axis_values()[0]]),
+                                          pos=(0, 0),
+                                          pen=(5, 9),
+                                          edges=[self.data_buffer.get_x_axis_values()[0],
+                                                 self.data_buffer.get_x_axis_values()[-1],
+                                                 self.data_buffer.get_y_axis_values()[0],
+                                                 self.data_buffer.get_y_axis_values()[-1]])
+                # connect signal to a slot
+                line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
+                # make a reference to this ROI so i can use it later
+                self.line_segment_roi["ROI"] = line_segmet_roi
+                # add the ROI to main subplot
+                self.plot_elements["main_subplot"].addItem(line_segmet_roi)
+                # connect signal to a slot, this signa
+                line_segmet_roi.aligned.connect(self.update_line_trace_plot)
+            else:
+                self.line_segment_roi["ROI"].show()
         else:
+            self.modes["ROI"] = False
             self.plot_elements["line_trace_graph"].clear()
+            self.line_segment_roi["ROI"].hide()
 
     def font_action(self):
         """
@@ -223,44 +304,8 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
         self.eaw = helpers.Edit3DAxisWidget(self)
+        self.eaw.submitted.connect(self.edit_axis_data)
         self.eaw.show()
-
-    def update_line_trace_plot(self):
-        """
-        Each time a line trace is moved this method is called to update the line trace graph element of the Heatmap
-        widget.
-
-        :return: NoneType
-        """
-
-        data = self.active_data
-        img = self.plot_elements["img"]
-        selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
-        line_trace_graph = self.plot_elements["line_trace_graph"]
-        new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
-        point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
-        _, scene_coords = point
-        coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        new_plot.translate(coords.x(), 0)
-        # scale_x, scale_y = self.data_buffer.get_scale()
-        # new_plot.scale(scale_x, 1)
-
-        point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
-        _, scene_coords = point1
-        start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
-        _, scene_coords = point2
-        end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-
-        # had the scale figured out wrong, this is the correct way of doing it
-        scale = end_coords.x() - start_coords.x()
-        num_of_points = (len(selected) - 1) or 1
-        new_plot.scale(scale/num_of_points, 1)
-        print(scale)
-
-        print(start_coords.x(), end_coords.x())
-
-        # real_scale =
 
     def gaussian_filter_action(self):
         """
@@ -274,13 +319,15 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
         if self.display != "gauss":
+            self.plt_data_gauss = pg.gaussianFilter(self.active_data, (2, 2))
             self.plot_elements["img"].setImage(self.plt_data_gauss)
+            self.last_used_data = self.active_data
             self.active_data = self.plt_data_gauss
             self.display = "gauss"
         else:
-            self.plot_elements["img"].setImage(self.plt_data)
+            self.plot_elements["img"].setImage(self.last_used_data)
             self.display = "normal"
-            self.active_data = self.plt_data
+            self.active_data = self.last_used_data
 
     def lorentzian_filter_action(self):
         """
@@ -296,7 +343,11 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.data_buffer.create_matrix_file()
+        index = self.active_data_index
+        if index >= self.data_buffer.number_of_measured_parameters():
+            helpers.show_error_message("Warning", "Matrix creation for selected data is not possible")
+        else:
+            self.data_buffer.create_matrix_file(index)
 
     def show_2d_action(self):
         """
@@ -326,9 +377,16 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-
-        der_x_data = np.diff(self.plt_data, 1, 0)
-        self.plot_elements["img"].setImage(der_x_data)
+        if self.der_x.isChecked():
+            name = self.active_data_name
+            if self.plt_data_options[name]["xDer"] is None:
+                der_x_data = np.diff(self.active_data, 1, 0)
+                self.plt_data_options[name]["xDer"] = der_x_data
+            else:
+                der_x_data = self.plt_data_options[name]["xDer"]
+            self.change_displayed_data_set(der_x_data)
+        else:
+            self.change_displayed_data_set(self.active_data)
 
     def yderivative_action(self):
         """
@@ -337,8 +395,16 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
 
-        der_x_data = np.diff(self.plt_data, 1, 1)
-        self.plot_elements["img"].setImage(der_x_data)
+        if self.der_y.isChecked():
+            name = self.active_data_name
+            if self.plt_data_options[name]["yDer"] is None:
+                der_y_data = np.diff(self.active_data, 1, 1)
+                self.plt_data_options[name]["yDer"] = der_y_data
+            else:
+                der_y_data = self.plt_data_options[name]["yDer"]
+            self.change_displayed_data_set(der_y_data)
+        else:
+            self.change_displayed_data_set(self.active_data)
 
     def correct_data_action(self):
         """
@@ -347,27 +413,16 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
+        # ################################
+        # NEED REWORK, MAKE BUTTON CLICK CREATE CORRECTED DATA SETS AND ADD THEM TO COMBOBOX FOR SELECTING DATA SET
         self.input = helpers.InputData("Please input the resistance something something to correct your data")
-        self.input.submitted.connect(self.proccess_data)
+        self.input.submitted.connect(self.apply_correction)
 
-    def proccess_data(self, data):
-        self.correction_resistance = float(data)
-
-        dimensions = self.data_buffer.get_matrix_dimensions()
-        matrix = self.data_buffer.get_matrix()
-        y_data = self.data_buffer.get_y_axis_values()
-        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
-
-        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
-
-        for row in range(dimensions[0]):
-            column = matrix[row, :]
-            corrected_voltages = (abs(y_data) - abs(self.correction_resistance * column)) * biases
-
-        print(y_data)
-        print(column)
-        print(corrected_voltages)
-
+    """
+    ########################
+    ######## Events ########
+    ########################
+    """
     def update_iso_curve(self):
         """
         When iso line element of the histogram is moved update the data on the main plot according to the value of the
@@ -392,6 +447,91 @@ class Heatmap(BaseGraph):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
             string = "[Position: {}, {}]".format(int(mouse_point.x()), int(mouse_point.y()))
             self.statusBar().showMessage(string)
+
+    def update_line_trace_plot(self):
+        """
+        Each time a line trace is moved this method is called to update the line trace graph element of the Heatmap
+        widget.
+
+        :return: NoneType
+        """
+
+        data = self.displayed_data_set
+        img = self.plot_elements["img"]
+        selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
+        line_trace_graph = self.plot_elements["line_trace_graph"]
+        new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
+        point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point
+        coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        new_plot.translate(coords.x(), 0)
+        # scale_x, scale_y = self.data_buffer.get_scale()
+        # new_plot.scale(scale_x, 1)
+
+        point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point1
+        start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = point2
+        end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+
+        # had the scale figured out wrong, this is the correct way of doing it
+        scale = end_coords.x() - start_coords.x()
+        num_of_points = (len(selected) - 1) or 1
+        new_plot.scale(scale/num_of_points, 1)
+
+    def apply_correction(self, data):
+        self.correction_resistance = float(data)
+
+        dimensions = self.data_buffer.get_matrix_dimensions()
+        matrix = self.active_data
+        y_data = self.data_buffer.get_y_axis_values()
+        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
+
+        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
+
+        for row in range(dimensions[0]):
+            column = matrix[row, :]
+            corrected_voltages = (abs(y_data) - abs(self.correction_resistance * column) * self.unit_correction) * biases
+
+            xp = corrected_voltages
+            fp = column
+
+            if np.all(np.diff(y_data) > 0):
+                corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
+            else:
+                reversed_y_data = y_data[::-1]
+                reversed_xp = xp[::-1]
+                reversed_fp = fp[::-1]
+
+                reversed_matrix_column = np.interp(reversed_y_data, reversed_xp, reversed_fp,
+                                                   left=0, right=0)
+                column = reversed_matrix_column[::-1]
+                corrected_matrix[row, :] = column
+
+        display_member = "corrected_" + self.active_data_name
+        value_member = corrected_matrix
+        self.matrix_selection_combobox.addItem(display_member, value_member)
+        self.plt_data.append(value_member)
+        self.plt_data_options[display_member] = {"xDer": None,
+                                                 "yDer": None,
+                                                 "corrected": None,
+                                                 "gauss": None}
+        # self.corrected_data = corrected_matrix
+
+    def edit_axis_data(self, data):
+        for element, sides in data.items():
+            if element != "histogram":
+                for side, options in sides.items():
+                    axis = self.plot_elements[element].getAxis(side)
+                    axis.setLabel(options["name"], options["unit"], **options["label_style"])
+                    # axis.setTickSpacing(major=float(options["ticks"]["major"]),
+                    #                     minor=float(options["ticks"]["minor"]))
+            else:
+                axis = self.plot_elements["histogram"].axis
+                axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])
+                # axis.setTickSpacing(major=float(sides["ticks"]["major"]),
+                #                     minor=float(sides["ticks"]["minor"]))
 
 
 def main():
