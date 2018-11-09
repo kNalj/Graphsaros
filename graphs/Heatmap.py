@@ -424,7 +424,8 @@ class Heatmap(BaseGraph):
         """
         # ################################
         # NEED REWORK, MAKE BUTTON CLICK CREATE CORRECTED DATA SETS AND ADD THEM TO COMBOBOX FOR SELECTING DATA SET
-        self.input = helpers.InputData("Please input the resistance something something to correct your data")
+        self.input = helpers.InputData("Please input the resistance something something to correct your data",
+                                       numeric=True)
         self.input.submitted.connect(self.apply_correction)
 
     """

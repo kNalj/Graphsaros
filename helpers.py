@@ -379,10 +379,17 @@ class InputData(QWidget):
 
     submitted = pyqtSignal(object)
 
-    def __init__(self, msg):
+    def __init__(self, msg, default_value=None, numeric=False):
         super(InputData, self).__init__()
 
         self.display_msg = msg
+
+        self.numeric = numeric
+
+        if default_value is not None:
+            self.default = default_value
+        else:
+            self.default = ""
 
         self.init_ui()
 
@@ -390,10 +397,13 @@ class InputData(QWidget):
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         self.setGeometry(int(0.2 * width), int(0.2 * height), 300, 200)
 
+        self.setWindowTitle("Ola senor !")
+        self.setWindowIcon(QIcon("img/question_mark_icon.png"))
+
         v_layout = QVBoxLayout()
         self.explanation_text_label = QLabel(self.display_msg)
         v_layout.addWidget(self.explanation_text_label)
-        self.textbox_input_value = QLineEdit("")
+        self.textbox_input_value = QLineEdit(self.default)
         v_layout.addWidget(self.textbox_input_value)
         self.submit_btn = QPushButton("OK")
         self.submit_btn.clicked.connect(self.submit_data)
@@ -405,12 +415,15 @@ class InputData(QWidget):
 
     def submit_data(self):
 
-        if is_numeric(self.textbox_input_value.text()):
+        if self.numeric:
+            if is_numeric(self.textbox_input_value.text()):
+                self.submitted.emit(self.textbox_input_value.text())
+                self.close()
+            else:
+                show_error_message("Warning", "Input data has to be numeric")
+        else:
             self.submitted.emit(self.textbox_input_value.text())
             self.close()
-        else:
-            show_error_message("Warning", "Input data has to be numeric")
-
 
 def main():
 
