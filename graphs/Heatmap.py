@@ -352,9 +352,19 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
+        location = self.data_buffer.location
+        name = helpers.get_location_basename(location)
         index = self.active_data_index
-        if index >= self.data_buffer.number_of_measured_parameters():
-            helpers.show_error_message("Warning", "Matrix creation for selected data is not possible")
+        if index > self.data_buffer.number_of_measured_parameters:
+            self.select_file_name = helpers.InputData("Please select the name of the output file.", default_value=name)
+            new_file_name = helpers.get_location_path(location) + "\\" + name + "_generated_correction"
+            file = open(new_file_name, "w")
+            raw_data = np.transpose(self.displayed_data_set)
+            np.savetxt(file, raw_data, delimiter="\t")
+            file.close()
+        elif self.modes["Side-by-side"]:
+            helpers.show_error_message("NO, U CANT DO THAT !",
+                                       "Creating a matrix file for side by side view is not possible.")
         else:
             self.data_buffer.create_matrix_file(index)
 
