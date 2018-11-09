@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.MatrixFileDataBuffer import MatrixData
-from helpers import InfoWidget
+from helpers import InfoWidget, get_location_basename, get_location_path
 
 import pyqtgraph as pg
 
@@ -108,7 +108,7 @@ class BufferExplorer(QWidget):
                         ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
                 v_layout = QVBoxLayout()
-                v_layout.addWidget(QLabel(os.path.basename(candidate)[:30]))
+                v_layout.addWidget(QLabel(get_location_basename(candidate)[:30]))
                 h_layout = QHBoxLayout()
                 checkbox = QCheckBox(self)
                 info_btn = QPushButton("Info", self)
@@ -193,8 +193,7 @@ class BufferExplorer(QWidget):
         """
         def go_to_location():
             location = buffer.get_location()
-            folder = os.path.dirname(location)
-            # unfortunately this thing only works on windows :((((
+            folder = get_location_path(location)
             os.startfile(folder)
         return go_to_location
 

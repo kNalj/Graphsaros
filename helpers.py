@@ -7,6 +7,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 import numpy as np
 import os
 import time
+import ntpath
 import sys
 import json
 import graphs
@@ -20,6 +21,18 @@ def split_location_string(location: str):
     :return: list: [parent directory, name of the file]
     """
     return [os.path.dirname(location), os.path.basename(location)]
+
+
+def get_location_basename(location: str):
+    head, tail = ntpath.split(location)
+    return tail or ntpath.basename(head)
+
+
+def get_location_path(location: str):
+    head, tail = ntpath.split(location)
+    if tail:
+        return head
+    return ntpath.dirname(head)
 
 
 def get_subfolders(path):
@@ -402,13 +415,12 @@ class InputData(QWidget):
 def main():
 
     app = QApplication(sys.argv)
-    """ex = ProgressBarWidget()
+    ex = ProgressBarWidget()
     for i in range(0, 100):
         time.sleep(0.05)
         ex.setValue(((i + 1) / 100) * 100)
         QApplication.processEvents()
-    ex.close()"""
-    ex = InputData("gfsukdfg")
+    ex.close()
     sys.exit(app.exec_())
 
 
