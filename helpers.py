@@ -425,6 +425,7 @@ class InputData(QWidget):
             self.submitted.emit(self.textbox_input_value.text())
             self.close()
 
+
 def main():
 
     app = QApplication(sys.argv)

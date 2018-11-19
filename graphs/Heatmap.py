@@ -352,16 +352,21 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
+
+        def save_matrix(data):
+            user_input_name = data
+            new_file_location = helpers.get_location_path(location) + "\\" + user_input_name + "_generated_correction"
+            file = open(new_file_location, "w")
+            raw_data = np.transpose(self.active_data)
+            np.savetxt(file, raw_data, delimiter="\t")
+            file.close()
+
         location = self.data_buffer.location
         name = helpers.get_location_basename(location)
         index = self.active_data_index
         if index > self.data_buffer.number_of_measured_parameters:
             self.select_file_name = helpers.InputData("Please select the name of the output file.", default_value=name)
-            new_file_name = helpers.get_location_path(location) + "\\" + name + "_generated_correction"
-            file = open(new_file_name, "w")
-            raw_data = np.transpose(self.displayed_data_set)
-            np.savetxt(file, raw_data, delimiter="\t")
-            file.close()
+            self.select_file_name.submitted.connect(save_matrix)
         elif self.modes["Side-by-side"]:
             helpers.show_error_message("NO, U CANT DO THAT !",
                                        "Creating a matrix file for side by side view is not possible.")
@@ -432,8 +437,6 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        # ################################
-        # NEED REWORK, MAKE BUTTON CLICK CREATE CORRECTED DATA SETS AND ADD THEM TO COMBOBOX FOR SELECTING DATA SET
         self.input = helpers.InputData("Please input the resistance something something to correct your data",
                                        numeric=True)
         self.input.submitted.connect(self.apply_correction)

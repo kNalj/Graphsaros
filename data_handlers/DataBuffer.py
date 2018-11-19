@@ -196,7 +196,7 @@ class DataBuffer(QObject):
 
         :return: NoneType
         """
-        name = self.location + "_matrix"
+        name = self.location + "_matrix_{0}".format(index)
         file = open(name, "w")
         raw_data = np.transpose(self.get_matrix(index))
         np.savetxt(file, raw_data, delimiter="\t")
