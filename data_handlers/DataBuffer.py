@@ -13,6 +13,7 @@ from helpers import is_numeric
 class DataBuffer(QObject):
 
     ready = pyqtSignal()
+    progress = pyqtSignal(object)
 
     def __init__(self, location):
         super().__init__()

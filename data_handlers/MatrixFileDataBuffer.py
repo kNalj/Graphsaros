@@ -47,8 +47,11 @@ class MatrixData(DataBuffer):
 
         :return: list: [len_of_x, len_of_y]
         """
+        self.data["matrix"] = []
         data = np.loadtxt(self.location, dtype=float)
-        self.data["matrix"] = np.transpose(data)
+        transposed = np.transpose(data)
+        self.textual = np.array2string(transposed)
+        self.data["matrix"].append(transposed)
         y, x = np.shape(data)
 
         return [x, y]

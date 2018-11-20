@@ -77,15 +77,20 @@ class QcodesData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             matrices = []
-            for matrix in range(self.number_of_set_parameters,
-                                self.number_of_set_parameters + self.number_of_measured_parameters):
-                matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
+            start_index = self.number_of_set_parameters
+            end_index = self.number_of_set_parameters + self.number_of_measured_parameters
+            x_dimension = self.matrix_dimensions[0]
+            y_dimension = self.matrix_dimensions[1]
+            for matrix in range(start_index, end_index):
+                matrix_data = np.zeros((x_dimension, y_dimension))
                 num_of_elements = np.size(matrix_data)
-                for i in range(self.matrix_dimensions[0]):
-                    for j in range(self.matrix_dimensions[1]):
-                        if i * self.matrix_dimensions[1] + j < num_of_elements:
-                            if len(data) > i * self.matrix_dimensions[1] + j:
-                                matrix_data[i][j] = data[i * self.matrix_dimensions[1] + j][matrix]
+                for i in range(x_dimension):
+                    for j in range(y_dimension):
+                        if i * y_dimension + j < num_of_elements:
+                            if len(data) > i * y_dimension + j:
+                                matrix_data[i][j] = data[i * y_dimension + j][matrix]
+                                self.progress.emit(((y_dimension * i + j) / (x_dimension * y_dimension)) /
+                                                   (end_index - matrix))
                             else:
                                 pass
                                 # matrix_data[i][j] = float("NaN")

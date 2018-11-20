@@ -42,38 +42,16 @@ class Worker(QRunnable):
         """
         # Retrieve args/kwargs here; and fire processing using them
 
-        # if what we want is to repeat this action until a stop is called then True will be passed
-        if self.repeat:
-            # stop requested is a signal used and checked on each iteration of this loop to check if the loop execution
-            # should proceed
-            while not self.stop_requested:
-                try:
-                    result = self.func(*self.args, **self.kwargs)
-                except:
-                    traceback.print_exc()
-                    exctype, value = sys.exc_info()[:2]
-                    self.signals.error.emit((exctype, value, traceback.format_exc()))
-                else:
-                    self.signals.result.emit(result)  # Return the result of the processing
-                finally:
-                    self.signals.finished.emit()  # Done
-                # this time sleep determines how long to wait before continuing with the loop
-                time.sleep(3)
-            else:
-                print("Stop has been requested !")
-        # otherwise if we dont want it to loop, but rather execute just once, then False will be passed and this code
-        # will get executed
+        try:
+            result = self.func(*self.args, **self.kwargs)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            try:
-                result = self.func(*self.args, **self.kwargs)
-            except:
-                traceback.print_exc()
-                exctype, value = sys.exc_info()[:2]
-                self.signals.error.emit((exctype, value, traceback.format_exc()))
-            else:
-                self.signals.result.emit(result)  # Return the result of the processing
-            finally:
-                self.signals.finished.emit()  # Done
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
 
 
 class WorkerSignals(QObject):
