@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidget, QPushButton, QWidget, QTableWidget,\
-    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy
+    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy, QVBoxLayout
 from PyQt5 import QtCore, QtGui
 
 from data_handlers.QtLabDataBuffer import QtLabData
@@ -8,6 +8,8 @@ from data_handlers.MatrixFileDataBuffer import MatrixData
 from BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
 from graphs.LineTrace import LineTrace
+from ThreadWorker import Worker
+from helpers import get_location_basename, ProgressBarWidget
 
 import pyqtgraph as pg
 
@@ -47,6 +49,8 @@ class MainWindow(QMainWindow):
 
         # dict of data sets that have been loaded into the main program
         self.datasets = {}
+
+        self.thread_pool = QtCore.QThreadPool()
 
         # call to a method that builds user interface
         self.init_ui()
@@ -110,6 +114,8 @@ class MainWindow(QMainWindow):
 
         self.mini_plot_items = {"main_subplot": main_subplot}
 
+        self.loading_bars_layout = QVBoxLayout()
+
         # position the elements within the grid layout
         self.grid_layout.addWidget(self.opened_datasets_tablewidget, 0, 0, 1, 3)
         self.grid_layout.addWidget(self.selected_dataset_textbrowser, 1, 0, 3, 1)
@@ -117,6 +123,7 @@ class MainWindow(QMainWindow):
         self.grid_layout.addWidget(self.add_to_list_btn, 2, 1, 1, 2)
         self.grid_layout.addWidget(self.open_dataset_btn, 3, 1, 1, 1)
         self.grid_layout.addWidget(self.exit_btn, 3, 2, 1, 1)
+        self.grid_layout.addLayout(self.loading_bars_layout, 4, 0, 1, 3)
 
         # connect changing a selected set in the table to a method that displays correct data in the text browser and
         # in the mini plot
@@ -201,29 +208,45 @@ class MainWindow(QMainWindow):
         file_dialog = QFileDialog.getOpenFileNames()
 
         for file in file_dialog[0]:
-
-            name = os.path.basename(file)
-            rows = self.opened_datasets_tablewidget.rowCount()
-
+            name = get_location_basename(file)
             with open(file, "r") as current_file:
                 for i, line in enumerate(current_file):
                     if i == 2:
                         if line.strip(" \n") == "":
-                            self.datasets[name] = QtLabData(file)
-                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("QtLab")
+                            buffer = QtLabData(file)
+                            worker = Worker(buffer.prepare_data)
                         elif line.startswith("#"):
-                            self.datasets[name] = QcodesData(file)
-                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("QCoDeS")
+                            buffer = QcodesData(file)
+                            worker = Worker(buffer.prepare_data)
                         else:
-                            self.datasets[name] = MatrixData(file)
-                            self.datasets[name].ready.connect(self.make_add_to_table(self.datasets[name]))
                             type_item = QTableWidgetItem("Matrix")
-                        self.opened_datasets_tablewidget.setItem(rows, 3, type_item)
+                            buffer = MatrixData(file)
+                            worker = Worker(buffer.prepare_data)
+
+                        progress_bar = self.add_progress_widget(buffer)
+                        buffer.progress.connect(lambda checked: self.get_progress(checked, progress_bar))
+                        self.datasets[name] = buffer
+                        buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
+                        worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
+                                                                                         type_item))
+                        self.thread_pool.start(worker)
 
                         break
-            self.add_buffer_to_table(self.datasets[name])
+
+    def add_progress_widget(self, buffer):
+        progress_bar = ProgressBarWidget(buffer.location)
+        progress_bar.finished.connect(self.remove_progress_widget)
+        self.loading_bars_layout.addWidget(progress_bar)
+
+        return progress_bar
+
+    def remove_progress_widget(self, widget):
+        widget.deleteLater()
+
+    def get_progress(self, progress, progress_bar):
+        progress_bar.setValue(progress*100)
 
     def make_add_to_table(self, buffer):
         """
@@ -236,28 +259,28 @@ class MainWindow(QMainWindow):
             self.add_buffer_to_table(buffer)
         return add_to_table
 
-    def add_buffer_to_table(self, buffer):
+    def add_buffer_to_table(self, buffer, item_type=None):
         """
         Actual method that creates a row in the table in the main window and adds the data buffer to that table.
 
         :param buffer: DataBuffer(): instance of data buffer that is being added to the table in the main window
+        :param item_type: string: string that is added to table to display type of the buffer in that row
         :return: NoneType
         """
         if buffer.is_data_ready():
             name = os.path.basename(buffer.get_location())
             rows = self.opened_datasets_tablewidget.rowCount()
             self.opened_datasets_tablewidget.insertRow(rows)
-            name_item = QTableWidgetItem(name)
-            name_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-            self.opened_datasets_tablewidget.setItem(rows, 0, name_item)
+            table_item = QTableWidgetItem(name)
+            table_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            self.opened_datasets_tablewidget.setItem(rows, 0, table_item)
             location_item = QTableWidgetItem(buffer.get_location())
             location_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
             self.opened_datasets_tablewidget.setItem(rows, 1, location_item)
             delete_current_file_btn = QPushButton("Delete")
-            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name_item))
+            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name))
             self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
-        else:
-            print("WHY")
+            self.opened_datasets_tablewidget.setItem(rows, 3, item_type)
 
     def display_dataset(self):
         """
@@ -392,7 +415,7 @@ class MainWindow(QMainWindow):
         :return: NoneType
         """
         for path, buffer in buffers.items():
-            self.add_buffer_to_table(buffer)
+            self.add_buffer_to_table(buffer, QTableWidgetItem(buffer.string_type))
             name = os.path.basename(buffer.get_location())
             self.datasets[name] = buffer
 

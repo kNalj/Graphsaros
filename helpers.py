@@ -1,16 +1,12 @@
 from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
     QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import pyqtSignal
 
-
-import numpy as np
 import os
 import time
 import ntpath
 import sys
-import json
-import graphs
 
 
 def split_location_string(location: str):
@@ -92,17 +88,21 @@ def frange(start, end, step):
         start += step
 
 
-class ProgressBarWidget(QDialog):
+class ProgressBarWidget(QWidget):
 
-    def __init__(self):
+    finished = pyqtSignal(object)
+
+    def __init__(self, title):
         super().__init__()
+
+        self.title = title
 
         self.init_ui()
         self.show()
 
     def init_ui(self):
 
-        self.setWindowTitle("Procesing . . .")
+        self.setWindowTitle("Loading {}".format(self.title))
         self.setGeometry(200, 200, 200, 50)
         self.grid_layout = QGridLayout()
         self.progressBar = QProgressBar()
@@ -111,6 +111,8 @@ class ProgressBarWidget(QDialog):
 
     def setValue(self, val):  # Sets value
         self.progressBar.setProperty("value", val)
+        if val == 100:
+            self.finished.emit(self)
 
 
 class EditAxisWidget(QWidget):
@@ -429,7 +431,7 @@ class InputData(QWidget):
 def main():
 
     app = QApplication(sys.argv)
-    ex = ProgressBarWidget()
+    ex = ProgressBarWidget("sirnica")
     for i in range(0, 100):
         time.sleep(0.05)
         ex.setValue(((i + 1) / 100) * 100)
