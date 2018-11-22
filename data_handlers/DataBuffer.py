@@ -45,6 +45,8 @@ class DataBuffer(QObject):
         # Textual representetion of data set. Enables wuick overview of the data in the main window
         self.textual = None
 
+        self.string_type = ""
+
         # list of values containing number of steps for x and y dimensions
         self.matrix_dimensions = None
 

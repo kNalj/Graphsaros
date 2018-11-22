@@ -23,10 +23,12 @@ class QcodesData(DataBuffer):
         self.matrix_dimensions = self.calculate_matrix_dimensions()
 
         # get data from the file (read x, y and z data and save it as a member variable)
-        self.data = self.prepare_data()
+        self.data = {}  # self.prepare_data()
 
         # from snapshot.json file get data about names, units, etc. of the each individual axis
         self.axis_values = self.get_axis_data()
+
+        self.string_type = "QCoDeS"
 
     def calculate_matrix_dimensions(self):
         """
@@ -89,14 +91,17 @@ class QcodesData(DataBuffer):
                         if i * y_dimension + j < num_of_elements:
                             if len(data) > i * y_dimension + j:
                                 matrix_data[i][j] = data[i * y_dimension + j][matrix]
-                                self.progress.emit(((y_dimension * i + j) / (x_dimension * y_dimension)) /
-                                                   (end_index - matrix))
+                                self.progress.emit(((matrix - start_index) * x_dimension * y_dimension + i * y_dimension + j) /
+                                                   (self.number_of_measured_parameters * x_dimension * y_dimension))
                             else:
                                 pass
                                 # matrix_data[i][j] = float("NaN")
                 matrices.append(matrix_data)
+            self.data = {"x": x_axis, "y": y_axis, "matrix": matrices}
+            self.progress.emit(1)
             return {"x": x_axis, "y": y_axis, "matrix": matrices}
 
+        self.data = {"x": x_axis, "y": y_axis}
         return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):

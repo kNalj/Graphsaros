@@ -10,7 +10,7 @@ class Worker(QRunnable):
 
     """
 
-    def __init__(self, func, repeat, *args, **kwargs):
+    def __init__(self, func, *args, **kwargs):
         """
         This is a constructor for the worker class, it runs any function passed to it as a separate thread
 
@@ -25,12 +25,6 @@ class Worker(QRunnable):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-
-        self.stop_requested = False
-        if repeat == True:
-            self.repeat = True
-        else:
-            self.repeat = False
 
         # Add the callback to our kwargs
         # kwargs['progress_callback'] = self.signals.progress

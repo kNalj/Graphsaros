@@ -38,6 +38,8 @@ class MatrixData(DataBuffer):
         # measurement])
         self.matrix_dimensions = self.calculate_matrix_dimensions()
 
+        self.string_type = "Matrix"
+
         self.get_axis_data()
 
     def calculate_matrix_dimensions(self):
@@ -48,11 +50,11 @@ class MatrixData(DataBuffer):
         :return: list: [len_of_x, len_of_y]
         """
         self.data["matrix"] = []
-        data = np.loadtxt(self.location, dtype=float)
-        transposed = np.transpose(data)
+        self.raw_data = np.loadtxt(self.location, dtype=float)
+        transposed = np.transpose(self.raw_data)
         self.textual = np.array2string(transposed)
         self.data["matrix"].append(transposed)
-        y, x = np.shape(data)
+        y, x = np.shape(self.raw_data)
 
         return [x, y]
 
@@ -62,7 +64,11 @@ class MatrixData(DataBuffer):
 
         :return:
         """
-        pass
+        if not self.data["matrix"]:
+            transposed = np.transpose(self.raw_data)
+            self.data["matrix"].append(transposed)
+        else:
+            print("Data already exists")
 
     def get_axis_data(self):
         """

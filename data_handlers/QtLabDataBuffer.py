@@ -17,10 +17,12 @@ class QtLabData(DataBuffer):
         super().__init__(location)
 
         self.data = {}
+        self.raw_data = None
         self.matrix_dimensions = self.calculate_matrix_dimensions()
         if self.matrix_dimensions:
-            self.prepare_data()
             self.axis_values = self.get_axis_data()
+
+        self.string_type = "QtLab"
 
     def calculate_matrix_dimensions(self):
         """
@@ -28,22 +30,22 @@ class QtLabData(DataBuffer):
 
         :return: list: [len(x_axis_data), len(y_axis_data)]
         """
-        axis_data = np.loadtxt(self.location, dtype=float)
-        self.textual = np.array2string(axis_data)
-        if len(axis_data) < 2:
+        self.raw_data = np.loadtxt(self.location, dtype=float)
+        self.textual = np.array2string(self.raw_data)
+        if len(self.raw_data) < 2:
             show_error_message("Warning", "Seems like data for file {} is incomplete".format(self.location))
         else:
-            if axis_data[0][1] == axis_data[1][1]:
-                y_axis = pd.unique([value[0] for value in axis_data])
-                x_axis = pd.unique([value[1] for value in axis_data])
+            if self.raw_data[0][1] == self.raw_data[1][1]:
+                y_axis = pd.unique([value[0] for value in self.raw_data])
+                x_axis = pd.unique([value[1] for value in self.raw_data])
                 self.legend[0] = "y"
                 self.legend[1] = "x"
-            elif axis_data[0][0] == axis_data[1][0]:
-                x_axis = pd.unique([value[0] for value in axis_data])
-                y_axis = pd.unique([value[1] for value in axis_data])
+            elif self.raw_data[0][0] == self.raw_data[1][0]:
+                x_axis = pd.unique([value[0] for value in self.raw_data])
+                y_axis = pd.unique([value[1] for value in self.raw_data])
             else:
-                x_axis = [value[0] for value in axis_data]
-                y_axis = [value[1] for value in axis_data]
+                x_axis = [value[0] for value in self.raw_data]
+                y_axis = [value[1] for value in self.raw_data]
                 self.data["x"] = x_axis
                 self.data["y"] = y_axis
                 return [len(x_axis)]
@@ -64,18 +66,23 @@ class QtLabData(DataBuffer):
         else:
             matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
             matrices = []
-            z = np.loadtxt(self.location, dtype=float)
+            z = self.raw_data
             self.number_of_set_parameters = self.get_number_of_dimension() - 1
             self.number_of_measured_parameters = np.shape(z)[1] - self.number_of_set_parameters
+            start_index = self.number_of_set_parameters
+            end_index = self.number_of_set_parameters + self.number_of_measured_parameters
+            x_dimension = self.matrix_dimensions[0]
+            y_dimension = self.matrix_dimensions[1]
             num_of_elements = np.shape(z)[0]
-            for matrix in range(self.number_of_set_parameters,
-                                self.number_of_set_parameters + self.number_of_measured_parameters):
-                for i in range(self.matrix_dimensions[0]):
-                    for j in range(self.matrix_dimensions[1]):
-                        if i * self.matrix_dimensions[1] + j < num_of_elements:
-                            matrix_data[i][j] = z[(i * self.matrix_dimensions[1]) + j][matrix]
+            for matrix in range(start_index, end_index):
+                for i in range(x_dimension):
+                    for j in range(y_dimension):
+                        if i * y_dimension + j < num_of_elements:
+                            matrix_data[i][j] = z[(i * y_dimension) + j][matrix]
+                            self.progress.emit(((y_dimension * i + j) / (x_dimension * y_dimension)) /
+                                               (end_index - matrix))
                 matrices.append(matrix_data)
-
+        self.progress.emit(1)
         self.data["matrix"] = matrices
 
     def get_axis_data(self):
