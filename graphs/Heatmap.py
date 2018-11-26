@@ -4,8 +4,9 @@ import ntpath
 import sys
 import os
 
-from PyQt5.QtWidgets import QAction, QApplication, QPushButton, QGraphicsProxyWidget, QToolBar, QComboBox
+from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSlider, QInputDialog, QSpinBox
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 
 import helpers
 from graphs.BaseGraph import BaseGraph
@@ -173,19 +174,26 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
 
+        # ###############################
+        # ##### Data manipulations ######
+        # ###############################
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
         self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
         self.line_trace_btn.setCheckable(True)
         self.tools.addAction(self.line_trace_btn)
-        self.gaussian_filter_btn = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_filter", self)
-        self.tools.addAction(self.gaussian_filter_btn)
         self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative")
         self.der_x.setCheckable(True)
         self.tools.addAction(self.der_x)
         self.der_y = QAction(QIcon("img/yDer.png"), "yDerivative")
         self.der_y.setCheckable(True)
         self.tools.addAction(self.der_y)
+        self.smoothen_x = QSpinBox()
+        self.smoothen_x.valueChanged.connect(self.smoothening_action)
+        self.tools.addWidget(self.smoothen_x)
+        self.smoothen_y = QSpinBox()
+        self.smoothen_y.valueChanged.connect(self.smoothening_action)
+        self.tools.addWidget(self.smoothen_y)
         self.matrix_selection_combobox = QComboBox()
         for index, matrix in enumerate(self.data_buffer.get_matrix()):
             display_member = "matrix{}".format(index)
@@ -199,6 +207,9 @@ class Heatmap(BaseGraph):
 
         self.tools.addWidget(self.matrix_selection_combobox)
 
+        # ###############################
+        # #### Matrix manipulations #####
+        # ###############################
         self.matrix_manipulation_toolbar = QToolBar("Matrix manipulation")
         self.matrix_manipulation_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(self.matrix_manipulation_toolbar)
@@ -207,6 +218,9 @@ class Heatmap(BaseGraph):
         self.data_correction_action = QAction(QIcon("img/line-chart.png"), "Correct_data", self)
         self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
 
+        # ###############################
+        # #### Window manipulations #####
+        # ###############################
         self.window_toolbar = QToolBar("Window toolbar")
         self.window_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(self.window_toolbar)
@@ -316,7 +330,7 @@ class Heatmap(BaseGraph):
         self.eaw.submitted.connect(self.edit_axis_data)
         self.eaw.show()
 
-    def gaussian_filter_action(self):
+    def smoothening_action(self):
         """
         Following the naming convention set in the base class of the graph widgets this method is called after an action
         in the toolbar called "gaussian_filter" and it gets called when that action is triggered. Method applies
@@ -327,16 +341,11 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        if self.display != "gauss":
-            self.plt_data_gauss = pg.gaussianFilter(self.active_data, (2, 2))
-            self.plot_elements["img"].setImage(self.plt_data_gauss)
-            self.last_used_data = self.active_data
-            self.active_data = self.plt_data_gauss
-            self.display = "gauss"
-        else:
-            self.plot_elements["img"].setImage(self.last_used_data)
-            self.display = "normal"
-            self.active_data = self.last_used_data
+        x = self.smoothen_x.value()
+        y = self.smoothen_y.value()  # apply this to displayed set, instead of this below
+
+        smoothened_data = pg.gaussianFilter(self.active_data, (x, y))
+        self.change_displayed_data_set(smoothened_data)
 
     def lorentzian_filter_action(self):
         """
@@ -357,7 +366,7 @@ class Heatmap(BaseGraph):
             user_input_name = data
             new_file_location = helpers.get_location_path(location) + "\\" + user_input_name + "_generated_correction"
             file = open(new_file_location, "w")
-            raw_data = np.transpose(self.active_data)
+            raw_data = np.transpose(self.displayed_data_set)
             np.savetxt(file, raw_data, delimiter="\t")
             file.close()
 
