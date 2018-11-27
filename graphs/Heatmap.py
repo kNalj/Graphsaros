@@ -179,21 +179,7 @@ class Heatmap(BaseGraph):
         # ###############################
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
-        self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
-        self.line_trace_btn.setCheckable(True)
-        self.tools.addAction(self.line_trace_btn)
-        self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative")
-        self.der_x.setCheckable(True)
-        self.tools.addAction(self.der_x)
-        self.der_y = QAction(QIcon("img/yDer.png"), "yDerivative")
-        self.der_y.setCheckable(True)
-        self.tools.addAction(self.der_y)
-        self.smoothen_x = QSpinBox()
-        self.smoothen_x.valueChanged.connect(self.smoothening_action)
-        self.tools.addWidget(self.smoothen_x)
-        self.smoothen_y = QSpinBox()
-        self.smoothen_y.valueChanged.connect(self.smoothening_action)
-        self.tools.addWidget(self.smoothen_y)
+
         self.matrix_selection_combobox = QComboBox()
         for index, matrix in enumerate(self.data_buffer.get_matrix()):
             display_member = "matrix{}".format(index)
@@ -204,8 +190,22 @@ class Heatmap(BaseGraph):
         self.matrix_selection_combobox.addItem(display_member, value_member)
         self.matrix_selection_combobox.currentIndexChanged.connect(lambda: self.change_active_set(
             index=self.matrix_selection_combobox.currentIndex()))
-
         self.tools.addWidget(self.matrix_selection_combobox)
+        self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
+        self.line_trace_btn.setCheckable(True)
+        self.tools.addAction(self.line_trace_btn)
+        self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative")
+        self.der_x.setCheckable(True)
+        self.tools.addAction(self.der_x)
+        self.der_y = QAction(QIcon("img/yDer.png"), "yDerivative")
+        self.der_y.setCheckable(True)
+        self.tools.addAction(self.der_y)
+        self.smoothen_x = QSpinBox()
+        self.smoothen_x.valueChanged.connect(self.smoothing_action)
+        self.tools.addWidget(self.smoothen_x)
+        self.smoothen_y = QSpinBox()
+        self.smoothen_y.valueChanged.connect(self.smoothing_action)
+        self.tools.addWidget(self.smoothen_y)
 
         # ###############################
         # #### Matrix manipulations #####
@@ -330,22 +330,13 @@ class Heatmap(BaseGraph):
         self.eaw.submitted.connect(self.edit_axis_data)
         self.eaw.show()
 
-    def smoothening_action(self):
+    def smoothing_action(self):
         """
-        Following the naming convention set in the base class of the graph widgets this method is called after an action
-        in the toolbar called "gaussian_filter" and it gets called when that action is triggered. Method applies
-        gaussian filter to your dataset and displays it.
-
-        If the gaussian filter data is the active data, then upon calling this method the dataset is set back to the
-        default dataset. (Works like ON / OFF switch)
+        TODO: Insert description
 
         :return: NoneType
         """
-        x = self.smoothen_x.value()
-        y = self.smoothen_y.value()  # apply this to displayed set, instead of this below
-
-        smoothened_data = pg.gaussianFilter(self.active_data, (x, y))
-        self.change_displayed_data_set(smoothened_data)
+        self.naive_smoothing()
 
     def lorentzian_filter_action(self):
         """
@@ -449,6 +440,58 @@ class Heatmap(BaseGraph):
         self.input = helpers.InputData("Please input the resistance something something to correct your data",
                                        numeric=True)
         self.input.submitted.connect(self.apply_correction)
+
+    def naive_smoothing(self):
+        """
+        TODO: Insert description
+
+        :return:
+        """
+
+        x = self.smoothen_x.value()
+        y = self.smoothen_y.value()
+        data = self.active_data
+
+        vertical_shift = np.copy(data)
+        horizontal_shift = np.copy(np.transpose(data))
+        for i, axis in enumerate([x, y]):
+            for shift_value in range(-axis, axis + 1):
+                if shift_value != 0:
+                    if i:
+                        temp = helpers.shift(np.transpose(data), shift_value, 0)
+                        np.add(horizontal_shift, temp, horizontal_shift)
+                    else:
+                        temp = helpers.shift(data, shift_value, 0)
+                        np.add(vertical_shift, temp, vertical_shift)
+        limit_vertical = len(vertical_shift) - 1
+        limit_horizontal = len(horizontal_shift) - 1
+        for index, row in enumerate(vertical_shift):
+            low = index - y if index - y >= 0 else 0
+            high = index + y if index + y <= limit_vertical else limit_vertical
+            division_number = high - low + 1
+            row = row / division_number
+            vertical_shift[index] = row
+        for index, column in enumerate(horizontal_shift):
+            low = index - x if index - x >= 0 else 0
+            high = index + x if index + x <= limit_horizontal else limit_horizontal
+            division_number = high - low + 1
+            column = column / division_number
+            horizontal_shift[index] = column
+        result = (vertical_shift + np.transpose(horizontal_shift)) / 2
+
+        self.change_displayed_data_set(result)
+
+    def gaussian_smoothing(self):
+        """
+        TODO: Insert description
+
+        :return:
+        """
+        x = self.smoothen_x.value()
+        y = self.smoothen_y.value()  # apply this to displayed set, instead of this below
+
+        smoothened_data = pg.gaussianFilter(self.active_data, (x, y))
+        self.change_displayed_data_set(smoothened_data)
 
     """
     ########################

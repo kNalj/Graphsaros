@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 import os
 import time
 import ntpath
+import numpy as np
 import sys
 
 
@@ -86,6 +87,19 @@ def frange(start, end, step):
     while start < end:
         yield start
         start += step
+
+
+def shift(arr, num, fill_value=0):
+    result = np.empty_like(arr)
+    if num > 0:
+        result[:num] = fill_value
+        result[num:] = arr[:-num]
+    elif num < 0:
+        result[num:] = fill_value
+        result[:num] = arr[-num:]
+    else:
+        result = arr
+    return result
 
 
 class ProgressBarWidget(QWidget):
