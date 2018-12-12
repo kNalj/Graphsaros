@@ -1,5 +1,5 @@
 import pyqtgraph as pg
-from math import degrees,radians, atan2, cos, sin, sqrt
+from math import degrees,radians, atan2, cos, sin, sqrt, tan
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtWidgets import QMenu, QAction, QWidgetAction, QSlider
 
@@ -179,9 +179,30 @@ class LineROI(pg.LineSegmentROI):
 
         self.align_points()
 
-    def get_angle_from_points(self, p1, p2):
+    def get_angle_from_points(self, p1=None, p2=None):
+        """
+        Method that calculates angle between a line connecting p1 and p2, and the positive side of the x axis.
+        If parameters p1 and p2 are not given to the method, it takes end points of the ROI as p1 and p2 (calculates
+        the angle of ROI).
+
+        :param p1: list [x, y]: starting point of the line (defined by x and y coordinates)
+        :param p2: list [x, y]: ending point of the line (defined by x and y coordinates)
+        :return: float: angle between line and positive side of the x axis
+        """
+
+        if (p1 is None) and (p2 is None):
+            point1 = self.getSceneHandlePositions(0)
+            _, scene_coords = point1
+            start_coords = self.mapSceneToParent(scene_coords)
+            p1 = [start_coords.x(), start_coords.y()]
+            point2 = self.getSceneHandlePositions(1)
+            _, scene_coords = point2
+            end_coords = self.mapSceneToParent(scene_coords)
+            p2 = [end_coords.x(), end_coords.y()]
+
         x_diff = p2[0] - p1[0]
         y_diff = p2[1] - p1[1]
+
         return degrees(atan2(y_diff, x_diff))
 
     def set_angle(self):
