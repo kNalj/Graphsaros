@@ -1,5 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
+from math import degrees,radians, atan2, cos, sin, sqrt, tan
 import ntpath
 import sys
 import os
@@ -152,16 +153,32 @@ class Heatmap(BaseGraph):
         central_item.nextRow()
         line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
-        legend = {"left": "z", "bottom": "x"}
+        line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
+        legend = {"left": "z", "bottom": "y", "top": "x"}
         for axis in ["left", "bottom"]:
             ax = line_trace_graph.getAxis(axis)
+            ax.show()
             ax.setPen((60, 60, 60))
             axis_data = self.data_buffer.axis_values[legend[axis]]
             label_style = {'font-size': '9pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+
+        line_trace_graph.layout.removeItem(
+            line_trace_graph.getAxis("top")
+        )
+        extra_view_box = pg.ViewBox()
+        extra_axis = pg.AxisItem("top")
+        extra_axis.setPen((60, 60, 60))
+        axis_data = self.data_buffer.axis_values[legend["top"]]
+        label_style = {'font-size': '9pt'}
+        extra_axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+        line_trace_graph.layout.addItem(extra_axis, 0, 1)
+        extra_axis.linkToView(extra_view_box)
+        extra_view_box.setXLink(line_trace_graph.vb)
+
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
-                              "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph,
-                              "iso": iso, "isoLine": isoLine}
+                              "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
+                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -295,10 +312,13 @@ class Heatmap(BaseGraph):
 
             if self.line_segment_roi["ROI"] is None:
                 # ROI instantiation
-                line_segmet_roi = LineROI(positions=([self.data_buffer.get_x_axis_values()[0],
-                                                      self.data_buffer.get_y_axis_values()[0]],
-                                                     [self.data_buffer.get_x_axis_values()[-1],
-                                                      self.data_buffer.get_y_axis_values()[0]]),
+                x0 = min(self.data_buffer.get_x_axis_values())
+                y0 = min(self.data_buffer.get_y_axis_values())
+
+                x1 = min(self.data_buffer.get_x_axis_values())
+                y1 = max(self.data_buffer.get_y_axis_values())
+
+                line_segmet_roi = LineROI(positions=([x0, y0], [x1, y1]),
                                           pos=(0, 0),
                                           pen=(5, 9),
                                           edges=[self.data_buffer.get_x_axis_values()[0],
@@ -379,7 +399,7 @@ class Heatmap(BaseGraph):
 
         :return:
         """
-        data = self.active_data
+        data = self.displayed_data_set
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         first_point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
@@ -520,7 +540,7 @@ class Heatmap(BaseGraph):
         pos = evt
         if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
-            string = "[Position: {}, {}]".format(int(mouse_point.x()), int(mouse_point.y()))
+            string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
 
     def update_line_trace_plot(self):
@@ -539,7 +559,7 @@ class Heatmap(BaseGraph):
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        new_plot.translate(coords.x(), 0)
+        new_plot.translate(coords.y(), 0)
         # scale_x, scale_y = self.data_buffer.get_scale()
         # new_plot.scale(scale_x, 1)
 
@@ -550,8 +570,17 @@ class Heatmap(BaseGraph):
         _, scene_coords = point2
         end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
 
+        line_trace_graph.setXRange(start_coords.y(), end_coords.y())
+
+        """
+        This might also work, but then axis goes in wrong direction
+        if end_coords.x() > start_coords.x():
+            scale = end_coords.x() - start_coords.x()
+        else:
+            scale = end_coords.x() - start_coords.x()"""
+
         # had the scale figured out wrong, this is the correct way of doing it
-        scale = end_coords.x() - start_coords.x()
+        scale = end_coords.y() - start_coords.y()
         num_of_points = (len(selected) - 1) or 1
         new_plot.scale(scale/num_of_points, 1)
 
@@ -607,6 +636,75 @@ class Heatmap(BaseGraph):
                 axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])
                 # axis.setTickSpacing(major=float(sides["ticks"]["major"]),
                 #                     minor=float(sides["ticks"]["minor"]))
+
+    def update_extra_axis_range(self):
+        """
+        TODO: Check what orientation of the X axis in the extra view box should be
+        TODO: viewBox.invertX(True) if p1.x() > p2.x()
+
+        Updates extra axis (positioned on top of the line trace graph) when the main x axis of line trace graph changes
+        its value (dragged by user).
+
+        :return:
+        """
+        if self.modes["ROI"]:
+            point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+            _, scene_coords = point1
+            start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+            point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+            _, scene_coords = point2
+            end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+
+            # calcualate distances between points (used to calculate angle of ROI)
+            x_diff = end_coords.x() - start_coords.x()
+            y_diff = end_coords.y() - start_coords.y()
+
+            angle = atan2(y_diff, x_diff)
+
+            # atan2 calculates angle from given distances between points, tan calculates tangent of given angle
+            angle_tan = tan(angle)
+
+            # padded start of the x axis of line trace graph
+            start_value_x_axis = self.plot_elements["line_trace_graph"].vb.state["viewRange"][0][0]
+            # padded end of the x axis of line trace graph
+            end_value_x_axis = self.plot_elements["line_trace_graph"].vb.state["viewRange"][0][1]
+
+            # pyqtgraph forces padding in viewboxes (0.02 - 0.1 of total data range)
+            # in the end i did not need this padding, but lets leave it here i might need it later
+            padding = self.plot_elements["line_trace_graph"].vb.suggestPadding(0)
+
+            if (start_coords.y() > start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+                delta_x_start = start_coords.y() - start_value_x_axis
+                delta_y_start = delta_x_start / angle_tan
+                delta_x_end = end_value_x_axis - end_coords.y()
+                delta_y_end = delta_x_end / angle_tan
+                start_value_extra_axis = start_coords.x() - delta_y_start
+                end_value_extra_axis = end_coords.x() + delta_y_end
+            elif (start_coords.y() < start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+                delta_x_start = start_value_x_axis - start_coords.y()
+                delta_y_start = delta_x_start / angle_tan
+                delta_x_end = end_value_x_axis - end_coords.y()
+                delta_y_end = delta_x_end / angle_tan
+                start_value_extra_axis = start_coords.x() + delta_y_start
+                end_value_extra_axis = end_coords.x() + delta_y_end
+            elif (start_coords.y() > start_value_x_axis) and (end_coords.y() > end_value_x_axis):
+                delta_x_start = start_coords.y() - start_value_x_axis
+                delta_y_start = delta_x_start / angle_tan
+                delta_x_end = end_coords.y() - end_value_x_axis
+                delta_y_end = delta_x_end / angle_tan
+                start_value_extra_axis = start_coords.x() - delta_y_start
+                end_value_extra_axis = end_coords.x() - delta_y_end
+            else:
+                delta_x_start = start_value_x_axis - start_coords.y()
+                delta_y_start = delta_x_start / angle_tan
+                delta_x_end = end_coords.y() - end_value_x_axis
+                delta_y_end = delta_x_end / angle_tan
+                start_value_extra_axis = start_coords.x() + delta_y_start
+                end_value_extra_axis = end_coords.x() - delta_y_end
+
+            self.plot_elements["extra_view_box"].setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
+        else:
+            pass
 
 
 def main():
