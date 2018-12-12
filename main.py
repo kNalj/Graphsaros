@@ -278,7 +278,7 @@ class MainWindow(QMainWindow):
             location_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
             self.opened_datasets_tablewidget.setItem(rows, 1, location_item)
             delete_current_file_btn = QPushButton("Delete")
-            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(name))
+            delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(location_item))
             self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
             self.opened_datasets_tablewidget.setItem(rows, 3, item_type)
 
@@ -311,16 +311,16 @@ class MainWindow(QMainWindow):
         """
         print(file_type)
 
-    def make_delete_file_from_list(self, name: str):
+    def make_delete_file_from_list(self, item):
         """
         Function factory that creates and returns a function that removes a databuffer from databuffer table
 
-        :param name: name of the data buffer ( one used in the table )
+        :param item: item to be removed
         :return: Pointer to a function that removes a row from the table
         """
 
         def delete_file_from_list():
-            self.opened_datasets_tablewidget.removeRow(self.opened_datasets_tablewidget.row(name))
+            self.opened_datasets_tablewidget.removeRow(self.opened_datasets_tablewidget.row(item))
 
         return delete_file_from_list
 
