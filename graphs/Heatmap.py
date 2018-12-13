@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
-from math import degrees,radians, atan2, cos, sin, sqrt, tan
+from math import degrees, radians, atan2, cos, sin, sqrt, tan
 import ntpath
 import sys
 import os
@@ -325,20 +325,36 @@ class Heatmap(BaseGraph):
                                                  self.data_buffer.get_x_axis_values()[-1],
                                                  self.data_buffer.get_y_axis_values()[0],
                                                  self.data_buffer.get_y_axis_values()[-1]])
+                print(line_segmet_roi.getHandles())
+                self.label_a = pg.TextItem("[A]", color=(255, 255, 255))
+                self.label_a.setAnchor((0, 1))
+                self.label_a.setParentItem(line_segmet_roi)
+                self.label_a.setPos(x0, y0)
+                self.label_b = pg.TextItem("[B]", color=(255, 255, 255))
+                self.label_b.setAnchor((0, 0))
+                self.label_a.setParentItem(line_segmet_roi)
+                self.label_b.setPos(x1, y1)
+
                 # connect signal to a slot
                 line_segmet_roi.sigRegionChanged.connect(self.update_line_trace_plot)
                 # make a reference to this ROI so i can use it later
                 self.line_segment_roi["ROI"] = line_segmet_roi
                 # add the ROI to main subplot
                 self.plot_elements["main_subplot"].addItem(line_segmet_roi)
-                # connect signal to a slot, this signa
+                self.plot_elements["main_subplot"].addItem(self.label_a)
+                self.plot_elements["main_subplot"].addItem(self.label_b)
+                # connect signal to a slot, this signal
                 line_segmet_roi.aligned.connect(self.update_line_trace_plot)
             else:
                 self.line_segment_roi["ROI"].show()
+                self.label_a.show()
+                self.label_b.show()
         else:
             self.modes["ROI"] = False
             self.plot_elements["line_trace_graph"].clear()
             self.line_segment_roi["ROI"].hide()
+            self.label_a.hide()
+            self.label_b.hide()
 
     def font_action(self):
         """
@@ -551,6 +567,8 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
 
+        self.update_point_label_positions()
+
         data = self.displayed_data_set
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
@@ -559,9 +577,10 @@ class Heatmap(BaseGraph):
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        new_plot.translate(coords.y(), 0)
+
         # scale_x, scale_y = self.data_buffer.get_scale()
         # new_plot.scale(scale_x, 1)
+        # NOTE: This is incorrect way of doing the scale
 
         point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point1
@@ -570,7 +589,30 @@ class Heatmap(BaseGraph):
         _, scene_coords = point2
         end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
 
-        line_trace_graph.setXRange(start_coords.y(), end_coords.y())
+        if (180 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+            self.plot_elements["line_trace_graph"].getAxis("bottom").hide()
+            self.plot_elements["extra_axis"].show()
+            new_plot.translate(coords.x(), 0)
+            line_trace_graph.setXRange(start_coords.x(), end_coords.x())
+            scale = end_coords.x() - start_coords.x()
+        elif abs(self.line_segment_roi["ROI"].get_angle_from_points()) < 0.0000001:
+            self.plot_elements["line_trace_graph"].getAxis("bottom").hide()
+            self.plot_elements["extra_axis"].show()
+            new_plot.translate(coords.x(), 0)
+            line_trace_graph.setXRange(start_coords.x(), end_coords.x())
+            scale = end_coords.x() - start_coords.x()
+        elif abs(90 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+            self.plot_elements["line_trace_graph"].getAxis("bottom").show()
+            self.plot_elements["extra_axis"].hide()
+            new_plot.translate(coords.y(), 0)
+            line_trace_graph.setXRange(start_coords.y(), end_coords.y())
+            scale = end_coords.y() - start_coords.y()
+        else:
+            self.plot_elements["line_trace_graph"].getAxis("bottom").show()
+            self.plot_elements["extra_axis"].show()
+            new_plot.translate(coords.y(), 0)
+            line_trace_graph.setXRange(start_coords.y(), end_coords.y())
+            scale = end_coords.y() - start_coords.y()
 
         """
         This might also work, but then axis goes in wrong direction
@@ -579,8 +621,6 @@ class Heatmap(BaseGraph):
         else:
             scale = end_coords.x() - start_coords.x()"""
 
-        # had the scale figured out wrong, this is the correct way of doing it
-        scale = end_coords.y() - start_coords.y()
         num_of_points = (len(selected) - 1) or 1
         new_plot.scale(scale/num_of_points, 1)
 
@@ -639,15 +679,15 @@ class Heatmap(BaseGraph):
 
     def update_extra_axis_range(self):
         """
-        TODO: Check what orientation of the X axis in the extra view box should be
-        TODO: viewBox.invertX(True) if p1.x() > p2.x()
-
         Updates extra axis (positioned on top of the line trace graph) when the main x axis of line trace graph changes
         its value (dragged by user).
 
-        :return:
+        :return: NoneType
         """
+
+        # if ROI is visible do the adjustments
         if self.modes["ROI"]:
+            # get starting and ending point of the ROI
             point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
             _, scene_coords = point1
             start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -659,56 +699,109 @@ class Heatmap(BaseGraph):
             x_diff = end_coords.x() - start_coords.x()
             y_diff = end_coords.y() - start_coords.y()
 
+            # calculate angle of ROI (result is in radians)
             angle = atan2(y_diff, x_diff)
 
-            # atan2 calculates angle from given distances between points, tan calculates tangent of given angle
+            # calculate tangent of the angle
             angle_tan = tan(angle)
 
-            # padded start of the x axis of line trace graph
-            start_value_x_axis = self.plot_elements["line_trace_graph"].vb.state["viewRange"][0][0]
+            # extra axis is linked to this view box
+            view_box = self.plot_elements["line_trace_graph"].vb
+
+            # padded start of the x axis of line trace graph (pyqtgraph by default adds a padding to plots)
+            # need to get the starting point of axis (not starting point of data that is being ploted)
+            start_value_x_axis = view_box.state["viewRange"][0][0]
             # padded end of the x axis of line trace graph
-            end_value_x_axis = self.plot_elements["line_trace_graph"].vb.state["viewRange"][0][1]
+            end_value_x_axis = view_box.state["viewRange"][0][1]
 
             # pyqtgraph forces padding in viewboxes (0.02 - 0.1 of total data range)
             # in the end i did not need this padding, but lets leave it here i might need it later
-            padding = self.plot_elements["line_trace_graph"].vb.suggestPadding(0)
+            padding = view_box.suggestPadding(0)
 
-            if (start_coords.y() > start_value_x_axis) and (end_coords.y() < end_value_x_axis):
-                delta_x_start = start_coords.y() - start_value_x_axis
-                delta_y_start = delta_x_start / angle_tan
-                delta_x_end = end_value_x_axis - end_coords.y()
-                delta_y_end = delta_x_end / angle_tan
-                start_value_extra_axis = start_coords.x() - delta_y_start
-                end_value_extra_axis = end_coords.x() + delta_y_end
-            elif (start_coords.y() < start_value_x_axis) and (end_coords.y() < end_value_x_axis):
-                delta_x_start = start_value_x_axis - start_coords.y()
-                delta_y_start = delta_x_start / angle_tan
-                delta_x_end = end_value_x_axis - end_coords.y()
-                delta_y_end = delta_x_end / angle_tan
-                start_value_extra_axis = start_coords.x() + delta_y_start
-                end_value_extra_axis = end_coords.x() + delta_y_end
-            elif (start_coords.y() > start_value_x_axis) and (end_coords.y() > end_value_x_axis):
-                delta_x_start = start_coords.y() - start_value_x_axis
-                delta_y_start = delta_x_start / angle_tan
-                delta_x_end = end_coords.y() - end_value_x_axis
-                delta_y_end = delta_x_end / angle_tan
-                start_value_extra_axis = start_coords.x() - delta_y_start
-                end_value_extra_axis = end_coords.x() - delta_y_end
+            # when line is vertical, extra axis (positioned on the top) should not be shown because its range is 0
+            # begining and the end of the data is on the same point
+            if abs(90 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                pass
+            # when line is horizontal set the same values as bottom axis. This is because in case when ROI line is
+            # horizontal i set the bottom axis to reflect x range from the main plot (this simplifies this process)
+            # Orientation of the line in this case is [B]o--------------o[A]
+            elif (180 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                start_value_extra_axis = start_value_x_axis
+                end_value_extra_axis = end_value_x_axis
+                self.plot_elements["extra_view_box"].setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
+            # same as above, horizontal, but like this -> [A]o-------------o[B]
+            elif abs(self.line_segment_roi["ROI"].get_angle_from_points()) < 0.0000001:
+                start_value_extra_axis = start_value_x_axis
+                end_value_extra_axis = end_value_x_axis
+                self.plot_elements["extra_view_box"].setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
+            # In all other cases both axes need to be shown. In this case take the value of the edges from x axis
+            # which is actualy y axis in the main plot, and calculate what is the value of x on main plot for given y
+            # set calculated values as end values of extra axis (one positioned on top of line trace graph)
+            else:  # NOTE: This has 4 different options
+                # Option 1: Both starting and ending point of the ROI are visible on line trace graph
+                if (start_coords.y() > start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+                    delta_x_start = start_coords.y() - start_value_x_axis
+                    delta_y_start = delta_x_start / angle_tan
+                    delta_x_end = end_value_x_axis - end_coords.y()
+                    delta_y_end = delta_x_end / angle_tan
+                    start_value_extra_axis = start_coords.x() - delta_y_start
+                    end_value_extra_axis = end_coords.x() + delta_y_end
+                # Option 2: starting point has been dragged outside of the visible range on line trace graph
+                elif (start_coords.y() < start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+                    delta_x_start = start_value_x_axis - start_coords.y()
+                    delta_y_start = delta_x_start / angle_tan
+                    delta_x_end = end_value_x_axis - end_coords.y()
+                    delta_y_end = delta_x_end / angle_tan
+                    start_value_extra_axis = start_coords.x() + delta_y_start
+                    end_value_extra_axis = end_coords.x() + delta_y_end
+                # Option 3: ending point has been draged outside of the visible range of line trace graph
+                elif (start_coords.y() > start_value_x_axis) and (end_coords.y() > end_value_x_axis):
+                    delta_x_start = start_coords.y() - start_value_x_axis
+                    delta_y_start = delta_x_start / angle_tan
+                    delta_x_end = end_coords.y() - end_value_x_axis
+                    delta_y_end = delta_x_end / angle_tan
+                    start_value_extra_axis = start_coords.x() - delta_y_start
+                    end_value_extra_axis = end_coords.x() - delta_y_end
+                # Option 4: graph has been zoomed in and neither starting or ending point are visible on the line trace
+                # graph
+                else:
+                    delta_x_start = start_value_x_axis - start_coords.y()
+                    delta_y_start = delta_x_start / angle_tan
+                    delta_x_end = end_coords.y() - end_value_x_axis
+                    delta_y_end = delta_x_end / angle_tan
+                    start_value_extra_axis = start_coords.x() + delta_y_start
+                    end_value_extra_axis = end_coords.x() - delta_y_end
+
+                self.plot_elements["extra_view_box"].setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
+            # In some cases extra axis (positioned on top of line trace graph) needs to be inverted, otherwise it
+            # shows incorrect data
+            if abs(degrees(angle)) > 90:
+                if not self.plot_elements["extra_view_box"].xInverted():
+                    self.plot_elements["extra_view_box"].invertX(True)
             else:
-                delta_x_start = start_value_x_axis - start_coords.y()
-                delta_y_start = delta_x_start / angle_tan
-                delta_x_end = end_coords.y() - end_value_x_axis
-                delta_y_end = delta_x_end / angle_tan
-                start_value_extra_axis = start_coords.x() + delta_y_start
-                end_value_extra_axis = end_coords.x() - delta_y_end
-
-            self.plot_elements["extra_view_box"].setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
+                if self.plot_elements["extra_view_box"].xInverted():
+                    self.plot_elements["extra_view_box"].invertX(False)
         else:
             pass
 
+    def update_point_label_positions(self):
+        """
+        Method that moves labels for point A and B of the LineROI when one of them (or both) get moved.
+
+        :return: NoneType
+        """
+        point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point1
+        coords_a = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = point2
+        coords_b = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+
+        self.label_a.setPos(coords_a.x(), coords_a.y())
+        self.label_b.setPos(coords_b.x(), coords_b.y())
+
 
 def main():
-
     app = QApplication(sys.argv)
 
     # Daniels 3D measurement example in QCoDeS
