@@ -102,6 +102,7 @@ class QcodesData(DataBuffer):
             return {"x": x_axis, "y": y_axis, "matrix": matrices}
 
         self.data = {"x": x_axis, "y": y_axis}
+        self.progress.emit(1)
         return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):
