@@ -209,12 +209,18 @@ class Edit3DAxisWidget(EditAxisWidget):
             layout.addWidget(plot_label)
             self.elements[element] = {}
 
-            for side in ('left', 'bottom'):
+            if element == "line_trace_graph":
+                axes = ["left", "bottom", "top"]
+            else:
+                axes = ["left", "bottom"]
+            for side in axes:
                 self.elements[element][side] = {}
                 # this one contains all elements of one axis of one plot
                 v_layout = QVBoxLayout()
-
-                axis = self.window.plot_elements[element].getAxis(side)
+                if side != "top":
+                    axis = self.window.plot_elements[element].getAxis(side)
+                else:
+                    axis = self.window.plot_elements["extra_axis"]
 
                 plot_axis_text = axis.labelText
                 plot_text = QLineEdit(plot_axis_text)
@@ -244,6 +250,7 @@ class Edit3DAxisWidget(EditAxisWidget):
                 v_layout.addWidget(plot_font_size)
                 v_layout.addLayout(tick_h_layout)
                 h_layout.addLayout(v_layout)
+
 
             box.setLayout(h_layout)
             layout.addWidget(box)
@@ -302,11 +309,15 @@ class Edit3DAxisWidget(EditAxisWidget):
         """
 
         data = {"main_subplot": {"left": {}, "bottom": {}},
-                "line_trace_graph": {"left": {}, "bottom": {}},
+                "line_trace_graph": {"left": {}, "bottom": {}, "top": {}},
                 "histogram": {"name": None, "unit": None, "label_style": None, "ticks": None}}
 
         for element in ["main_subplot", "line_trace_graph"]:
-            for side in ('left', 'bottom'):
+            if element == "line_trace_graph":
+                axes = ["left", "bottom", "top"]
+            else:
+                axes = ["left", "bottom"]
+            for side in axes:
                 data[element][side] = {"name": self.elements[element][side]["label"].text(),
                                        "unit": self.elements[element][side]["unit"].text(),
                                        "label_style": {'font-size': self.elements[element][side]["font_size"].text()},
@@ -395,17 +406,30 @@ class InputData(QWidget):
 
     submitted = pyqtSignal(object)
 
-    def __init__(self, msg, default_value=None, numeric=False):
+    def __init__(self, msg, num_of_fields, default_value=None, numeric=False, placeholders=None):
         super(InputData, self).__init__()
 
         self.display_msg = msg
+
+        self.number_of_input_fields = num_of_fields
 
         self.numeric = numeric
 
         if default_value is not None:
             self.default = default_value
         else:
-            self.default = ""
+            self.default = []
+            for i in range(num_of_fields):
+                self.default.append("")
+
+        if placeholders is not None:
+            self.placeholders = placeholders
+        else:
+            self.placeholders = []
+            for i in range(num_of_fields):
+                self.placeholders.append("Unspecified field")
+
+        self.textboxes = []
 
         self.init_ui()
 
@@ -419,8 +443,13 @@ class InputData(QWidget):
         v_layout = QVBoxLayout()
         self.explanation_text_label = QLabel(self.display_msg)
         v_layout.addWidget(self.explanation_text_label)
-        self.textbox_input_value = QLineEdit(self.default)
-        v_layout.addWidget(self.textbox_input_value)
+        for i in range(self.number_of_input_fields):
+            textbox = QLineEdit(self.default[i])
+            textbox.setPlaceholderText(self.placeholders[i])
+            self.textboxes.append(textbox)
+            v_layout.addWidget(textbox)
+        # self.textbox_input_value = QLineEdit(self.default)
+        # v_layout.addWidget(self.textbox_input_value)
         self.submit_btn = QPushButton("OK")
         self.submit_btn.clicked.connect(self.submit_data)
         v_layout.addWidget(self.submit_btn)
@@ -431,15 +460,18 @@ class InputData(QWidget):
 
     def submit_data(self):
 
-        if self.numeric:
-            if is_numeric(self.textbox_input_value.text()):
-                self.submitted.emit(self.textbox_input_value.text())
-                self.close()
+        send_value = []
+        for i, numeric_required in enumerate(self.numeric):
+            if numeric_required:
+                if is_numeric(self.textboxes[i].text()):
+                    send_value.append(self.textboxes[i].text())
+                else:
+                    show_error_message("Warning", "Input data has to be numeric")
+                    return
             else:
-                show_error_message("Warning", "Input data has to be numeric")
-        else:
-            self.submitted.emit(self.textbox_input_value.text())
-            self.close()
+                send_value.append(self.textboxes[i].text())
+        self.submitted.emit(send_value)
+        self.close()
 
 
 def main():

@@ -284,6 +284,7 @@ class MainWindow(QMainWindow):
 
     def display_dataset(self):
         """
+        TODO: Keep traack of all opened windows separately, currently the older ones are overwritten by newer ones
         A method that opens LineTrace or Heatmap window depending on number of dimension that the selected buffer has.
 
         :return: NoneType
