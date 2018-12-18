@@ -1,13 +1,13 @@
 import pyqtgraph as pg
-from math import degrees,radians, atan2, cos, sin, sqrt, tan
-from PyQt5 import QtGui, QtCore
+from math import degrees, atan2
+from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 from PyQt5.QtWidgets import QMenu, QAction, QWidgetAction, QSlider
 
 from helpers import show_error_message
 
 
 class LineROI(pg.LineSegmentROI):
-    aligned = QtCore.pyqtSignal()
+    aligned = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         self.edges = kwargs["edges"]
@@ -15,11 +15,10 @@ class LineROI(pg.LineSegmentROI):
         super().__init__(*args, **kwargs)
 
         self.temp_line = 0
-        print(self.maxBounds)
 
     # On right-click, raise the context menu
     def mouseClickEvent(self, ev):
-        if ev.button() == QtCore.Qt.RightButton:
+        if ev.button() == Qt.RightButton:
             if self.raiseContextMenu(ev):
                 ev.accept()
 
@@ -31,7 +30,7 @@ class LineROI(pg.LineSegmentROI):
         menu = self.scene().addParentContextMenus(self, menu, ev)
 
         pos = ev.screenPos()
-        menu.popup(QtCore.QPoint(pos.x(), pos.y()))
+        menu.popup(QPoint(pos.x(), pos.y()))
         return True
 
     # This method will be called when this item's _children_ want to raise
@@ -90,7 +89,7 @@ class LineROI(pg.LineSegmentROI):
             # //////////////////////// SLIDER ////////////////////////
             angle = QWidgetAction(self.menu)
             angle_slider = QSlider()
-            angle_slider.setOrientation(QtCore.Qt.Horizontal)
+            angle_slider.setOrientation(Qt.Horizontal)
             angle_slider.setMaximum(3600)
             angle_slider.setValue(1800)
             angle_slider.valueChanged.connect(self.set_angle)
@@ -131,7 +130,7 @@ class LineROI(pg.LineSegmentROI):
             return
 
     def add_preview(self, position, orientation, angle):
-        pen = pg.mkPen('y', width=1, style=QtCore.Qt.DashLine)
+        pen = pg.mkPen('y', width=1, style=Qt.DashLine)
         if orientation == "vertical":
             new_line = pg.InfiniteLine(angle=angle, pen=pen, movable=False)
             new_line.setPos(position)
@@ -210,4 +209,30 @@ class LineROI(pg.LineSegmentROI):
 
     def align_points(self):
         self.aligned.emit()
+
+    def arrow_move(self, key_pressed, distance):
+        handle_a = self.getHandles()[0]
+        handle_b = self.getHandles()[1]
+
+        handle_a_scene_position = self.getSceneHandlePositions(0)
+        _, handle_a_scene_coords = handle_a_scene_position
+        handle_a_parrent_coords = self.mapSceneToParent(handle_a_scene_coords)
+
+        handle_b_scene_position = self.getSceneHandlePositions(1)
+        _, handle_b_scene_coords = handle_b_scene_position
+        handle_b_parrent_coords = self.mapSceneToParent(handle_b_scene_coords)
+
+        if key_pressed == Qt.Key_Left:
+            self.movePoint(handle_a, (handle_a_parrent_coords.x() - + distance, handle_a_parrent_coords.y()))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x() - + distance, handle_b_parrent_coords.y()))
+        elif key_pressed == Qt.Key_Right:
+            self.movePoint(handle_a, (handle_a_parrent_coords.x() + + distance, handle_a_parrent_coords.y()))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x() + + distance, handle_b_parrent_coords.y()))
+        elif key_pressed == Qt.Key_Down:
+            self.movePoint(handle_a, (handle_a_parrent_coords.x(), handle_a_parrent_coords.y() - + distance))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x(), handle_b_parrent_coords.y() - + distance))
+        elif key_pressed == Qt.Key_Up:
+            self.movePoint(handle_a, (handle_a_parrent_coords.x(), handle_a_parrent_coords.y() + + distance))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x(), handle_b_parrent_coords.y() + + distance))
+
 

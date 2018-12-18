@@ -209,12 +209,16 @@ class Heatmap(BaseGraph):
             index=self.matrix_selection_combobox.currentIndex()))
         self.tools.addWidget(self.matrix_selection_combobox)
         self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
+        self.line_trace_btn.setToolTip("Add an adjustable line to the main graph. Data 'below' the line is displayed\n"
+                                       "in the line trace graph")
         self.line_trace_btn.setCheckable(True)
         self.tools.addAction(self.line_trace_btn)
         self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative")
+        self.der_x.setToolTip("Calculate and display x derivative of the displayed data")
         self.der_x.setCheckable(True)
         self.tools.addAction(self.der_x)
         self.der_y = QAction(QIcon("img/yDer.png"), "yDerivative")
+        self.der_y.setToolTip("Calculate and display y derivative of the displayed data")
         self.der_y.setCheckable(True)
         self.tools.addAction(self.der_y)
         self.smoothen_x = QSpinBox()
@@ -231,9 +235,20 @@ class Heatmap(BaseGraph):
         self.matrix_manipulation_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(self.matrix_manipulation_toolbar)
         self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
+        self.create_matrix_file_btn.setToolTip("Create a raw matrix file from currently displayed data set")
         self.matrix_manipulation_toolbar.addAction(self.create_matrix_file_btn)
         self.data_correction_action = QAction(QIcon("img/line-chart.png"), "Correct_data", self)
+        self.data_correction_action.setToolTip("Get Y(real) values calculated by formula: Y(real) = Y - (I * R)\n"
+                                               "R is user input.")
         self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
+        self.didv_correction_action_btn = QAction(QIcon("img/dIdV.png"), "didv_correction", self)
+        self.didv_correction_action_btn.setToolTip("Get dV(real) values calculated by formula: dV(real) = dV - (dI * R)\n"
+                                               "dV, R are user input")
+        self.matrix_manipulation_toolbar.addAction(self.didv_correction_action_btn)
+
+        self.gm_didv = QAction(QIcon("img/dIdV.png"), "gm_didv_correction", self)
+        self.matrix_manipulation_toolbar.addAction(self.gm_didv)
+
 
         # ###############################
         # #### Window manipulations #####
@@ -473,8 +488,8 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.input = helpers.InputData("Please input the resistance something something to correct your data",
-                                       numeric=True)
+        self.input = helpers.InputData("Please input the resistance something something to correct your data", 1,
+                                       numeric=[True], placeholders=["Resistance"])
         self.input.submitted.connect(self.apply_correction)
 
     def naive_smoothing(self):
@@ -667,10 +682,14 @@ class Heatmap(BaseGraph):
         for element, sides in data.items():
             if element != "histogram":
                 for side, options in sides.items():
-                    axis = self.plot_elements[element].getAxis(side)
-                    axis.setLabel(options["name"], options["unit"], **options["label_style"])
-                    # axis.setTickSpacing(major=float(options["ticks"]["major"]),
-                    #                     minor=float(options["ticks"]["minor"]))
+                    if side != "top":
+                        axis = self.plot_elements[element].getAxis(side)
+                        axis.setLabel(options["name"], options["unit"], **options["label_style"])
+                        # axis.setTickSpacing(major=float(options["ticks"]["major"]),
+                        #                     minor=float(options["ticks"]["minor"]))
+                    else:
+                        axis = self.plot_elements["extra_axis"]
+                        axis.setLabel(options["name"], options["unit"], **options["label_style"])
             else:
                 axis = self.plot_elements["histogram"].axis
                 axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])
@@ -799,6 +818,17 @@ class Heatmap(BaseGraph):
 
         self.label_a.setPos(coords_a.x(), coords_a.y())
         self.label_b.setPos(coords_b.x(), coords_b.y())
+
+    def keyPressEvent(self, event):
+
+        if self.modes["ROI"]:
+            if event.key() in [Qt.Key_Up, Qt.Key_Down]:
+                distance = abs(self.data_buffer.get_y_axis_values()[1] - self.data_buffer.get_y_axis_values()[0])
+            elif event.key() in [Qt.Key_Right, Qt.Key_Left]:
+                distance = abs(self.data_buffer.get_x_axis_values()[1] - self.data_buffer.get_x_axis_values()[0])
+            else:
+                return
+            self.line_segment_roi["ROI"].arrow_move(event.key(), distance)
 
 
 def main():
