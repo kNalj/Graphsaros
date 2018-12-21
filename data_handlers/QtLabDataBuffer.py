@@ -109,15 +109,14 @@ class QtLabData(DataBuffer):
                             if unit == j+k:
                                 valid_unit = True
                                 break
-
                     name = data
-                    data_dict[self.legend[index]]["name"] = name
-                    if valid_unit:
-                        data_dict[self.legend[index]]["unit"] = unit
+                    if index in self.legend:
+                        data_dict[self.legend[index]]["name"] = name
+                        if valid_unit:
+                            data_dict[self.legend[index]]["unit"] = unit
                 else:
                     if i[0].isdigit() or (i.startswith("-") and i[1].isdigit()):
                         break
-
         return data_dict
 
 

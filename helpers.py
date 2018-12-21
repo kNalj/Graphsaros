@@ -240,9 +240,13 @@ class Edit3DAxisWidget(EditAxisWidget):
                 tick_spacing_minor = QLineEdit()
                 tick_spacing_minor.setPlaceholderText("Minor ticks")
                 self.elements[element][side]["minor_ticks"] = tick_spacing_minor
+                tick_font_size = QLineEdit()
+                tick_font_size.setPlaceholderText("Font")
+                self.elements[element][side]["tick_font"] = tick_font_size
                 tick_h_layout = QHBoxLayout()
                 tick_h_layout.addWidget(tick_spacing_major)
                 tick_h_layout.addWidget(tick_spacing_minor)
+                tick_h_layout.addWidget(tick_font_size)
 
                 v_layout.addWidget(QLabel(side.capitalize()))
                 v_layout.addWidget(plot_text)
@@ -281,9 +285,13 @@ class Edit3DAxisWidget(EditAxisWidget):
         tick_spacing_minor = QLineEdit()
         tick_spacing_minor.setPlaceholderText("Minor ticks")
         self.elements["histogram"]["minor_ticks"] = tick_spacing_minor
+        tick_font_size = QLineEdit()
+        tick_font_size.setPlaceholderText("Font")
+        self.elements["histogram"]["tick_font"] = tick_font_size
         tick_h_layout = QHBoxLayout()
         tick_h_layout.addWidget(tick_spacing_major)
         tick_h_layout.addWidget(tick_spacing_minor)
+        tick_h_layout.addWidget(tick_font_size)
         v_layout.addWidget(QLabel("Left"))
         v_layout.addWidget(plot_text)
         v_layout.addWidget(plot_unit)
@@ -322,7 +330,8 @@ class Edit3DAxisWidget(EditAxisWidget):
                                        "unit": self.elements[element][side]["unit"].text(),
                                        "label_style": {'font-size': self.elements[element][side]["font_size"].text()},
                                        "ticks": {"minor": self.elements[element][side]["minor_ticks"].text(),
-                                                 "major": self.elements[element][side]["major_ticks"].text()}}
+                                                 "major": self.elements[element][side]["major_ticks"].text(),
+                                                 "font": self.elements[element][side]["tick_font"].text()}}
         data["histogram"] = {"name": self.elements["histogram"]["label"].text(),
                              "unit": self.elements["histogram"]["unit"].text(),
                              "label_style": {'font-size': self.elements["histogram"]["font_size"].text()},

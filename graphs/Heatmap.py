@@ -6,7 +6,7 @@ import sys
 import os
 
 from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSlider, QInputDialog, QSpinBox
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
 import helpers
@@ -115,15 +115,24 @@ class Heatmap(BaseGraph):
         central_item.addItem(frame_layout)
         main_subplot = frame_layout.addPlot()
         img = pg.ImageItem()
-        img.setImage(self.displayed_data_set)
+        img.setImage(self.displayed_data_set, padding=0)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
         (x_scale, y_scale) = self.data_buffer.get_scale()
         img.scale(x_scale, y_scale)
-        main_subplot.addItem(img)
+        main_subplot.addItem(img, padding=0)
+        x_min = min(self.data_buffer.get_x_axis_values())
+        x_max = max(self.data_buffer.get_x_axis_values())
+        y_min = min(self.data_buffer.get_y_axis_values())
+        y_max = max(self.data_buffer.get_y_axis_values())
+        main_subplot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
         legend = {"left": "y", "bottom": "x"}
         for side in ('left', 'bottom'):
             ax = main_subplot.getAxis(side)
             ax.setPen((60, 60, 60))
+            # font = QFont()  # this and following 3 line are changing the size of ticks on axis
+            # font.setPixelSize(20)
+            # ax.tickFont = font
+            # ax.setStyle(tickTextOffset=10)
             axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
@@ -307,6 +316,7 @@ class Heatmap(BaseGraph):
     def change_displayed_data_set(self, data_set):
         self.displayed_data_set = data_set
         self.plot_elements["img"].setImage(self.displayed_data_set)
+        self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
         if self.modes["ROI"]:
             self.update_line_trace_plot()
 
@@ -544,6 +554,23 @@ class Heatmap(BaseGraph):
         smoothened_data = pg.gaussianFilter(self.active_data, (x, y))
         self.change_displayed_data_set(smoothened_data)
 
+    def didv_correction_action(self):
+        """
+        TODO: Write documentation for this function
+
+        :return: NoneType
+        """
+
+        self.didv_input = helpers.InputData("Please input resistance and dV that will be used in calculating dV(real)",
+                                            2, numeric=[True, True], placeholders=["Resistance", "dV"])
+        self.didv_input.submitted.connect(self.apply_didv_correction)
+
+    def gm_didv_correction_action(self):
+        self.didv_input = helpers.InputData("Please input resistance and dV that will be used in calculating dV(real)",
+                                            2, numeric=[True, True], placeholders=["Resistance", "dV"])
+        self.didv_input.submitted.connect(self.apply_gm_didv_correction)
+
+
     """
     ########################
     ######## Events ########
@@ -640,7 +667,7 @@ class Heatmap(BaseGraph):
         new_plot.scale(scale/num_of_points, 1)
 
     def apply_correction(self, data):
-        self.correction_resistance = float(data)
+        self.correction_resistance = float(data[0])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
         matrix = self.active_data
@@ -671,6 +698,105 @@ class Heatmap(BaseGraph):
         display_member = "corrected_" + self.active_data_name
         value_member = corrected_matrix
         self.matrix_selection_combobox.addItem(display_member, value_member)
+        # ###########################################################
+        # ###########################################################
+        # #### THIS THING HERE ADDS EXTRA MATRIX TO DATA BUFFER #####
+        # ###########################################################
+        # ###########################################################
+
+        self.plt_data.append(value_member)
+        self.plt_data_options[display_member] = {"xDer": None,
+                                                 "yDer": None,
+                                                 "corrected": None,
+                                                 "gauss": None}
+        # self.corrected_data = corrected_matrix
+
+    def apply_didv_correction(self, data):
+
+        self.didv_correction_resistance = float(data[0])
+        self.didv_correction_dv = float(data[1])
+
+        dimensions = self.data_buffer.get_matrix_dimensions()
+        corrected_dv_matrix = self.didv_correction_dv - (self.active_data * self.didv_correction_resistance)
+
+        matrix = self.active_data / corrected_dv_matrix
+
+        y_data = self.data_buffer.get_y_axis_values()
+        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
+
+        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
+
+        for row in range(dimensions[0]):
+            column = matrix[row, :]
+            corrected_voltages = (abs(y_data) - abs(self.didv_correction_resistance * column) * self.unit_correction) * biases
+
+            xp = corrected_voltages
+            fp = column
+
+            if np.all(np.diff(y_data) > 0):
+                corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
+            else:
+                reversed_y_data = y_data[::-1]
+                reversed_xp = xp[::-1]
+                reversed_fp = fp[::-1]
+
+                reversed_matrix_column = np.interp(reversed_y_data, reversed_xp, reversed_fp,
+                                                   left=0, right=0)
+                column = reversed_matrix_column[::-1]
+                corrected_matrix[row, :] = column
+
+        display_member = "corrected_" + self.active_data_name
+        value_member = corrected_matrix
+        self.matrix_selection_combobox.addItem(display_member, value_member)
+        self.plt_data.append(value_member)
+        self.plt_data_options[display_member] = {"xDer": None,
+                                                 "yDer": None,
+                                                 "corrected": None,
+                                                 "gauss": None}
+
+    def apply_gm_didv_correction(self, data):
+        self.didv_correction_resistance = float(data[0])
+        self.didv_correction_dv = float(data[1])
+
+        dimensions = self.data_buffer.get_matrix_dimensions()
+        matrix = self.active_data
+        y_data = self.data_buffer.get_y_axis_values()
+        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
+
+        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
+
+        for row in range(dimensions[0]):
+            column = matrix[row, :]
+            corrected_voltages = (abs(y_data) - abs(
+                self.didv_correction_resistance * column) * self.unit_correction) * biases
+
+            xp = corrected_voltages
+            fp = column
+
+            if np.all(np.diff(y_data) > 0):
+                corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
+            else:
+                reversed_y_data = y_data[::-1]
+                reversed_xp = xp[::-1]
+                reversed_fp = fp[::-1]
+
+                reversed_matrix_column = np.interp(reversed_y_data, reversed_xp, reversed_fp,
+                                                   left=0, right=0)
+                column = reversed_matrix_column[::-1]
+                corrected_matrix[row, :] = column
+
+        didv_matrix = self.didv_correction_dv - (corrected_matrix * self.didv_correction_resistance)
+        corrected_didv_matrix = corrected_matrix / didv_matrix
+
+        display_member = "didv_" + self.active_data_name
+        value_member = corrected_didv_matrix
+        self.matrix_selection_combobox.addItem(display_member, value_member)
+        # ###########################################################
+        # ###########################################################
+        # #### THIS THING HERE ADDS EXTRA MATRIX TO DATA BUFFER #####
+        # ###########################################################
+        # ###########################################################
+
         self.plt_data.append(value_member)
         self.plt_data_options[display_member] = {"xDer": None,
                                                  "yDer": None,
