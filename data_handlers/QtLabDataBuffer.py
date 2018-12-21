@@ -13,7 +13,7 @@ class QtLabData(DataBuffer):
 
         :param location: string: absolute path to the file which is being parsed by this DataBuffer
         """
-        self.legend = {0: "x", 1: "y", 2: "z"}
+        self.legend = {0: "x", 1: "y"}
         super().__init__(location)
 
         self.data = {}
@@ -64,7 +64,7 @@ class QtLabData(DataBuffer):
         if self.get_number_of_dimension() == 2:
             return
         else:
-            matrix_data = np.zeros((self.matrix_dimensions[0], self.matrix_dimensions[1]))
+
             matrices = []
             z = self.raw_data
             self.number_of_set_parameters = self.get_number_of_dimension() - 1
@@ -75,6 +75,7 @@ class QtLabData(DataBuffer):
             y_dimension = self.matrix_dimensions[1]
             num_of_elements = np.shape(z)[0]
             for matrix in range(start_index, end_index):
+                matrix_data = np.zeros((x_dimension, y_dimension))
                 for i in range(x_dimension):
                     for j in range(y_dimension):
                         if i * y_dimension + j < num_of_elements:
@@ -91,7 +92,7 @@ class QtLabData(DataBuffer):
 
         :return: dict: {x: {name: "...", unit: "..."}, y: {}, z: {}}
         """
-        data_dict = {"x": {"name": "", "unit": ""}, "y": {"name": "", "unit": ""}, "z": {"name": "", "unit": ""}}
+        data_dict = {"x": {"name": "", "unit": ""}, "y": {"name": "", "unit": ""}, "z": {}}
         index = -1
         with open(self.location) as file:
             for i in file:
@@ -114,6 +115,13 @@ class QtLabData(DataBuffer):
                         data_dict[self.legend[index]]["name"] = name
                         if valid_unit:
                             data_dict[self.legend[index]]["unit"] = unit
+                    else:
+                        mi = index - len(self.legend)
+                        if valid_unit:
+                            matrix_data = {"name": name, "unit": unit}
+                        else:
+                            matrix_data = {"name": name, "unit": ""}
+                        data_dict["z"][mi] = matrix_data
                 else:
                     if i[0].isdigit() or (i.startswith("-") and i[1].isdigit()):
                         break

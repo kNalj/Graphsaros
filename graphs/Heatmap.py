@@ -145,7 +145,7 @@ class Heatmap(BaseGraph):
         histogram.setImageItem(img)
         histogram.gradient.loadPreset("thermal")
         histogram.setFixedWidth(128)
-        axis_data = self.data_buffer.axis_values["z"]
+        axis_data = self.data_buffer.axis_values["z"][0]
         label_style = {'font-size': '8pt'}
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
@@ -170,7 +170,10 @@ class Heatmap(BaseGraph):
             ax.setPen((60, 60, 60))
             axis_data = self.data_buffer.axis_values[legend[axis]]
             label_style = {'font-size': '9pt'}
-            ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            if axis == "left":
+                ax.setLabel(axis_data[0]["name"], axis_data[0]["unit"], **label_style)
+            else:
+                ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
         line_trace_graph.layout.removeItem(
             line_trace_graph.getAxis("top")

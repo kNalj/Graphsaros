@@ -150,7 +150,7 @@ class QcodesData(DataBuffer):
         :param json_data: json format of data file that qcodes creates after running a measurement, file name is
                             snapshot.json and is located in the same directory as the mesurement output file (matrix file)
         :param depth: boolean that is FALSE by default, unless there is a recursive call to self when its set to True to
-                        signify that we are using a LINL
+                        signify that we are using a loop in a loop
 
         :return: array: containing one or two dictionaries (depending if its 2D or 3D measurement) containing data for all
                         action parameters
@@ -166,7 +166,9 @@ class QcodesData(DataBuffer):
             if depth:
                 # if depth is not 0, then we have a LINL, and we need both y and z axis data
                 y_axis_data = json_data["sweep_values"]["parameter"]
-                z_axis_data = json_data["actions"][0]
+                z_axis_data = {}
+                for i, action in enumerate(json_data["actions"]):
+                    z_axis_data[i] = json_data["actions"][i]
                 return [y_axis_data, z_axis_data]
             else:
                 # otherwise we only need y axis data since it's a 2D graph and there is no z

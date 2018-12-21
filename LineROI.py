@@ -234,5 +234,3 @@ class LineROI(pg.LineSegmentROI):
         elif key_pressed == Qt.Key_Up:
             self.movePoint(handle_a, (handle_a_parrent_coords.x(), handle_a_parrent_coords.y() + + distance))
             self.movePoint(handle_b, (handle_b_parrent_coords.x(), handle_b_parrent_coords.y() + + distance))
-
-
