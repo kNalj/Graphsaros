@@ -86,11 +86,11 @@ class LineTrace(BaseGraph):
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
 
-        self.toggle_fit_mode = QAction(QIcon("img/fit_curve_icon.png"), "Fit_mode")
+        self.toggle_fit_mode = QAction(QIcon("img/fit_curve_icon.png"), "Fit_mode", self)
         self.tools.addAction(self.toggle_fit_mode)
         self.toggle_fit_mode.setCheckable(True)
 
-        self.exit_action_Btn = QAction(QIcon("img/closeIcon.png"), "Exit")
+        self.exit_action_Btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
         self.tools.addAction(self.exit_action_Btn)
 
         self.init_fit_toolbar()
@@ -104,12 +104,12 @@ class LineTrace(BaseGraph):
         self.fit_toolbar = QToolBar("Fitting options")
         self.fit_toolbar.actionTriggered[QAction].connect(self.perform_action)
 
-        self.default_graph = QAction(QIcon("img/noneIcon.png"), "Default_graph")
+        self.default_graph = QAction(QIcon("img/noneIcon.png"), "Default_graph", self)
         self.default_graph.setCheckable(True)
         self.default_graph.setChecked(True)
         self.fit_toolbar.addAction(self.default_graph)
 
-        self.gauss = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_fit")
+        self.gauss = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_fit", self)
         self.gauss.setCheckable(True)
         self.fit_toolbar.addAction(self.gauss)
         self.addToolBar(Qt.RightToolBarArea, self.fit_toolbar)
