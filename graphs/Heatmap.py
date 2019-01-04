@@ -293,9 +293,12 @@ class Heatmap(BaseGraph):
                 (x_scale, y_scale) = self.data_buffer.get_scale()
                 img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
                 img.scale(x_scale, y_scale)
-                histogram = pg.HistogramLUTItem()
+                histogram = self.plot_elements["histogram"]
                 histogram.setImageItem(img)
                 histogram.gradient.loadPreset("thermal")
+                axis_data = self.data_buffer.axis_values["z"][index]
+                label_style = {'font-size': '8pt'}
+                histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
                 plot = self.plot_elements["frame"].addPlot()
                 plot.addItem(img)
 
@@ -315,6 +318,14 @@ class Heatmap(BaseGraph):
             self.active_data_name = name
             self.active_data_index = index
             self.change_displayed_data_set(self.active_data)
+            histogram = self.plot_elements["histogram"]
+            histogram.setImageItem(self.plot_elements["img"])
+            histogram.gradient.loadPreset("thermal")
+            axis_data = self.data_buffer.axis_values["z"][index]
+            label_style = {'font-size': '8pt'}
+            histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            label_style = {'font-size': '9pt'}
+            self.plot_elements["line_trace_graph"].getAxis("left").setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
     def change_displayed_data_set(self, data_set):
         self.displayed_data_set = data_set
@@ -396,7 +407,7 @@ class Heatmap(BaseGraph):
 
     def smoothing_action(self):
         """
-        TODO: Insert description
+        TODO: Write documentation for this function
 
         :return: NoneType
         """
@@ -507,7 +518,7 @@ class Heatmap(BaseGraph):
 
     def naive_smoothing(self):
         """
-        TODO: Insert description
+        TODO: Write documentation for this function
 
         :return:
         """
@@ -547,7 +558,7 @@ class Heatmap(BaseGraph):
 
     def gaussian_smoothing(self):
         """
-        TODO: Insert description
+        TODO: Write documentation for this function
 
         :return:
         """
