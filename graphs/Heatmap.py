@@ -326,6 +326,7 @@ class Heatmap(BaseGraph):
             histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
             label_style = {'font-size': '9pt'}
             self.plot_elements["line_trace_graph"].getAxis("left").setLabel(axis_data["name"], axis_data["unit"], **label_style)
+        self.reset_transformations()
 
     def change_displayed_data_set(self, data_set):
         self.displayed_data_set = data_set
@@ -333,6 +334,13 @@ class Heatmap(BaseGraph):
         self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
         if self.modes["ROI"]:
             self.update_line_trace_plot()
+
+    def reset_transformations(self):
+        for action in self.tools.actions():
+            if action.isChecked():
+                action.trigger()
+        self.smoothen_y.setValue(0)
+        self.smoothen_x.setValue(0)
 
     """
     #########################
