@@ -94,6 +94,8 @@ class Heatmap(BaseGraph):
 
         self.unit_correction = 1000
 
+        self.histogram_width = self.width() * 0.2
+
         self.init_ui()
 
     """
@@ -144,7 +146,7 @@ class Heatmap(BaseGraph):
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
         histogram.gradient.loadPreset("thermal")
-        histogram.setFixedWidth(128)
+        histogram.setFixedWidth(self.histogram_width)
         axis_data = self.data_buffer.axis_values["z"][0]
         label_style = {'font-size': '8pt'}
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
@@ -210,7 +212,7 @@ class Heatmap(BaseGraph):
         self.tools.actionTriggered[QAction].connect(self.perform_action)
 
         self.matrix_selection_combobox = QComboBox()
-        for index, matrix in enumerate(self.data_buffer.get_matrix()):
+        for index, matrix in enumerate(self.plt_data):
             display_member = "matrix{}".format(index)
             value_member = matrix
             self.matrix_selection_combobox.addItem(display_member, value_member)
@@ -284,29 +286,44 @@ class Heatmap(BaseGraph):
     ##################################
     """
     def change_active_set(self, index):
+        """
+        TODO: Write documentation
+
+        :param index:
+        :return:
+        """
         if index == self.data_buffer.number_of_measured_parameters:
+            self.plot_elements["histogram"].setFixedWidth(0)
+            self.plot_elements["histogram"].hide()
             self.modes["Side-by-side"] = True
             self.plot_elements["frame"].clear()
-            for matrix in self.plt_data:
+            for i, matrix in enumerate(self.plt_data):
                 img = pg.ImageItem()
                 img.setImage(matrix)
                 (x_scale, y_scale) = self.data_buffer.get_scale()
                 img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
                 img.scale(x_scale, y_scale)
-                histogram = self.plot_elements["histogram"]
+
+                """
+                Danger, potential memory leak, make sure to delete all these histograms later.
+                """
+                histogram = pg.HistogramLUTItem()
                 histogram.setImageItem(img)
                 histogram.gradient.loadPreset("thermal")
-                axis_data = self.data_buffer.axis_values["z"][index]
+                axis_data = self.data_buffer.axis_values["z"][i]
                 label_style = {'font-size': '8pt'}
                 histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
                 plot = self.plot_elements["frame"].addPlot()
                 plot.addItem(img)
+                self.plot_elements["frame"].addItem(histogram)
 
                 for axis in ["left", "bottom"]:
                     ax = plot.getAxis(axis)
                     ax.setPen((60, 60, 60))
         else:
             if self.modes["Side-by-side"]:
+                self.plot_elements["histogram"].setFixedWidth(self.histogram_width)
+                self.plot_elements["histogram"].show()
                 self.plot_elements["frame"].clear()
                 self.modes["Side-by-side"] = False
                 self.plot_elements["frame"].addItem(self.plot_elements["main_subplot"])
@@ -318,12 +335,12 @@ class Heatmap(BaseGraph):
             self.active_data_name = name
             self.active_data_index = index
             self.change_displayed_data_set(self.active_data)
-            histogram = self.plot_elements["histogram"]
-            histogram.setImageItem(self.plot_elements["img"])
-            histogram.gradient.loadPreset("thermal")
+            self.plot_elements["isoLine"].setValue(self.active_data.mean())
+            self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
+            self.plot_elements["histogram"].gradient.loadPreset("thermal")
             axis_data = self.data_buffer.axis_values["z"][index]
             label_style = {'font-size': '8pt'}
-            histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            self.plot_elements["histogram"].axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
             label_style = {'font-size': '9pt'}
             self.plot_elements["line_trace_graph"].getAxis("left").setLabel(axis_data["name"], axis_data["unit"], **label_style)
         self.reset_transformations()
