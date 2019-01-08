@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
-    QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton
+    QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton, QComboBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal
 
@@ -415,7 +415,8 @@ class InputData(QWidget):
 
     submitted = pyqtSignal(object)
 
-    def __init__(self, msg, num_of_fields, default_value=None, numeric=False, placeholders=None):
+    def __init__(self, msg, num_of_fields, default_value=None, numeric=False, placeholders=None,
+                 dropdown=False, dropdown_text=None, dropdown_options=None):
         super(InputData, self).__init__()
 
         self.display_msg = msg
@@ -438,6 +439,13 @@ class InputData(QWidget):
             for i in range(num_of_fields):
                 self.placeholders.append("Unspecified field")
 
+        if dropdown:
+            self.dropdown = True
+            self.dropdown_text = dropdown_text
+            self.dropdown_options = dropdown_options
+        else:
+            self.dropdown = False
+
         self.textboxes = []
 
         self.init_ui()
@@ -452,6 +460,14 @@ class InputData(QWidget):
         v_layout = QVBoxLayout()
         self.explanation_text_label = QLabel(self.display_msg)
         v_layout.addWidget(self.explanation_text_label)
+
+        if self.dropdown:
+            v_layout.addWidget(QLabel(self.dropdown_text))
+            self.combobox = QComboBox()
+            for name, data in self.dropdown_options.items():
+                self.combobox.addItem(name, data)
+            v_layout.addWidget(self.combobox)
+
         for i in range(self.number_of_input_fields):
             textbox = QLineEdit(self.default[i])
             textbox.setPlaceholderText(self.placeholders[i])
@@ -479,6 +495,10 @@ class InputData(QWidget):
                     return
             else:
                 send_value.append(self.textboxes[i].text())
+
+        if self.dropdown:
+            send_value.append(self.combobox.currentData())
+
         self.submitted.emit(send_value)
         self.close()
 

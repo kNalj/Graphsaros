@@ -108,9 +108,6 @@ class Heatmap(BaseGraph):
         self.setGeometry(50, 50, 640, 400)
         self.setCentralWidget(self.plt)
         self.show()
-        # proxy = QGraphicsProxyWidget()
-        # line_trace_button = QPushButton("Line trace")
-        # proxy.setWidget(line_trace_button)
 
         central_item = pg.GraphicsLayout()
         frame_layout = pg.GraphicsLayout()
@@ -255,14 +252,13 @@ class Heatmap(BaseGraph):
         self.data_correction_action.setToolTip("Get Y(real) values calculated by formula: Y(real) = Y - (I * R)\n"
                                                "R is user input.")
         self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
-        self.didv_correction_action_btn = QAction(QIcon("img/dIdV.png"), "didv_correction", self)
-        self.didv_correction_action_btn.setToolTip("Get dV(real) values calculated by formula: dV(real) = dV - (dI * R)\n"
-                                               "dV, R are user input")
-        self.matrix_manipulation_toolbar.addAction(self.didv_correction_action_btn)
+        # self.didv_correction_action_btn = QAction(QIcon("img/dIdV.png"), "didv_correction", self)
+        # self.matrix_manipulation_toolbar.addAction(self.didv_correction_action_btn)
 
         self.gm_didv = QAction(QIcon("img/dIdV.png"), "gm_didv_correction", self)
+        self.gm_didv.setToolTip("Get dV(real) values calculated by formula: dV(real) = dV - (dI * R)\n"
+                                "dV, R are user input")
         self.matrix_manipulation_toolbar.addAction(self.gm_didv)
-
 
         # ###############################
         # #### Window manipulations #####
@@ -605,8 +601,15 @@ class Heatmap(BaseGraph):
         self.didv_input.submitted.connect(self.apply_didv_correction)
 
     def gm_didv_correction_action(self):
+        dropdown_options = {}
+        for index, matrix in enumerate(self.plt_data):
+            key = "matrix{}".format(index)
+            value = matrix
+            dropdown_options[key] = value
         self.didv_input = helpers.InputData("Please input resistance and dV that will be used in calculating dV(real)",
-                                            2, numeric=[True, True], placeholders=["Resistance", "dV"])
+                                            2, numeric=[True, True], placeholders=["Resistance", "dV"],
+                                            dropdown=True, dropdown_text="Select matrix containing values of CURRENT",
+                                            dropdown_options=dropdown_options)
         self.didv_input.submitted.connect(self.apply_gm_didv_correction)
 
 
@@ -798,6 +801,7 @@ class Heatmap(BaseGraph):
         self.didv_correction_dv = float(data[1])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
+        currents_matrix = data[2]
         matrix = self.active_data
         y_data = self.data_buffer.get_y_axis_values()
         corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
@@ -805,12 +809,12 @@ class Heatmap(BaseGraph):
         biases = [1 if voltage >= 0 else -1 for voltage in y_data]
 
         for row in range(dimensions[0]):
-            column = matrix[row, :]
+            column = currents_matrix[row, :]
             corrected_voltages = (abs(y_data) - abs(
                 self.didv_correction_resistance * column) * self.unit_correction) * biases
 
             xp = corrected_voltages
-            fp = column
+            fp = matrix[row, :]
 
             if np.all(np.diff(y_data) > 0):
                 corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
