@@ -232,6 +232,11 @@ class Heatmap(BaseGraph):
         self.der_y.setToolTip("Calculate and display y derivative of the displayed data")
         self.der_y.setCheckable(True)
         self.tools.addAction(self.der_y)
+        self.smoothing_selection_combobox = QComboBox()
+        for smoothing_type in ["Naive", "Gaussian"]:
+            self.smoothing_selection_combobox.addItem(smoothing_type)
+        self.smoothing_selection_combobox.currentIndexChanged.connect(self.smoothing_action)
+        self.tools.addWidget(self.smoothing_selection_combobox)
         self.smoothen_x = QSpinBox()
         self.smoothen_x.valueChanged.connect(self.smoothing_action)
         self.tools.addWidget(self.smoothen_x)
@@ -306,9 +311,10 @@ class Heatmap(BaseGraph):
                 histogram = pg.HistogramLUTItem()
                 histogram.setImageItem(img)
                 histogram.gradient.loadPreset("thermal")
-                axis_data = self.data_buffer.axis_values["z"][i]
-                label_style = {'font-size': '8pt'}
-                histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                if i < self.data_buffer.number_of_measured_parameters:
+                    axis_data = self.data_buffer.axis_values["z"][i]
+                    label_style = {'font-size': '8pt'}
+                    histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
                 plot = self.plot_elements["frame"].addPlot()
                 plot.addItem(img)
                 self.plot_elements["frame"].addItem(histogram)
@@ -334,11 +340,12 @@ class Heatmap(BaseGraph):
             self.plot_elements["isoLine"].setValue(self.active_data.mean())
             self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
             self.plot_elements["histogram"].gradient.loadPreset("thermal")
-            axis_data = self.data_buffer.axis_values["z"][index]
-            label_style = {'font-size': '8pt'}
-            self.plot_elements["histogram"].axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-            label_style = {'font-size': '9pt'}
-            self.plot_elements["line_trace_graph"].getAxis("left").setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            if index < self.data_buffer.number_of_measured_parameters:
+                axis_data = self.data_buffer.axis_values["z"][index]
+                label_style = {'font-size': '8pt'}
+                self.plot_elements["histogram"].axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                label_style = {'font-size': '9pt'}
+                self.plot_elements["line_trace_graph"].getAxis("left").setLabel(axis_data["name"], axis_data["unit"], **label_style)
         self.reset_transformations()
 
     def change_displayed_data_set(self, data_set):
@@ -432,7 +439,10 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.naive_smoothing()
+        smoothing_type = self.smoothing_selection_combobox.currentText().lower()
+        method_name = smoothing_type + "_smoothing"
+        method = getattr(self, method_name)
+        method()
 
     def lorentzian_filter_action(self):
         """
@@ -543,7 +553,6 @@ class Heatmap(BaseGraph):
 
         :return:
         """
-
         x = self.smoothen_x.value()
         y = self.smoothen_y.value()
         data = self.active_data
