@@ -277,6 +277,9 @@ class Heatmap(BaseGraph):
         self.open_2D = QAction(QIcon("img/2d_icon.png"), "Show_2d", self)
         self.open_2D.setToolTip("Open a selected line trace in new window that allows manipulation and transformations")
         self.window_toolbar.addAction(self.open_2D)
+        self.zoom_action_btn = QAction(QIcon("img/zoomin_icon.png"), "Zoom", self)
+        self.zoom_action_btn.setToolTip("Select area of graph to zoom into")
+        self.window_toolbar.addAction(self.zoom_action_btn)
         self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
         self.exit_action_btn.setToolTip("Close this heatmap window")
         self.window_toolbar.addAction(self.exit_action_btn)
@@ -620,6 +623,25 @@ class Heatmap(BaseGraph):
                                             dropdown=True, dropdown_text="Select matrix containing values of CURRENT",
                                             dropdown_options=dropdown_options)
         self.didv_input.submitted.connect(self.apply_gm_didv_correction)
+
+    def zoom_action(self):
+        current_x_min = min(self.data_buffer.get_x_axis_values())
+        current_x_max = max(self.data_buffer.get_x_axis_values())
+        current_y_min = min(self.data_buffer.get_y_axis_values())
+        current_y_max = max(self.data_buffer.get_y_axis_values())
+        self.input = helpers.InputData("Please input ranges of values to display", 4,
+                                       numeric=[True, True, True, True],
+                                       placeholders=["Start X value [Currently: {}]".format(current_x_min),
+                                                     "End X value [Currently {}]".format(current_x_max),
+                                                     "Start Y value [Currently {}]".format(current_y_min),
+                                                     "End Y value [Currently {}]".format(current_y_max)])
+        self.input.submitted.connect(self.zoom_to_range)
+
+    def zoom_to_range(self, data):
+
+        x_min, x_max, y_min, y_max = float(data[0]), float(data[1]), float(data[2]), float(data[3])
+        self.plot_elements["main_subplot"].vb.setXRange(x_min, x_max, padding=0)
+        self.plot_elements["main_subplot"].vb.setYRange(y_min, y_max, padding=0)
 
 
     """
