@@ -291,10 +291,16 @@ class Heatmap(BaseGraph):
     """
     def change_active_set(self, index):
         """
-        TODO: Write documentation
+        A method that changes what matrix is displayed in the main subplot, also changes data on which the actions
+        from menu do the transformations. All matrices (for each measured parameter in your measurement there is one
+        matrix) are selectable from a combobox (drop down) in the menu bar. Selected matrix is the ne displayed in the
+        vombo box, and that is the one on which the transformations are done.
 
-        :param index:
-        :return:
+        :param index: integer: index of the data set in the combobox (also matches the index in self.plt_data)
+                                After adding data to the combo box (example: doing data correction adds another matrix
+                                to the combo box) additional matrices will be given index in order of adding them to
+                                the combo box.
+        :return: NoneType
         """
         if index == self.data_buffer.number_of_measured_parameters:
             self.plot_elements["histogram"].setFixedWidth(0)
@@ -352,6 +358,13 @@ class Heatmap(BaseGraph):
         self.reset_transformations()
 
     def change_displayed_data_set(self, data_set):
+        """
+        A helper method for changing active data set. Changes the item which is being displayed in the imgItem element
+        of the main subplot.
+
+        :param data_set: np.array: numpy array representing one measured parameter (measured values)
+        :return: NoneType
+        """
         self.displayed_data_set = data_set
         self.plot_elements["img"].setImage(self.displayed_data_set)
         self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
@@ -359,6 +372,12 @@ class Heatmap(BaseGraph):
             self.update_line_trace_plot()
 
     def reset_transformations(self):
+        """
+        Reset values of all changeable actions in the menu bar (ones that are checkable, and also smoothing spin boxes)
+        If action was activated for a previously selected matrix, then deactivate that action.
+
+        :return: NoneType
+        """
         for action in self.tools.actions():
             if action.isChecked():
                 action.trigger()
@@ -601,18 +620,14 @@ class Heatmap(BaseGraph):
         smoothened_data = pg.gaussianFilter(self.active_data, (x, y))
         self.change_displayed_data_set(smoothened_data)
 
-    def didv_correction_action(self):
+    def gm_didv_correction_action(self):
         """
-        TODO: Write documentation for this function
+        Method that instantiates a helper widget (InputData) used to input data necessary to perform dIdV correction.
+        InputData has a signal that gets emitted when submit button is pressed. Signal carries data and is connected
+        to a method that performs required action.
 
         :return: NoneType
         """
-
-        self.didv_input = helpers.InputData("Please input resistance and dV that will be used in calculating dV(real)",
-                                            2, numeric=[True, True], placeholders=["Resistance", "dV"])
-        self.didv_input.submitted.connect(self.apply_didv_correction)
-
-    def gm_didv_correction_action(self):
         dropdown_options = {}
         for index, matrix in enumerate(self.plt_data):
             key = "matrix{}".format(index)
@@ -625,6 +640,13 @@ class Heatmap(BaseGraph):
         self.didv_input.submitted.connect(self.apply_gm_didv_correction)
 
     def zoom_action(self):
+        """
+        Method that instantiates a helper widget (InputData) used to input data necessary to perform zoom action.
+        InputData has a signal that gets emitted when submit button is pressed. Signal carries data and is connected
+        to a method that performs required action.
+
+        :return: NoneType
+        """
         current_x_min = min(self.data_buffer.get_x_axis_values())
         current_x_max = max(self.data_buffer.get_x_axis_values())
         current_y_min = min(self.data_buffer.get_y_axis_values())
@@ -636,13 +658,6 @@ class Heatmap(BaseGraph):
                                                      "Start Y value [Currently {}]".format(current_y_min),
                                                      "End Y value [Currently {}]".format(current_y_max)])
         self.input.submitted.connect(self.zoom_to_range)
-
-    def zoom_to_range(self, data):
-
-        x_min, x_max, y_min, y_max = float(data[0]), float(data[1]), float(data[2]), float(data[3])
-        self.plot_elements["main_subplot"].vb.setXRange(x_min, x_max, padding=0)
-        self.plot_elements["main_subplot"].vb.setYRange(y_min, y_max, padding=0)
-
 
     """
     ########################
@@ -740,6 +755,12 @@ class Heatmap(BaseGraph):
         new_plot.scale(scale/num_of_points, 1)
 
     def apply_correction(self, data):
+        """
+        TODO: Write documentation
+
+        :param data:
+        :return:
+        """
         self.correction_resistance = float(data[0])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
@@ -784,50 +805,13 @@ class Heatmap(BaseGraph):
                                                  "gauss": None}
         # self.corrected_data = corrected_matrix
 
-    def apply_didv_correction(self, data):
-
-        self.didv_correction_resistance = float(data[0])
-        self.didv_correction_dv = float(data[1])
-
-        dimensions = self.data_buffer.get_matrix_dimensions()
-        corrected_dv_matrix = self.didv_correction_dv - (self.active_data * self.didv_correction_resistance)
-
-        matrix = self.active_data / corrected_dv_matrix
-
-        y_data = self.data_buffer.get_y_axis_values()
-        corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
-
-        biases = [1 if voltage >= 0 else -1 for voltage in y_data]
-
-        for row in range(dimensions[0]):
-            column = matrix[row, :]
-            corrected_voltages = (abs(y_data) - abs(self.didv_correction_resistance * column) * self.unit_correction) * biases
-
-            xp = corrected_voltages
-            fp = column
-
-            if np.all(np.diff(y_data) > 0):
-                corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
-            else:
-                reversed_y_data = y_data[::-1]
-                reversed_xp = xp[::-1]
-                reversed_fp = fp[::-1]
-
-                reversed_matrix_column = np.interp(reversed_y_data, reversed_xp, reversed_fp,
-                                                   left=0, right=0)
-                column = reversed_matrix_column[::-1]
-                corrected_matrix[row, :] = column
-
-        display_member = "corrected_" + self.active_data_name
-        value_member = corrected_matrix
-        self.matrix_selection_combobox.addItem(display_member, value_member)
-        self.plt_data.append(value_member)
-        self.plt_data_options[display_member] = {"xDer": None,
-                                                 "yDer": None,
-                                                 "corrected": None,
-                                                 "gauss": None}
-
     def apply_gm_didv_correction(self, data):
+        """
+        TODO: Write documentation
+
+        :param data:
+        :return:
+        """
         self.didv_correction_resistance = float(data[0])
         self.didv_correction_dv = float(data[1])
 
@@ -879,6 +863,12 @@ class Heatmap(BaseGraph):
         # self.corrected_data = corrected_matrix
 
     def edit_axis_data(self, data):
+        """
+        TODO: Write documentation
+
+        :param data:
+        :return:
+        """
         for element, sides in data.items():
             if element != "histogram":
                 for side, options in sides.items():
@@ -1020,6 +1010,12 @@ class Heatmap(BaseGraph):
         self.label_b.setPos(coords_b.x(), coords_b.y())
 
     def keyPressEvent(self, event):
+        """
+        TODO: Write documentation
+
+        :param event:
+        :return:
+        """
 
         if self.modes["ROI"]:
             if event.key() in [Qt.Key_Up, Qt.Key_Down]:
@@ -1029,6 +1025,18 @@ class Heatmap(BaseGraph):
             else:
                 return
             self.line_segment_roi["ROI"].arrow_move(event.key(), distance)
+
+    def zoom_to_range(self, data):
+        """
+        TODO: Write documentation
+
+        :param data:
+        :return:
+        """
+
+        x_min, x_max, y_min, y_max = float(data[0]), float(data[1]), float(data[2]), float(data[3])
+        self.plot_elements["main_subplot"].vb.setXRange(x_min, x_max, padding=0)
+        self.plot_elements["main_subplot"].vb.setYRange(y_min, y_max, padding=0)
 
 
 def main():
