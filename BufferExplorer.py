@@ -61,10 +61,13 @@ class BufferExplorer(QWidget):
                     if i == 2:
                         if line.strip(" \n") == "":
                             self.buffers[candidate] = QtLabData(candidate)
+                            self.buffers[candidate].prepare_data()
                         elif line.startswith("#"):
                             self.buffers[candidate] = QcodesData(candidate)
+                            self.buffers[candidate].prepare_data()
                         else:
                             self.buffers[candidate] = MatrixData(candidate)
+                            self.buffers[candidate].prepare_data()
 
                         break
 

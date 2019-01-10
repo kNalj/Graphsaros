@@ -226,7 +226,7 @@ class MainWindow(QMainWindow):
                             worker = Worker(buffer.prepare_data)
 
                         progress_bar = self.add_progress_widget(buffer)
-                        buffer.progress.connect(lambda checked: self.get_progress(checked, progress_bar))
+                        buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
                         self.datasets[name] = buffer
                         buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
                         worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
