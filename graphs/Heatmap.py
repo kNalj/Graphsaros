@@ -64,6 +64,8 @@ class Heatmap(BaseGraph):
             name = "matrix" + str(i)
             self.plt_data_options[name] = {"xDer": None,
                                            "yDer": None,
+                                           "xyDer": None,
+                                           "yxDer": None,
                                            "corrected": None,
                                            "gauss": None}
 
@@ -346,9 +348,7 @@ class Heatmap(BaseGraph):
             self.active_data_name = name
             self.active_data_index = index
             self.change_displayed_data_set(self.active_data)
-            self.plot_elements["isoLine"].setValue(self.active_data.mean())
-            self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
-            self.plot_elements["histogram"].gradient.loadPreset("thermal")
+
             if index < self.data_buffer.number_of_measured_parameters:
                 axis_data = self.data_buffer.axis_values["z"][index]
                 label_style = {'font-size': '8pt'}
@@ -367,7 +367,9 @@ class Heatmap(BaseGraph):
         """
         self.displayed_data_set = data_set
         self.plot_elements["img"].setImage(self.displayed_data_set)
+        self.plot_elements["isoLine"].setValue(self.displayed_data_set.mean())
         self.plot_elements["histogram"].setImageItem(self.plot_elements["img"])
+        self.plot_elements["histogram"].gradient.loadPreset("thermal")
         if self.modes["ROI"]:
             self.update_line_trace_plot()
 
@@ -414,7 +416,6 @@ class Heatmap(BaseGraph):
                                                  self.data_buffer.get_x_axis_values()[-1],
                                                  self.data_buffer.get_y_axis_values()[0],
                                                  self.data_buffer.get_y_axis_values()[-1]])
-                print(line_segmet_roi.getHandles())
                 self.label_a = pg.TextItem("[A]", color=(255, 255, 255))
                 self.label_a.setAnchor((0, 1))
                 self.label_a.setParentItem(line_segmet_roi)
@@ -529,16 +530,28 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        if self.der_x.isChecked():
+        if self.der_y.isChecked():
             name = self.active_data_name
-            if self.plt_data_options[name]["xDer"] is None:
-                der_x_data = np.diff(self.active_data, 1, 0)
-                self.plt_data_options[name]["xDer"] = der_x_data
+            if self.der_x.isChecked():
+                if self.plt_data_options[name]["yxDer"] is None:
+                    der_yx_data = np.diff(self.plt_data_options[name]["yDer"], 1, 0)
+                    self.plt_data_options[name]["yxDer"] = der_yx_data
+                else:
+                    der_yx_data = self.plt_data_options[name]["yxDer"]
+                self.change_displayed_data_set(der_yx_data)
             else:
-                der_x_data = self.plt_data_options[name]["xDer"]
-            self.change_displayed_data_set(der_x_data)
+                self.change_displayed_data_set(self.plt_data_options[name]["yDer"])
         else:
-            self.change_displayed_data_set(self.active_data)
+            if self.der_x.isChecked():
+                name = self.active_data_name
+                if self.plt_data_options[name]["xDer"] is None:
+                    der_x_data = np.diff(self.active_data, 1, 0)
+                    self.plt_data_options[name]["xDer"] = der_x_data
+                else:
+                    der_x_data = self.plt_data_options[name]["xDer"]
+                self.change_displayed_data_set(der_x_data)
+            else:
+                self.change_displayed_data_set(self.active_data)
 
     def yderivative_action(self):
         """
@@ -546,17 +559,29 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-
-        if self.der_y.isChecked():
+        if self.der_x.isChecked():
             name = self.active_data_name
-            if self.plt_data_options[name]["yDer"] is None:
-                der_y_data = np.diff(self.active_data, 1, 1)
-                self.plt_data_options[name]["yDer"] = der_y_data
+            if self.der_y.isChecked():
+                if self.plt_data_options[name]["xyDer"] is None:
+                    der_xy_data = np.diff(self.plt_data_options[name]["xDer"], 1, 1)
+                    self.plt_data_options[name]["xyDer"] = der_xy_data
+                else:
+                    der_xy_data = self.plt_data_options[name]["xyDer"]
+                self.change_displayed_data_set(der_xy_data)
             else:
-                der_y_data = self.plt_data_options[name]["yDer"]
-            self.change_displayed_data_set(der_y_data)
+                self.change_displayed_data_set(self.plt_data_options[name]["xDer"])
+
         else:
-            self.change_displayed_data_set(self.active_data)
+            if self.der_y.isChecked():
+                name = self.active_data_name
+                if self.plt_data_options[name]["yDer"] is None:
+                    der_y_data = np.diff(self.active_data, 1, 1)
+                    self.plt_data_options[name]["yDer"] = der_y_data
+                else:
+                    der_y_data = self.plt_data_options[name]["yDer"]
+                self.change_displayed_data_set(der_y_data)
+            else:
+                self.change_displayed_data_set(self.active_data)
 
     def correct_data_action(self):
         """
@@ -708,10 +733,6 @@ class Heatmap(BaseGraph):
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
 
-        # scale_x, scale_y = self.data_buffer.get_scale()
-        # new_plot.scale(scale_x, 1)
-        # NOTE: This is incorrect way of doing the scale
-
         point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point1
         start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -743,13 +764,6 @@ class Heatmap(BaseGraph):
             new_plot.translate(coords.y(), 0)
             line_trace_graph.setXRange(start_coords.y(), end_coords.y())
             scale = end_coords.y() - start_coords.y()
-
-        """
-        This might also work, but then axis goes in wrong direction
-        if end_coords.x() > start_coords.x():
-            scale = end_coords.x() - start_coords.x()
-        else:
-            scale = end_coords.x() - start_coords.x()"""
 
         num_of_points = (len(selected) - 1) or 1
         new_plot.scale(scale/num_of_points, 1)
@@ -801,6 +815,8 @@ class Heatmap(BaseGraph):
         self.plt_data.append(value_member)
         self.plt_data_options[display_member] = {"xDer": None,
                                                  "yDer": None,
+                                                 "xyDer": None,
+                                                 "yxDer": None,
                                                  "corrected": None,
                                                  "gauss": None}
         # self.corrected_data = corrected_matrix
@@ -858,6 +874,8 @@ class Heatmap(BaseGraph):
         self.plt_data.append(value_member)
         self.plt_data_options[display_member] = {"xDer": None,
                                                  "yDer": None,
+                                                 "xyDer": None,
+                                                 "yxDer": None,
                                                  "corrected": None,
                                                  "gauss": None}
         # self.corrected_data = corrected_matrix
