@@ -177,16 +177,20 @@ class QcodesData(DataBuffer):
 
 
 def main():
+
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
     # 3D
-    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+    #file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
 
     # 2D
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
 
     # Daniels measurement example
-    file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+    # file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
 
     data = QcodesData(file_location)
+    data.prepare_data()
+    print(data.data)
 
 
 if __name__ == '__main__':

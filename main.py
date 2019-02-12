@@ -5,6 +5,7 @@ from PyQt5 import QtCore, QtGui
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.MatrixFileDataBuffer import MatrixData
+from data_handlers.LabberDataBuffer import LabberData
 from BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
 from graphs.LineTrace import LineTrace
@@ -210,30 +211,42 @@ class MainWindow(QMainWindow):
         for file in file_dialog[0]:
             name = get_location_basename(file)
             with open(file, "r") as current_file:
-                for i, line in enumerate(current_file):
-                    if i == 2:
-                        if line.strip(" \n") == "":
-                            type_item = QTableWidgetItem("QtLab")
-                            buffer = QtLabData(file)
-                            worker = Worker(buffer.prepare_data)
-                        elif line.startswith("#"):
-                            type_item = QTableWidgetItem("QCoDeS")
-                            buffer = QcodesData(file)
-                            worker = Worker(buffer.prepare_data)
-                        else:
-                            type_item = QTableWidgetItem("Matrix")
-                            buffer = MatrixData(file)
-                            worker = Worker(buffer.prepare_data)
+                if file.lower().endswith(".hdf5"):
+                    type_item = QTableWidgetItem("Labber")
+                    buffer = LabberData(file)
+                    worker = Worker(buffer.prepare_data)
+                    progress_bar = self.add_progress_widget(buffer)
+                    buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
+                    self.datasets[name] = buffer
+                    buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
+                    worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
+                                                                                     type_item))
+                    self.thread_pool.start(worker)
+                else:
+                    for i, line in enumerate(current_file):
+                        if i == 2:
+                            if line.strip(" \n") == "":
+                                type_item = QTableWidgetItem("QtLab")
+                                buffer = QtLabData(file)
+                                worker = Worker(buffer.prepare_data)
+                            elif line.startswith("#"):
+                                type_item = QTableWidgetItem("QCoDeS")
+                                buffer = QcodesData(file)
+                                worker = Worker(buffer.prepare_data)
+                            else:
+                                type_item = QTableWidgetItem("Matrix")
+                                buffer = MatrixData(file)
+                                worker = Worker(buffer.prepare_data)
 
-                        progress_bar = self.add_progress_widget(buffer)
-                        buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
-                        self.datasets[name] = buffer
-                        buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
-                        worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
-                                                                                         type_item))
-                        self.thread_pool.start(worker)
+                            progress_bar = self.add_progress_widget(buffer)
+                            buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
+                            self.datasets[name] = buffer
+                            buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
+                            worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
+                                                                                             type_item))
+                            self.thread_pool.start(worker)
 
-                        break
+                            break
 
     def add_progress_widget(self, buffer):
         progress_bar = ProgressBarWidget(buffer.location)
@@ -243,9 +256,20 @@ class MainWindow(QMainWindow):
         return progress_bar
 
     def remove_progress_widget(self, widget):
+        """
+        TODO: Write documentation
+        :param widget:
+        :return:
+        """
         widget.deleteLater()
 
     def get_progress(self, progress, progress_bar):
+        """
+        TODO: Write documentation
+        :param progress:
+        :param progress_bar:
+        :return:
+        """
         progress_bar.setValue(progress*100)
 
     def make_add_to_table(self, buffer):
