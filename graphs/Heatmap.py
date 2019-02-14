@@ -84,6 +84,9 @@ class Heatmap(BaseGraph):
         # references to all widgets in this window
         self.plot_elements = {}
 
+        # references to all plots in side by side view
+        self.side_by_side_plots = {}
+
         # reference to ROI
         self.line_segment_roi = {"ROI": None}
 
@@ -286,6 +289,22 @@ class Heatmap(BaseGraph):
         self.exit_action_btn.setToolTip("Close this heatmap window")
         self.window_toolbar.addAction(self.exit_action_btn)
 
+        # self.init_line_trace_toolbar()
+
+    def init_line_trace_toolbar(self):
+        self.line_trace_toolbar = QToolBar("Line trace options")
+        self.line_trace_toolbar.actionTriggered[QAction].connect(self.perform_action)
+
+        for i, matrix in enumerate(self.plt_data):
+            name = "matrix{}".format(i)
+            toggle = QAction("M{}".format(i), self)
+            toggle.setCheckable(True)
+            toggle.setChecked(True)
+            self.line_trace_toolbar.addAction(toggle)
+            toggle.triggered.connect(lambda: self.toggle_display(name, toggle))
+
+        self.addToolBar(Qt.RightToolBarArea, self.line_trace_toolbar)
+
     """
     ##################################
     ######## Helper functions ########
@@ -310,29 +329,37 @@ class Heatmap(BaseGraph):
             self.modes["Side-by-side"] = True
             self.plot_elements["frame"].clear()
             for i, matrix in enumerate(self.plt_data):
-                img = pg.ImageItem()
-                img.setImage(matrix)
-                (x_scale, y_scale) = self.data_buffer.get_scale()
-                img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
-                img.scale(x_scale, y_scale)
+                name = "matrix{}".format(i)
+                if name not in self.side_by_side_plots:
+                    img = pg.ImageItem()
+                    histogram = pg.HistogramLUTItem()
+                    plot = self.plot_elements["frame"].addPlot()
 
-                """
-                Danger, potential memory leak, make sure to delete all these histograms later.
-                """
-                histogram = pg.HistogramLUTItem()
-                histogram.setImageItem(img)
-                histogram.gradient.loadPreset("thermal")
-                if i < self.data_buffer.number_of_measured_parameters:
-                    axis_data = self.data_buffer.axis_values["z"][i]
-                    label_style = {'font-size': '8pt'}
-                    histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-                plot = self.plot_elements["frame"].addPlot()
-                plot.addItem(img)
-                self.plot_elements["frame"].addItem(histogram)
+                    img.setImage(matrix)
+                    (x_scale, y_scale) = self.data_buffer.get_scale()
+                    img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+                    img.scale(x_scale, y_scale)
 
-                for axis in ["left", "bottom"]:
-                    ax = plot.getAxis(axis)
-                    ax.setPen((60, 60, 60))
+                    histogram.setImageItem(img)
+                    histogram.gradient.loadPreset("thermal")
+                    if i < self.data_buffer.number_of_measured_parameters:
+                        axis_data = self.data_buffer.axis_values["z"][i]
+                        label_style = {'font-size': '8pt'}
+                        histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                    plot.addItem(img)
+                    self.plot_elements["frame"].addItem(histogram)
+
+                    for axis in ["left", "bottom"]:
+                        ax = plot.getAxis(axis)
+                        ax.setPen((60, 60, 60))
+
+                    self.side_by_side_plots[name] = {"plot": plot, "img": img, "histogram": histogram}
+                else:
+                    # img = self.side_by_side_plots[name]["img"]
+                    histogram = self.side_by_side_plots[name]["histogram"]
+                    plot = self.side_by_side_plots[name]["plot"]
+                    self.plot_elements["frame"].addItem(plot)
+                    self.plot_elements["frame"].addItem(histogram)
         else:
             if self.modes["Side-by-side"]:
                 self.plot_elements["histogram"].setFixedWidth(self.histogram_width)
@@ -386,6 +413,25 @@ class Heatmap(BaseGraph):
         self.smoothen_y.setValue(0)
         self.smoothen_x.setValue(0)
 
+    def open_line_trace_menues(self):
+        """
+        Method that hdies/displays additional menues for controling what is displayed in the line trace graph
+
+        :return: NoneType
+        """
+        if self.modes["Side-by-side"] and self.modes["ROI"]:
+            self.line_trace_toolbar.show()
+        else:
+            self.line_trace_toolbar.hide()
+
+    def toggle_display(self, matrix, action):
+        if action.isChecked():
+            self.side_by_side_plots[matrix]["plot"].show()
+            self.side_by_side_plots[matrix]["histogram"].show()
+        else:
+            self.side_by_side_plots[matrix]["plot"].hide()
+            self.side_by_side_plots[matrix]["histogram"].hide()
+
     """
     #########################
     ######## Actions ########
@@ -398,6 +444,8 @@ class Heatmap(BaseGraph):
 
         :return:
         """
+        # self.open_line_trace_menues()
+
         if self.modes["ROI"] == False:
             self.modes["ROI"] = True
 
@@ -445,6 +493,9 @@ class Heatmap(BaseGraph):
             self.line_segment_roi["ROI"].hide()
             self.label_a.hide()
             self.label_b.hide()
+
+    def side_by_side_line_trace(self):
+        pass
 
     def font_action(self):
         """

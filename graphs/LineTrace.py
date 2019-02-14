@@ -120,6 +120,8 @@ class LineTrace(BaseGraph):
 
     def fit_mode_action(self):
         """
+        TODO: This might have a memory leak, i keep creating new LinerRegionItems. Probably should reuse the old one
+
         Called when user clicks on an action that activates fit mode of the window. Shows / hides additional toolbar
         used to fit different kinds of curves to the displayed data.
 
