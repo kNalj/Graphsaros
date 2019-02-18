@@ -118,6 +118,7 @@ class Heatmap(BaseGraph):
         frame_layout = pg.GraphicsLayout()
         central_item.addItem(frame_layout)
         main_subplot = frame_layout.addPlot()
+        main_subplot.setZValue(1000)
         img = pg.ImageItem()
         img.setImage(self.displayed_data_set, padding=0)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
@@ -948,7 +949,8 @@ class Heatmap(BaseGraph):
                             font = QFont()
                             font.setPixelSize(int(options["ticks"]["font"]))
                             axis.tickFont = font
-                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2),
+                                          tickLength=5)
                         # axis.setTickSpacing(major=float(options["ticks"]["major"]),
                         #                     minor=float(options["ticks"]["minor"]))
                     else:
@@ -958,7 +960,8 @@ class Heatmap(BaseGraph):
                             font = QFont()
                             font.setPixelSize(int(options["ticks"]["font"]))
                             axis.tickFont = font
-                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2),
+                                          tickLength=5)
             else:
                 axis = self.plot_elements["histogram"].axis
                 axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])
@@ -968,7 +971,8 @@ class Heatmap(BaseGraph):
                     font = QFont()
                     font.setPixelSize(int(data["histogram"]["ticks"]["font"]))
                     axis.tickFont = font
-                    axis.setStyle(tickTextOffset=int(int(data["histogram"]["ticks"]["font"]) / 2))
+                    axis.setStyle(tickTextOffset=int(int(data["histogram"]["ticks"]["font"]) / 2),
+                                  tickLength=int(5))
 
     def update_extra_axis_range(self):
         """
