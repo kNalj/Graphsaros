@@ -336,8 +336,8 @@ class Edit3DAxisWidget(EditAxisWidget):
                              "unit": self.elements["histogram"]["unit"].text(),
                              "label_style": {'font-size': self.elements["histogram"]["font_size"].text()},
                              "ticks": {"minor": self.elements["histogram"]["minor_ticks"].text(),
-                                       "major": self.elements["histogram"]["major_ticks"].text()}}
-                # ax.setLabel(ax.labelText, ax.labelUnits, **label_style)
+                                       "major": self.elements["histogram"]["major_ticks"].text(),
+                                       "font": self.elements["histogram"]["tick_font"].text()}}
 
         self.submitted.emit(data)
 

@@ -944,16 +944,31 @@ class Heatmap(BaseGraph):
                     if side != "top":
                         axis = self.plot_elements[element].getAxis(side)
                         axis.setLabel(options["name"], options["unit"], **options["label_style"])
+                        if options["ticks"]["font"] != "":
+                            font = QFont()
+                            font.setPixelSize(int(options["ticks"]["font"]))
+                            axis.tickFont = font
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
                         # axis.setTickSpacing(major=float(options["ticks"]["major"]),
                         #                     minor=float(options["ticks"]["minor"]))
                     else:
                         axis = self.plot_elements["extra_axis"]
                         axis.setLabel(options["name"], options["unit"], **options["label_style"])
+                        if options["ticks"]["font"] != "":
+                            font = QFont()
+                            font.setPixelSize(int(options["ticks"]["font"]))
+                            axis.tickFont = font
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
             else:
                 axis = self.plot_elements["histogram"].axis
                 axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])
                 # axis.setTickSpacing(major=float(sides["ticks"]["major"]),
                 #                     minor=float(sides["ticks"]["minor"]))
+                if data["histogram"]["ticks"]["font"] != "":
+                    font = QFont()
+                    font.setPixelSize(int(data["histogram"]["ticks"]["font"]))
+                    axis.tickFont = font
+                    axis.setStyle(tickTextOffset=int(int(data["histogram"]["ticks"]["font"]) / 2))
 
     def update_extra_axis_range(self):
         """
