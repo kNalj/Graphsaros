@@ -63,6 +63,7 @@ class LabberData(DataBuffer):
 
     def prepare_data(self):
         """
+        TODO: Implement case where a 2d file with multiple measured parameters needs to be read.
 
         :return:
         """
@@ -79,7 +80,6 @@ class LabberData(DataBuffer):
                 self.number_of_set_parameters += 1
             if channel[0] in measured_params:
                 self.number_of_measured_parameters += 1
-
 
         if self.get_number_of_dimension() == 3:
             print("Modeling 3d data . . .")

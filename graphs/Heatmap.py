@@ -507,7 +507,7 @@ class Heatmap(BaseGraph):
 
     def smoothing_action(self):
         """
-        TODO: Write documentation for this function
+        A method used to call a smoothing algorithm selected from the drop down menu in the toolbar.
 
         :return: NoneType
         """
@@ -645,7 +645,21 @@ class Heatmap(BaseGraph):
 
     def naive_smoothing(self):
         """
-        TODO: Write documentation for this function
+        Method that smoothens the data by calculating the average of the n points to the left and right of point P,
+        and setting the value of P to the calculated value.
+
+        Example:
+
+        [[1, 4, 3],
+         [2, 8, 2],
+         [3, 5, 6]]
+
+         If this example matrix is smoothened in the x axis direction with a value 1 (1 to the left and 1 to the right
+          of the data point) the result matrix would be:
+
+         [[2.5, 2.66, 3.5], -> (1+4) / 2 = 2.5 \\\\ (1+4+3) / 3 = 2.66 \\\\ (4+3) / 2 = 3.5
+          [5, 4, 5]         -> (2+8) / 2 = 5 \\\\ (2+8+2) / 3 = 4 \\\\ (8+2) / 2 = 5
+          [4, 4.66, 5.5]]   -> (3+5) / 2 = 4 \\\\ (3+5+6) / 3 = 4.66 \\\\ (5+6) / 2 = 5.5
 
         :return:
         """
@@ -684,7 +698,7 @@ class Heatmap(BaseGraph):
 
     def gaussian_smoothing(self):
         """
-        TODO: Write documentation for this function
+        Method that smoothens the data by using existing gaussianFilter function implemented in numpy python library.
 
         :return:
         """
@@ -819,11 +833,20 @@ class Heatmap(BaseGraph):
 
     def apply_correction(self, data):
         """
-        TODO: Write documentation
+        This method gets data from a signal emitted by a window (InputData) designed to input data required to perform
+        this method.
+        After fetching the data, new matrix is created and filled by corrected data.
 
-        :param data:
-        :return:
+        Data is calculated using the formula: Y(real) = Y - (I * R) where R is obtained by user input in the InputWindow
+
+        After generating new matrix, it is added to a dictionery of matrices and is available for selection in dropdown
+        located in the toolbar and can be displayed it the window.
+
+        :param data: array: contains just one member, value of R (resistance) needed to calculate the correction
+                            This array is sent to this method as a signal from the InputWindow widget.
+        :return: NoneType
         """
+        print(data)
         self.correction_resistance = float(data[0])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
@@ -872,11 +895,21 @@ class Heatmap(BaseGraph):
 
     def apply_gm_didv_correction(self, data):
         """
-        TODO: Write documentation
+        This method gets data from a signal emitted by a window (InputData) designed to input data required to perform
+        this method.
+        After fetching the data, new matrix is created and filled by corrected data.
 
-        :param data:
-        :return:
+        Data is calculated using the formula: dV(real) = dV - (dI * R) where R and dV are obtained by user input in the
+        InputWindow.
+
+        After generating new matrix, it is added to a dictionery of matrices and is available for selection in dropdown
+        located in the toolbar and can be displayed it the window.
+
+        :param data: array: contains value of R, dV and a matrix to which we apply the correction to. Passed to this
+                            method as a signal from InputWindow widget.
+        :return: NoneType
         """
+        print(data)
         self.didv_correction_resistance = float(data[0])
         self.didv_correction_dv = float(data[1])
 
@@ -931,10 +964,11 @@ class Heatmap(BaseGraph):
 
     def edit_axis_data(self, data):
         """
-        TODO: Write documentation
+        A method that accepts data from the signal created by EditAxisWidget. It changes the appearance of the graphs
+        axes by changing various parameters (font, text, ...).
 
-        :param data:
-        :return:
+        :param data: dictionary: contains user input specified in the EditAxisWidget
+        :return: NoneType
         """
         for element, sides in data.items():
             if element != "histogram":
