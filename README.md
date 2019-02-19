@@ -1,9 +1,10 @@
 # Graphsaros
     Data analysis tool
 
-# Requirements
+## Requirements
     - Python 3.6+
     - PyQt5
     - pyqtgraph
     - NumPy
     - pandas
+    - h5py
