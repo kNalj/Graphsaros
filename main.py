@@ -356,6 +356,7 @@ class MainWindow(QMainWindow):
 
         :return: NonType
         """
+        print("Redrawing main window . . .")
         self.update_mini_graph()
         self.update_text_display()
 
@@ -366,6 +367,7 @@ class MainWindow(QMainWindow):
 
         :return: NoneType
         """
+        print("Updating mini graph . . .")
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
@@ -374,22 +376,27 @@ class MainWindow(QMainWindow):
             dataset = self.datasets[name]
 
             if dataset.get_number_of_dimension() == 2:
+                print(" Drawing 2d plot . . .")
                 self.mini_plot_items["main_subplot"].clear()
                 self.mini_plot_items["main_subplot"].plot(x=dataset.get_x_axis_values(),
                                                           y=dataset.get_y_axis_values(),
                                                           pen=(60, 60, 60))
             else:
+                print(" Drawing 3d plot . . .")
                 self.mini_plot_items["main_subplot"].clear()
+                print(" Fetching image data . . .")
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix(index=0))
                 (x_scale, y_scale) = dataset.get_scale()
                 img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0])
                 img.scale(x_scale, y_scale)
+                print(" Drawing histogram . . .")
                 histogram = pg.HistogramLUTItem()
                 histogram.setImageItem(img)
                 histogram.gradient.loadPreset("thermal")
                 self.mini_plot_items["main_subplot"].addItem(img)
 
+                print(" Drawing axes . . .")
                 legend = {"left": "y", "bottom": "x"}
                 for side in ('left', 'bottom'):
                     ax = self.mini_plot_items["main_subplot"].getAxis(side)
@@ -405,6 +412,7 @@ class MainWindow(QMainWindow):
 
         :return: NoneType
         """
+        print("Updating text display . . .")
         self.selected_dataset_textbrowser.clear()
         row = self.opened_datasets_tablewidget.currentRow()
         if row != -1:

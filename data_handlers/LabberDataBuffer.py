@@ -6,6 +6,7 @@ import h5py
 
 from data_handlers.DataBuffer import DataBuffer
 
+
 class LabberData(DataBuffer):
 
     def __init__(self, location):
@@ -40,14 +41,17 @@ class LabberData(DataBuffer):
 
         matrix_dimensions = []
         file = h5py.File(self.location)
+        channel_names = [channel[0] for channel in file["Data"]["Channel names"]]
         steping_params = file["Step config"]
+        set_params = [channel[0] for channel in file["Step list"].value]
         for stepy_boye in steping_params:
-            for item in steping_params[stepy_boye]:
-                if item == "Step items":
-                    # [(1, 0, 3.05180438e-05, 0.01, 0.1, 0.055, 0.09, 0.005, 19, 0, 0.)]
-                    # above comment is what this "Step items" looks like
-                    # dimension of axis is third to last in the dataset displayed above
-                    matrix_dimensions.append(steping_params[stepy_boye][item].value[0][-3])
+            if stepy_boye in channel_names and stepy_boye in set_params:
+                for item in steping_params[stepy_boye]:
+                    if item == "Step items":
+                        # [(1, 0, 3.05180438e-05, 0.01, 0.1, 0.055, 0.09, 0.005, 19, 0, 0.)]
+                        # above comment is what this "Step items" looks like
+                        # dimension of axis is third to last in the dataset displayed above
+                        matrix_dimensions.append(steping_params[stepy_boye][item].value[0][-3])
         file.close()
 
         if not matrix_dimensions:
@@ -65,18 +69,30 @@ class LabberData(DataBuffer):
         file = h5py.File(self.location)
         data = file["Data"]
 
-        self.number_of_set_parameters = self.get_number_of_dimension() - 1
-        self.number_of_measured_parameters = len(data["Data"][0]) - self.number_of_set_parameters
+        self.number_of_set_parameters = 0
+        self.number_of_measured_parameters = 0
+        set_params = [channel[0] for channel in file["Step list"].value]
+        measured_params = [channel[0] for channel in file["Log list"].value]
+
+        for channel in data["Channel names"].value:
+            if channel[0] in set_params:
+                self.number_of_set_parameters += 1
+            if channel[0] in measured_params:
+                self.number_of_measured_parameters += 1
+
 
         if self.get_number_of_dimension() == 3:
+            print("Modeling 3d data . . .")
             y_axis = pd.unique((np.array([axis_values[0] / self.gains["x"] for axis_values in data["Data"].value])).flatten("C"))
             x_axis = pd.unique((np.array([axis_values[1] / self.gains["y"] for axis_values in data["Data"].value])).flatten("C"))
             z_axis = (np.array([axis_values[1] for axis_values in data["Data"].value])).flatten("C")
         else:
+            print("Modeling 2d data . . .")
             x_axis = [axis_values[0][0] for axis_values in data["Data"].value]
             y_axis = [axis_values[1][0] for axis_values in data["Data"].value]
 
         if self.get_number_of_dimension() == 3:
+            print("Fetching matrix values . . .")
             matrices = []
             start_index = self.number_of_set_parameters
             end_index = self.number_of_set_parameters + self.number_of_measured_parameters
@@ -96,9 +112,12 @@ class LabberData(DataBuffer):
                                 # if i want to set the missing data to something other then 0 i should do it here
                                 pass
                 matrices.append(matrix_data)
+
             self.data = {"x": x_axis, "y": y_axis, "matrix": matrices}
             self.progress.emit(1)
             return {"x": x_axis, "y": y_axis, "matrix": matrices}
+        else:
+            pass
 
         self.data = {"x": x_axis, "y": y_axis}
         self.progress.emit(1)
@@ -163,6 +182,7 @@ class LabberData(DataBuffer):
 
 def main():
     file_location = "K:\\Measurement\\Andrea\\Majo3\\1stCooldown\\2019\\02\\Data_0217\\I_sweepSG_BG+3000mV.hdf5"
+
     ex = LabberData(file_location)
     ex.prepare_data()
 

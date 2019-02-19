@@ -14,7 +14,7 @@ from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
 
 class LineTrace(BaseGraph):
-    def __init__(self, data: DataBuffer=None, axis_data=None):
+    def __init__(self, data: DataBuffer = None, axis_data=None):
         """
         Inherits: BaseGraph()
 
@@ -24,6 +24,7 @@ class LineTrace(BaseGraph):
         :param axis_data [Optional]: If what is being open is a line trace created from Heatmap window, then there is
                                     no actual data buffer rather just x and y axis data
         """
+        print("Instantiating 2d window . . .")
         super().__init__()
 
         # Axis data exists when what is being opened is a line trace created by Heatmap window. In that case no
@@ -53,6 +54,7 @@ class LineTrace(BaseGraph):
 
     def init_ui(self):
 
+        print("Creating 2d window . . .")
         # set dimensions, title and icon of the window
         self.setGeometry(50, 50, 640, 400)
         self.setWindowTitle("Line trace window")
@@ -62,6 +64,7 @@ class LineTrace(BaseGraph):
         self.plt.setBackground("w")
         self.plt.setCentralWidget(self.central_item)
 
+        print("Creating axis elements . . .")
         self.central_item.addItem(self.main_subplot, colspan=2)
         for plot_item in [self.main_subplot, self.fit_plot]:
             for axis in ['left', 'bottom']:
