@@ -118,7 +118,6 @@ class Heatmap(BaseGraph):
         frame_layout = pg.GraphicsLayout()
         central_item.addItem(frame_layout)
         main_subplot = frame_layout.addPlot()
-        main_subplot.setZValue(1000)
         img = pg.ImageItem()
         img.setImage(self.displayed_data_set, padding=0)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
@@ -134,10 +133,8 @@ class Heatmap(BaseGraph):
         for side in ('left', 'bottom'):
             ax = main_subplot.getAxis(side)
             ax.setPen((60, 60, 60))
-            # font = QFont()  # this and following 3 line are changing the size of ticks on axis
-            # font.setPixelSize(20)
-            # ax.tickFont = font
-            # ax.setStyle(tickTextOffset=10)
+            ax.setZValue(10)
+            ax.setStyle(tickLength=5)
             axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
@@ -949,8 +946,7 @@ class Heatmap(BaseGraph):
                             font = QFont()
                             font.setPixelSize(int(options["ticks"]["font"]))
                             axis.tickFont = font
-                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2),
-                                          tickLength=5)
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
                         # axis.setTickSpacing(major=float(options["ticks"]["major"]),
                         #                     minor=float(options["ticks"]["minor"]))
                     else:
@@ -960,8 +956,7 @@ class Heatmap(BaseGraph):
                             font = QFont()
                             font.setPixelSize(int(options["ticks"]["font"]))
                             axis.tickFont = font
-                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2),
-                                          tickLength=5)
+                            axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"])/2))
             else:
                 axis = self.plot_elements["histogram"].axis
                 axis.setLabel(sides["name"], sides["unit"], **sides["label_style"])

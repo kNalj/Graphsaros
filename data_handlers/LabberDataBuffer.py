@@ -73,8 +73,8 @@ class LabberData(DataBuffer):
             x_axis = pd.unique((np.array([axis_values[1] / self.gains["y"] for axis_values in data["Data"].value])).flatten("C"))
             z_axis = (np.array([axis_values[1] for axis_values in data["Data"].value])).flatten("C")
         else:
-            y_axis = [axis_values[0][0] for axis_values in data["Data"].value]
-            x_axis = [axis_values[1][0] for axis_values in data["Data"].value]
+            x_axis = [axis_values[0][0] for axis_values in data["Data"].value]
+            y_axis = [axis_values[1][0] for axis_values in data["Data"].value]
 
         if self.get_number_of_dimension() == 3:
             matrices = []
@@ -162,7 +162,7 @@ class LabberData(DataBuffer):
 
 
 def main():
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\A_sweepVS_stepVG_around0.hdf5"
+    file_location = "K:\\Measurement\\Andrea\\Majo3\\1stCooldown\\2019\\02\\Data_0217\\I_sweepSG_BG+3000mV.hdf5"
     ex = LabberData(file_location)
     ex.prepare_data()
 
