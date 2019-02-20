@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
 
         """
         super().__init__()
-
+        print("Instantiating main window . . .")
         # define title of the window
         self.title = "Graphsaros"
         # define width of the window
@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
 
     def init_ui(self):
 
+        print("Modeling main window . . .")
         # find dimensions of the monitor (screen)
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         # set position of the window relative to the dimensions of the display screen
@@ -86,6 +87,7 @@ class MainWindow(QMainWindow):
         self.open_dataset_btn = QPushButton("Plot")
         self.open_dataset_btn.clicked.connect(self.display_dataset)
 
+        print("Building datasets table . . .")
         # table widget containing all loaded data sets
         self.opened_datasets_tablewidget = QTableWidget(0, 4)
         self.opened_datasets_tablewidget.setMinimumSize(600, 200)
@@ -102,6 +104,7 @@ class MainWindow(QMainWindow):
         self.selected_dataset_textbrowser.setMinimumSize(600, 200)
         self.selected_dataset_textbrowser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        print("Building mini plot . . .")
         # miniature plot that displays data of the selected buffer
         preview_plt = pg.GraphicsView()
         mini_plot = pg.GraphicsLayout()
@@ -141,7 +144,7 @@ class MainWindow(QMainWindow):
 
         :return: NoneType
         """
-
+        print("Modeling menu bar . . .")
         # create action for closing the program
         exit_action = QAction("&Exit", self)
         # add shortcut to this action
@@ -185,6 +188,7 @@ class MainWindow(QMainWindow):
 
         :return:
         """
+        print("Closing all windows and exiting the application . . .")
         app = QtGui.QGuiApplication.instance()
         app.closeAllWindows()
         self.close()
@@ -206,6 +210,7 @@ class MainWindow(QMainWindow):
 
         :return: NoneType
         """
+        print("Opening FileDialog for selecting files . . .")
         file_dialog = QFileDialog.getOpenFileNames()
 
         for file in file_dialog[0]:
@@ -249,6 +254,12 @@ class MainWindow(QMainWindow):
                             break
 
     def add_progress_widget(self, buffer):
+        """
+
+        :param buffer:
+        :return:
+        """
+        print("Loading data buffer . . .")
         progress_bar = ProgressBarWidget(buffer.location)
         progress_bar.finished.connect(self.remove_progress_widget)
         self.loading_bars_layout.addWidget(progress_bar)
@@ -291,6 +302,7 @@ class MainWindow(QMainWindow):
         :param item_type: string: string that is added to table to display type of the buffer in that row
         :return: NoneType
         """
+        print("Adding buffer to the table . . .")
         if buffer.is_data_ready():
             name = os.path.basename(buffer.get_location())
             rows = self.opened_datasets_tablewidget.rowCount()

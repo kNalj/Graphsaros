@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QProgressBar, QDialog, QApplication, QGridLayout, QMessageBox, QWidget, QDesktopWidget, \
     QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QPushButton, QComboBox
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QValidator, QIntValidator
 from PyQt5.QtCore import pyqtSignal
 
 import os
@@ -102,6 +102,19 @@ def shift(arr, num, fill_value=0):
     return result
 
 
+def check_validator_state(sender, *args, **kwargs):
+    validator = sender.validator()
+    state = validator.validate(sender.text(), 0)[0]
+
+    if state == QValidator.Acceptable:
+        color = '#c4df9b'  # green
+    elif state == QValidator.Intermediate:
+        color = '#fff79a'  # yellow
+    else:
+        color = '#f6989d'  # red
+    sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
+
+
 class ProgressBarWidget(QWidget):
 
     finished = pyqtSignal(object)
@@ -190,6 +203,8 @@ class Edit3DAxisWidget(EditAxisWidget):
 
         self.elements = {}
 
+        self.validators = {}
+
         self.init_ui()
 
     def init_ui(self):
@@ -201,6 +216,8 @@ class Edit3DAxisWidget(EditAxisWidget):
         self.setWindowIcon(QIcon("img/dataStructure.png"))
 
         layout = QGridLayout()
+        validator = QIntValidator()
+        self.validators["int"] = validator
 
         for element in ["main_subplot", "line_trace_graph"]:
             box = QGroupBox(self)
@@ -208,6 +225,7 @@ class Edit3DAxisWidget(EditAxisWidget):
             plot_label = QLabel(element.capitalize().replace("_", " "), self)
             layout.addWidget(plot_label)
             self.elements[element] = {}
+            self.validators[element] = {}
 
             if element == "line_trace_graph":
                 axes = ["left", "bottom", "top"]
@@ -230,9 +248,10 @@ class Edit3DAxisWidget(EditAxisWidget):
                 plot_unit = QLineEdit(plot_current_unit)
                 plot_unit.setPlaceholderText("Unit")
                 self.elements[element][side]["unit"] = plot_unit
-                plot_current_font_size = axis.labelStyle["font-size"]
+                plot_current_font_size = axis.labelStyle["font-size"][:-2]
                 plot_font_size = QLineEdit(plot_current_font_size)
                 plot_font_size.setPlaceholderText("Font size")
+                plot_font_size.setValidator(self.validators["int"])
                 self.elements[element][side]["font_size"] = plot_font_size
                 tick_spacing_major = QLineEdit()
                 tick_spacing_major.setPlaceholderText("Major ticks")
@@ -243,11 +262,11 @@ class Edit3DAxisWidget(EditAxisWidget):
                 tick_font_size = QLineEdit()
                 tick_font_size.setPlaceholderText("Font")
                 self.elements[element][side]["tick_font"] = tick_font_size
+                self.elements[element][side]["tick_font"].setValidator(self.validators["int"])
                 tick_h_layout = QHBoxLayout()
                 tick_h_layout.addWidget(tick_spacing_major)
                 tick_h_layout.addWidget(tick_spacing_minor)
                 tick_h_layout.addWidget(tick_font_size)
-
                 v_layout.addWidget(QLabel(side.capitalize()))
                 v_layout.addWidget(plot_text)
                 v_layout.addWidget(plot_unit)
@@ -275,9 +294,10 @@ class Edit3DAxisWidget(EditAxisWidget):
         plot_unit = QLineEdit(plot_current_unit)
         plot_unit.setPlaceholderText("Unit")
         self.elements["histogram"]["unit"] = plot_unit
-        plot_current_font_size = hist_axis.labelStyle["font-size"]
+        plot_current_font_size = hist_axis.labelStyle["font-size"][:-2]
         plot_font_size = QLineEdit(plot_current_font_size)
         plot_font_size.setPlaceholderText("Font size")
+        plot_font_size.setValidator(self.validators["int"])
         self.elements["histogram"]["font_size"] = plot_font_size
         tick_spacing_major = QLineEdit()
         tick_spacing_major.setPlaceholderText("Major ticks")
@@ -288,6 +308,7 @@ class Edit3DAxisWidget(EditAxisWidget):
         tick_font_size = QLineEdit()
         tick_font_size.setPlaceholderText("Font")
         self.elements["histogram"]["tick_font"] = tick_font_size
+        self.elements["histogram"]["tick_font"].setValidator(self.validators["int"])
         tick_h_layout = QHBoxLayout()
         tick_h_layout.addWidget(tick_spacing_major)
         tick_h_layout.addWidget(tick_spacing_minor)
@@ -316,6 +337,11 @@ class Edit3DAxisWidget(EditAxisWidget):
         :return: NoneType
         """
 
+        # Main subplot in the heatmap window is the one showing the image of the data
+        # left and bottom refers to a location of the axis
+        # Line trace graph in the heatmap window is the one showing line traces under lineROI object
+        # left, top and bottom refer to axes in that graph
+        # Additionally histogram data needs to be stored in a separate dictionary
         data = {"main_subplot": {"left": {}, "bottom": {}},
                 "line_trace_graph": {"left": {}, "bottom": {}, "top": {}},
                 "histogram": {"name": None, "unit": None, "label_style": None, "ticks": None}}
@@ -328,21 +354,37 @@ class Edit3DAxisWidget(EditAxisWidget):
             for side in axes:
                 data[element][side] = {"name": self.elements[element][side]["label"].text(),
                                        "unit": self.elements[element][side]["unit"].text(),
-                                       "label_style": {'font-size': self.elements[element][side]["font_size"].text()},
+                                       "label_style": {'font-size': self.elements[element][side]["font_size"].text() + "pt"},
                                        "ticks": {"minor": self.elements[element][side]["minor_ticks"].text(),
                                                  "major": self.elements[element][side]["major_ticks"].text(),
                                                  "font": self.elements[element][side]["tick_font"].text()}}
         data["histogram"] = {"name": self.elements["histogram"]["label"].text(),
                              "unit": self.elements["histogram"]["unit"].text(),
-                             "label_style": {'font-size': self.elements["histogram"]["font_size"].text()},
+                             "label_style": {'font-size': self.elements["histogram"]["font_size"].text() + "pt"},
                              "ticks": {"minor": self.elements["histogram"]["minor_ticks"].text(),
                                        "major": self.elements["histogram"]["major_ticks"].text(),
                                        "font": self.elements["histogram"]["tick_font"].text()}}
 
-        self.submitted.emit(data)
+        validation_fail = self.validate()
+        if not validation_fail:
+            self.submitted.emit(data)
+        else:
+            self.setFocus(validation_fail)
 
     def validate(self):
-        pass
+        for element in self.elements:
+            if element in ["main_subplot", "line_trace_graph"]:
+                for axis in self.elements[element]:
+                    for widget in self.elements[element][axis]:
+                        if self.elements[element][axis][widget].validator() is not None:
+                            validator = self.elements[element][axis][widget].validator()
+                            state = validator.validate(self.elements[element][axis][widget].text(), 0)[0]
+                            if state == QValidator.Acceptable:
+                                return False
+                            elif state == QValidator.Intermediate:
+                                return False
+                            else:
+                                return self.elements[element][axis][widget]
 
 
 class InfoWidget(QWidget):

@@ -69,7 +69,7 @@ class LabberData(DataBuffer):
         """
         file = h5py.File(self.location)
         data = file["Data"]
-
+        self.textual = np.array2string(data["Data"].value)
         self.number_of_set_parameters = 0
         self.number_of_measured_parameters = 0
         set_params = [channel[0] for channel in file["Step list"].value]
