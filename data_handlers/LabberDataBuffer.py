@@ -68,14 +68,15 @@ class LabberData(DataBuffer):
         :return:
         """
         file = h5py.File(self.location)
-        data = file["Data"]
-        self.textual = np.array2string(data["Data"].value)
+        raw_data = file["Data"]
+        data = raw_data["Data"].value
+        self.textual = np.array2string(data)
         self.number_of_set_parameters = 0
         self.number_of_measured_parameters = 0
         set_params = [channel[0] for channel in file["Step list"].value]
         measured_params = [channel[0] for channel in file["Log list"].value]
 
-        for channel in data["Channel names"].value:
+        for channel in raw_data["Channel names"].value:
             if channel[0] in set_params:
                 self.number_of_set_parameters += 1
             if channel[0] in measured_params:
@@ -83,13 +84,13 @@ class LabberData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             print("Modeling 3d data . . .")
-            y_axis = pd.unique((np.array([axis_values[0] / self.gains["x"] for axis_values in data["Data"].value])).flatten("C"))
-            x_axis = pd.unique((np.array([axis_values[1] / self.gains["y"] for axis_values in data["Data"].value])).flatten("C"))
-            z_axis = (np.array([axis_values[1] for axis_values in data["Data"].value])).flatten("C")
+            y_axis = pd.unique((np.array([axis_values[0] / self.gains["x"] for axis_values in data])).flatten("C"))
+            x_axis = pd.unique((np.array([axis_values[1] / self.gains["y"] for axis_values in data])).flatten("C"))
+            z_axis = (np.array([axis_values[1] for axis_values in data])).flatten("C")
         else:
             print("Modeling 2d data . . .")
-            x_axis = [axis_values[0][0] for axis_values in data["Data"].value]
-            y_axis = [axis_values[1][0] for axis_values in data["Data"].value]
+            x_axis = [axis_values[0][0] for axis_values in data]
+            y_axis = [axis_values[1][0] for axis_values in data]
 
         if self.get_number_of_dimension() == 3:
             print("Fetching matrix values . . .")
@@ -105,7 +106,7 @@ class LabberData(DataBuffer):
                     for j in range(y_dimension):
                         if i * y_dimension + j < num_of_elements:
                             if len(z_axis) > i * y_dimension + j:
-                                matrix_data[i][j] = data["Data"].value[j][2 + matrix - start_index][i] / self.gains["z"][matrix - start_index]
+                                matrix_data[i][j] = data[j][2 + matrix - start_index][i] / self.gains["z"][matrix - start_index]
                                 self.progress.emit(float(((matrix - start_index) * x_dimension * y_dimension + i * y_dimension + j) /
                                                    (self.number_of_measured_parameters * x_dimension * y_dimension)))
                             else:
