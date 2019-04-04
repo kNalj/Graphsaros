@@ -434,8 +434,8 @@ class MainWindow(QMainWindow):
             dataset = self.datasets[name]
 
             self.selected_dataset_textbrowser.append("X [Step: {}]\tY [Step: {}]".format(
-                dataset.get_x_axis_values()[1] - dataset.get_x_axis_values()[0],
-                dataset.get_y_axis_values()[1] - dataset.get_y_axis_values()[0]))
+                (dataset.get_x_axis_values()[-1] - dataset.get_x_axis_values()[0]) / len(dataset.get_x_axis_values()),
+                (dataset.get_y_axis_values()[-1] - dataset.get_y_axis_values()[0]) / len(dataset.get_y_axis_values())))
             self.selected_dataset_textbrowser.append(dataset.textual_data_representation())
 
     def open_folder_explorer(self):

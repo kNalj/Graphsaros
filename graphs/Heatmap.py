@@ -37,6 +37,7 @@ class Heatmap(BaseGraph):
 
         :param data: DataBuffer(): Reference to a DataBuffer object that is being displayed in this window
         """
+        print("Initializing heatmap window . . .")
         super().__init__()
 
         # setting the window title, i would have never guessed its this
@@ -60,6 +61,7 @@ class Heatmap(BaseGraph):
         # saving transformations on main data buffer matrices, so that i dont need to recalculate them next time i need
         # them, gotta save that 0.1 sec bro
         self.plt_data_options = {}
+        print("Loading matrices . . .")
         for i in range(len(self.plt_data)):
             name = "matrix" + str(i)
             self.plt_data_options[name] = {"xDer": None,
@@ -130,6 +132,7 @@ class Heatmap(BaseGraph):
         y_max = max(self.data_buffer.get_y_axis_values())
         main_subplot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
         legend = {"left": "y", "bottom": "x"}
+        print("Gathering axis data . . .")
         for side in ('left', 'bottom'):
             ax = main_subplot.getAxis(side)
             ax.setPen((60, 60, 60))
@@ -166,6 +169,7 @@ class Heatmap(BaseGraph):
         line_trace_graph.setMaximumHeight(256)
         line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
         legend = {"left": "z", "bottom": "y", "top": "x"}
+        print("Modeling axis data . . .")
         for axis in ["left", "bottom"]:
             ax = line_trace_graph.getAxis(axis)
             ax.show()

@@ -103,8 +103,14 @@ class DataBuffer(QObject):
 
         :return: tuple: (scale_x, scale_y)
         """
-        return (self.data["x"][-1] - self.data["x"][0]) / (len(self.data["x"]) - 1), \
-               (self.data["y"][-1] - self.data["y"][0]) / (len(self.data["y"]) - 1)
+        x_divider = len(self.data["x"])
+        if x_divider == 0:
+            x_divider = 1
+        y_divider = len(self.data["y"])
+        if y_divider == 0:
+            y_divider = 1
+        return (self.data["x"][-1] - self.data["x"][0]) / x_divider, \
+               (self.data["y"][-1] - self.data["y"][0]) / y_divider
 
     def get_matrix(self, index=None):
         """
@@ -171,7 +177,7 @@ class DataBuffer(QObject):
 
         z_axis_data = {"name": data_dict["z"]["name"], "unit": data_dict["z"]["unit"]}
 
-        self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": z_axis_data}
+        self.axis_values = {"x": x_axis_data, "y": y_axis_data, "z": {0: z_axis_data}}
 
         self.ready.emit()
 
