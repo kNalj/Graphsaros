@@ -194,9 +194,16 @@ class Heatmap(BaseGraph):
         extra_axis.linkToView(extra_view_box)
         extra_view_box.setXLink(line_trace_graph.vb)
 
+        pen = pg.mkPen("b", width=1)
+        v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
+        h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
+        line_trace_graph.addItem(v_line, ignoreBounds=True)
+        line_trace_graph.addItem(h_line, ignoreBounds=True)
+
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
-                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box}
+                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box,
+                              "v_line": v_line, "h_line": h_line}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -489,6 +496,9 @@ class Heatmap(BaseGraph):
                 self.line_segment_roi["ROI"].show()
                 self.label_a.show()
                 self.label_b.show()
+                self.plot_elements["line_trace_graph"].addItem(self.plot_elements["v_line"])
+                self.plot_elements["line_trace_graph"].addItem(self.plot_elements["h_line"])
+
         else:
             self.modes["ROI"] = False
             self.plot_elements["line_trace_graph"].clear()
@@ -784,6 +794,8 @@ class Heatmap(BaseGraph):
             mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
             string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
+            self.plot_elements["v_line"].setPos(mouse_point.x())
+            self.plot_elements["h_line"].setPos(mouse_point.y())
 
     def update_line_trace_plot(self):
         """
@@ -800,6 +812,7 @@ class Heatmap(BaseGraph):
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
         new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
+        new_plot.setZValue(10)
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -836,7 +849,9 @@ class Heatmap(BaseGraph):
             line_trace_graph.setXRange(start_coords.y(), end_coords.y())
             scale = end_coords.y() - start_coords.y()
 
-        num_of_points = (len(selected) - 1) or 1
+        num_of_points = len(selected) - 1
+        if num_of_points == 0:
+            num_of_points = 1
         new_plot.scale(scale/num_of_points, 1)
 
     def apply_correction(self, data):
@@ -1168,7 +1183,7 @@ def main():
     app = QApplication(sys.argv)
 
     # Daniels 3D measurement example in QCoDeS
-    file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+    # file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
 
     # Josip 3D measurement example in QtLab
     file_location = "C:\\Users\\ldrmic\\Downloads\\113622_1_3 IV 560.dat"
