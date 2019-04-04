@@ -472,7 +472,7 @@ class Heatmap(BaseGraph):
                 self.label_a.setPos(x0, y0)
                 self.label_b = pg.TextItem("[B]", color=(255, 255, 255))
                 self.label_b.setAnchor((0, 0))
-                self.label_a.setParentItem(line_segmet_roi)
+                self.label_b.setParentItem(line_segmet_roi)
                 self.label_b.setPos(x1, y1)
 
                 # connect signal to a slot
@@ -778,6 +778,10 @@ class Heatmap(BaseGraph):
         pos = evt
         if self.plot_elements["main_subplot"].sceneBoundingRect().contains(pos):
             mouse_point = self.plot_elements["main_subplot"].vb.mapSceneToView(pos)
+            string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
+            self.statusBar().showMessage(string)
+        elif self.plot_elements["line_trace_graph"].sceneBoundingRect().contains(pos):
+            mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
             string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
 
