@@ -29,7 +29,7 @@ sys.excepthook = trap_exc_during_debug
 
 class Heatmap(BaseGraph):
 
-    def __init__(self, data: DataBuffer):
+    def __init__(self, data: DataBuffer, parent=None):
         """
         Inherits: BaseGraph()
 
@@ -38,7 +38,7 @@ class Heatmap(BaseGraph):
         :param data: DataBuffer(): Reference to a DataBuffer object that is being displayed in this window
         """
         print("Initializing heatmap window . . .")
-        super().__init__()
+        super().__init__(parent=parent)
 
         # setting the window title, i would have never guessed its this
         self.setWindowTitle("Heatmap window")
@@ -195,15 +195,15 @@ class Heatmap(BaseGraph):
         extra_view_box.setXLink(line_trace_graph.vb)
 
         pen = pg.mkPen("b", width=1)
-        v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
-        h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
-        line_trace_graph.addItem(v_line, ignoreBounds=True)
-        line_trace_graph.addItem(h_line, ignoreBounds=True)
+        # v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
+        # h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
+        # line_trace_graph.addItem(v_line, ignoreBounds=True)
+        # line_trace_graph.addItem(h_line, ignoreBounds=True)
 
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
-                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box,
-                              "v_line": v_line, "h_line": h_line}
+                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box}
+                              # "v_line": v_line, "h_line": h_line}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -730,15 +730,7 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        dropdown_options = {}
-        for index, matrix in enumerate(self.plt_data):
-            key = "matrix{}".format(index)
-            value = matrix
-            dropdown_options[key] = value
-        self.didv_input = helpers.InputData("Please input resistance and dV that will be used in calculating dV(real)",
-                                            2, numeric=[True, True], placeholders=["Resistance", "dV"],
-                                            dropdown=True, dropdown_text="Select matrix containing values of CURRENT",
-                                            dropdown_options=dropdown_options)
+        self.didv_input = helpers.DiDvCorrectionInputWidget(parent=self)
         self.didv_input.submitted.connect(self.apply_gm_didv_correction)
 
     def zoom_action(self):
@@ -794,8 +786,8 @@ class Heatmap(BaseGraph):
             mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
             string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
-            self.plot_elements["v_line"].setPos(mouse_point.x())
-            self.plot_elements["h_line"].setPos(mouse_point.y())
+            # self.plot_elements["v_line"].setPos(mouse_point.x())
+            # self.plot_elements["h_line"].setPos(mouse_point.y())
 
     def update_line_trace_plot(self):
         """
@@ -869,7 +861,6 @@ class Heatmap(BaseGraph):
                             This array is sent to this method as a signal from the InputWindow widget.
         :return: NoneType
         """
-        print(data)
         self.correction_resistance = float(data[0])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
@@ -932,7 +923,6 @@ class Heatmap(BaseGraph):
                             method as a signal from InputWindow widget.
         :return: NoneType
         """
-        print(data)
         self.didv_correction_resistance = float(data[0])
         self.didv_correction_dv = float(data[1])
 

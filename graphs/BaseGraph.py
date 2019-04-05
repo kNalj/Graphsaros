@@ -8,12 +8,14 @@ class BaseGraph(QMainWindow):
 
     """
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Base class for windows that display 2d and 3D graphs
 
         """
         super().__init__()
+
+        self.parent = parent
 
         # plot object, can be 2D or 3D
         self.plt = None

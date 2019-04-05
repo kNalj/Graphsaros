@@ -14,7 +14,7 @@ from data_handlers.QcodesDataBuffer import QcodesData, DataBuffer
 
 
 class LineTrace(BaseGraph):
-    def __init__(self, data: DataBuffer = None, axis_data=None):
+    def __init__(self, data: DataBuffer = None, axis_data=None, parent=None):
         """
         Inherits: BaseGraph()
 
@@ -25,7 +25,7 @@ class LineTrace(BaseGraph):
                                     no actual data buffer rather just x and y axis data
         """
         print("Instantiating 2d window . . .")
-        super().__init__()
+        super().__init__(parent=parent)
 
         # Axis data exists when what is being opened is a line trace created by Heatmap window. In that case no
         # reference to data buffer is made.

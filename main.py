@@ -333,10 +333,10 @@ class MainWindow(QMainWindow):
             dataset = self.datasets[name]
 
             if dataset.get_number_of_dimension() == 3:
-                self.hm = Heatmap(dataset)
+                self.hm = Heatmap(dataset, self)
                 self.hm.show()
             else:
-                self.lt = LineTrace(dataset)
+                self.lt = LineTrace(dataset, self)
                 self.lt.show()
 
     def open(self, file_type: str):
