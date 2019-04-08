@@ -195,15 +195,15 @@ class Heatmap(BaseGraph):
         extra_view_box.setXLink(line_trace_graph.vb)
 
         pen = pg.mkPen("b", width=1)
-        # v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
-        # h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
-        # line_trace_graph.addItem(v_line, ignoreBounds=True)
-        # line_trace_graph.addItem(h_line, ignoreBounds=True)
+        v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
+        h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
+        line_trace_graph.addItem(v_line)
+        line_trace_graph.addItem(h_line)
 
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
-                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box}
-                              # "v_line": v_line, "h_line": h_line}
+                              "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box,
+                              "v_line": v_line, "h_line": h_line, "line_trace_data": None}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -783,11 +783,40 @@ class Heatmap(BaseGraph):
             string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
         elif self.plot_elements["line_trace_graph"].sceneBoundingRect().contains(pos):
-            mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
-            string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
-            self.statusBar().showMessage(string)
-            # self.plot_elements["v_line"].setPos(mouse_point.x())
-            # self.plot_elements["h_line"].setPos(mouse_point.y())
+            if self.modes["ROI"]:
+                mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
+
+                x = mouse_point.x()
+
+                num_of_point = len(self.plot_elements["line_trace_data"])
+                point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+                _, scene_coords = point1
+                start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+                point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+                _, scene_coords = point2
+                end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+                if (180 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                    start, end = start_coords.x(), end_coords.x()
+                elif abs(self.line_segment_roi["ROI"].get_angle_from_points()) < 0.0000001:
+                    start, end = start_coords.x(), end_coords.x()
+                elif abs(90 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                    start, end = start_coords.y(), end_coords.y()
+                else:
+                    start, end = start_coords.y(), end_coords.y()
+
+                step = (end-start) / (num_of_point - 1)
+
+                xp = np.arange(start, end + step, step)
+                fp = self.plot_elements["line_trace_data"]
+                y = np.interp(x, xp, fp)
+
+                self.plot_elements["v_line"].setPos(x)
+                self.plot_elements["h_line"].setPos(y)
+
+                print(x, y)
+
+                string = "[Position: {}, {}]".format(round(x, 9), round(y, 9))
+                self.statusBar().showMessage(string)
 
     def update_line_trace_plot(self):
         """
@@ -797,6 +826,7 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
 
+        self.plot_elements["line_trace_graph"].clear()
         self.update_point_label_positions()
 
         data = self.displayed_data_set
@@ -804,7 +834,9 @@ class Heatmap(BaseGraph):
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
         line_trace_graph = self.plot_elements["line_trace_graph"]
         new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
-        new_plot.setZValue(10)
+        self.plot_elements["line_trace_data"] = selected
+        line_trace_graph.addItem(self.plot_elements["v_line"], ignoreBounds=True)
+        line_trace_graph.addItem(self.plot_elements["h_line"], ignoreBounds=True)
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -845,6 +877,9 @@ class Heatmap(BaseGraph):
         if num_of_points == 0:
             num_of_points = 1
         new_plot.scale(scale/num_of_points, 1)
+
+    def get_roi_points(self):
+        pass
 
     def apply_correction(self, data):
         """
