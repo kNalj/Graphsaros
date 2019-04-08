@@ -164,14 +164,14 @@ class DataBuffer(QObject):
         x_start = float(data_dict["x"]["start"])
         x_end = float(data_dict["x"]["end"])
         step = (x_end - x_start) / (self.matrix_dimensions[0] - 1)
-        x_axis_values = [x for x in np.arange(x_start, x_end, step=step)]
+        x_axis_values = np.array([x for x in np.arange(x_start, x_end+step, step=step)])
         self.data["x"] = x_axis_values
         x_axis_data = {"name": data_dict["x"]["name"], "unit": data_dict["x"]["unit"]}
 
         y_start = float(data_dict["y"]["start"])
         y_end = float(data_dict["y"]["end"])
         step = (y_end - y_start) / (self.matrix_dimensions[1] - 1)
-        y_axis_values = [y for y in np.arange(y_start, y_end, step=step)]
+        y_axis_values = np.array([y for y in np.arange(y_start, y_end+step, step=step)])
         self.data["y"] = y_axis_values
         y_axis_data = {"name": data_dict["y"]["name"], "unit": data_dict["y"]["unit"]}
 

@@ -938,10 +938,8 @@ class Heatmap(BaseGraph):
             column = currents_matrix[row, :]
             corrected_voltages = (abs(y_data) - abs(
                 self.didv_correction_resistance * column) * self.unit_correction) * biases
-
             xp = corrected_voltages
             fp = matrix[row, :]
-
             if np.all(np.diff(y_data) > 0):
                 corrected_matrix[row, :] = np.interp(y_data, xp, fp, left=0, right=0)
             else:

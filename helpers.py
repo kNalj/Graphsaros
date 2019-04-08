@@ -511,9 +511,9 @@ class DiDvCorrectionInputWidget(QWidget):
 
     def update_matrices(self):
         self.matrices_dropdown.clear()
-        matrices = self.dataset_dropdown.currentData().data["matrix"]
+        matrices = self.dataset_dropdown.currentData().get_matrix()
         for index, matrix in enumerate(matrices):
-            self.matrices_dropdown.addItem("Matrix {}".format(index), matrix)
+            self.matrices_dropdown.addItem("matrix{}".format(index), matrix)
 
 
     def submit_data(self):

@@ -64,6 +64,8 @@ class MatrixData(DataBuffer):
 
         :return:
         """
+        self.number_of_measured_parameters = 1
+        self.number_of_set_parameters = 2
         if not self.data["matrix"]:
             transposed = np.transpose(self.raw_data)
             self.data["matrix"].append(transposed)
