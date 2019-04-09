@@ -168,6 +168,7 @@ class Heatmap(BaseGraph):
         line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
         line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
+        line_trace_graph.scene().sigMouseClicked.connect(self.mark_current_line_trace_point)
         legend = {"left": "z", "bottom": "y", "top": "x"}
         print("Modeling axis data . . .")
         for axis in ["left", "bottom"]:
@@ -440,6 +441,50 @@ class Heatmap(BaseGraph):
         else:
             self.side_by_side_plots[matrix]["plot"].hide()
             self.side_by_side_plots[matrix]["histogram"].hide()
+
+    def calculate_crosshair_position(self, mouse_point):
+        """
+
+        :param mouse_point:
+        :return:
+        """
+        if self.plot_elements["line_trace_data"] is not None:
+            x = mouse_point.x()
+
+            num_of_point = len(self.plot_elements["line_trace_data"])
+            point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+            _, scene_coords = point1
+            start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+            point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+            _, scene_coords = point2
+            end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+            if (180 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                start, end = start_coords.x(), end_coords.x()
+            elif abs(self.line_segment_roi["ROI"].get_angle_from_points()) < 0.0000001:
+                start, end = start_coords.x(), end_coords.x()
+            elif abs(90 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
+                start, end = start_coords.y(), end_coords.y()
+            else:
+                start, end = start_coords.y(), end_coords.y()
+
+            step = (end - start) / (num_of_point - 1)
+
+            xp = np.arange(start, end + step, step)
+            fp = self.plot_elements["line_trace_data"]
+            y = np.interp(x, xp, fp)
+
+            return x, y
+
+    def change_crosshair_position(self, x, y):
+        """
+
+
+        :param x:
+        :param y:
+        :return:
+        """
+        self.plot_elements["v_line"].setPos(x)
+        self.plot_elements["h_line"].setPos(y)
 
     """
     #########################
@@ -783,40 +828,13 @@ class Heatmap(BaseGraph):
             string = "[Position: {}, {}]".format(round(mouse_point.x(), 3), round(mouse_point.y(), 3))
             self.statusBar().showMessage(string)
         elif self.plot_elements["line_trace_graph"].sceneBoundingRect().contains(pos):
-            if self.modes["ROI"]:
-                mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
-
-                x = mouse_point.x()
-
-                num_of_point = len(self.plot_elements["line_trace_data"])
-                point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
-                _, scene_coords = point1
-                start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-                point2 = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
-                _, scene_coords = point2
-                end_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-                if (180 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
-                    start, end = start_coords.x(), end_coords.x()
-                elif abs(self.line_segment_roi["ROI"].get_angle_from_points()) < 0.0000001:
-                    start, end = start_coords.x(), end_coords.x()
-                elif abs(90 - abs(self.line_segment_roi["ROI"].get_angle_from_points())) < 0.0000001:
-                    start, end = start_coords.y(), end_coords.y()
-                else:
-                    start, end = start_coords.y(), end_coords.y()
-
-                step = (end-start) / (num_of_point - 1)
-
-                xp = np.arange(start, end + step, step)
-                fp = self.plot_elements["line_trace_data"]
-                y = np.interp(x, xp, fp)
-
-                self.plot_elements["v_line"].setPos(x)
-                self.plot_elements["h_line"].setPos(y)
-
-                print(x, y)
-
-                string = "[Position: {}, {}]".format(round(x, 9), round(y, 9))
-                self.statusBar().showMessage(string)
+            if self.plot_elements["line_trace_data"] is not None:
+                if self.modes["ROI"]:
+                    mouse_point = self.plot_elements["line_trace_graph"].vb.mapSceneToView(pos)
+                    x, y = self.calculate_crosshair_position(mouse_point)
+                    self.change_crosshair_position(x, y)
+                    string = "[Position: {}, {}]".format(round(x, 9), round(y, 9))
+                    self.statusBar().showMessage(string)
 
     def update_line_trace_plot(self):
         """
@@ -835,8 +853,6 @@ class Heatmap(BaseGraph):
         line_trace_graph = self.plot_elements["line_trace_graph"]
         new_plot = line_trace_graph.plot(selected, pen=(60, 60, 60), clear=True)
         self.plot_elements["line_trace_data"] = selected
-        line_trace_graph.addItem(self.plot_elements["v_line"], ignoreBounds=True)
-        line_trace_graph.addItem(self.plot_elements["h_line"], ignoreBounds=True)
         point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = point
         coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
@@ -877,9 +893,9 @@ class Heatmap(BaseGraph):
         if num_of_points == 0:
             num_of_points = 1
         new_plot.scale(scale/num_of_points, 1)
-
-    def get_roi_points(self):
-        pass
+        line_trace_graph.addItem(self.plot_elements["v_line"], ignoreBounds=True)
+        line_trace_graph.addItem(self.plot_elements["h_line"], ignoreBounds=True)
+        self.change_crosshair_position(start_coords.x(), start_coords.y())
 
     def apply_correction(self, data):
         """
@@ -1188,6 +1204,10 @@ class Heatmap(BaseGraph):
             else:
                 return
             self.line_segment_roi["ROI"].arrow_move(event.key(), distance)
+            point1 = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+            _, scene_coords = point1
+            start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+            self.change_crosshair_position(start_coords.x(), start_coords.y())
 
     def zoom_to_range(self, data):
         """
@@ -1201,6 +1221,12 @@ class Heatmap(BaseGraph):
         self.plot_elements["main_subplot"].vb.setXRange(x_min, x_max, padding=0)
         self.plot_elements["main_subplot"].vb.setYRange(y_min, y_max, padding=0)
 
+    def mark_current_line_trace_point(self):
+        """
+
+        :return:
+        """
+        print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
 
 def main():
     app = QApplication(sys.argv)
