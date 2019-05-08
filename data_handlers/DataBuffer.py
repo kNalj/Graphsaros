@@ -21,6 +21,8 @@ class DataBuffer(QObject):
         # location is absolute path to a location of the file on the disk
         self.location = location
 
+        self.name = os.path.basename(self.get_location())
+
         # data is a dictionary containing:
         #   For 3D measurement: matrix, x, y
         #       matrix: np.array containing z axis data

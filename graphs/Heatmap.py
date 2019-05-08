@@ -41,7 +41,7 @@ class Heatmap(BaseGraph):
         super().__init__(parent=parent)
 
         # setting the window title, i would have never guessed its this
-        self.setWindowTitle("Heatmap window")
+        self.setWindowTitle(data.name)
 
         # khm khm ... setting window icon ...
         self.setWindowIcon(QIcon("img/heatmapIcon.png"))
@@ -119,7 +119,7 @@ class Heatmap(BaseGraph):
         central_item = pg.GraphicsLayout()
         frame_layout = pg.GraphicsLayout()
         central_item.addItem(frame_layout)
-        main_subplot = frame_layout.addPlot()
+        main_subplot = frame_layout.addPlot(title=self.data_buffer.name)
         img = pg.ImageItem()
         img.setImage(self.displayed_data_set, padding=0)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
