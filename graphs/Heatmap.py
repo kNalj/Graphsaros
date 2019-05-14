@@ -254,25 +254,40 @@ class Heatmap(BaseGraph):
         # ###############################
         # ##### Data manipulations ######
         # ###############################
+
+        # Create a toolbar
         self.tools = self.addToolBar("Tools")
+        # Connect all actions to a "perform action" method. Perform action takes the name of the action and finds the
+        # method that corresponds to that name. This is way for each action in the toolbar there needs to be a method
+        # that has a name: actionName_action where actionName is the name of the action in the toolbar.
         self.tools.actionTriggered[QAction].connect(self.perform_action)
 
+        # add a dropdown menu which allows a user to select the matrix to display (some measurements measure more then
+        # 1 parameter
         self.matrix_selection_combobox = QComboBox()
+        # fill the dropdown with matrices
         for index, matrix in enumerate(self.plt_data):
             display_member = "matrix{}".format(index)
             value_member = matrix
             self.matrix_selection_combobox.addItem(display_member, value_member)
+        # Create an option that displays all matrices at the sime time
         display_member = "Side-by-side"
         value_member = None
         self.matrix_selection_combobox.addItem(display_member, value_member)
         self.matrix_selection_combobox.currentIndexChanged.connect(lambda: self.change_active_set(
             index=self.matrix_selection_combobox.currentIndex()))
         self.tools.addWidget(self.matrix_selection_combobox)
+
+        # Adds a line to the matrix. The endpoints of this line are movable. The line_trace_graph shows data below this
+        # line
         self.line_trace_btn = QAction(QIcon("img/lineGraph"), "Line_Trace", self)
         self.line_trace_btn.setToolTip("Add an adjustable line to the main graph. Data 'below' the line is displayed\n"
                                        "in the line trace graph")
+        # Make the line trace action be toggleable (ON/OFF)
         self.line_trace_btn.setCheckable(True)
         self.tools.addAction(self.line_trace_btn)
+
+        # Add actions that allow user to derivate the data along x or y axis (toggleable)
         self.der_x = QAction(QIcon("img/xDer.png"), "xDerivative", self)
         self.der_x.setToolTip("Calculate and display x derivative of the displayed data")
         self.der_x.setCheckable(True)
@@ -281,11 +296,17 @@ class Heatmap(BaseGraph):
         self.der_y.setToolTip("Calculate and display y derivative of the displayed data")
         self.der_y.setCheckable(True)
         self.tools.addAction(self.der_y)
+
+        # Add a dropdown that allows a user to select different kinds of data smoothening. Depending on the selected
+        # option, changinh the spin boxes applies a different kind of smoothening to the active data set.
         self.smoothing_selection_combobox = QComboBox()
         for smoothing_type in ["Naive", "Gaussian"]:
             self.smoothing_selection_combobox.addItem(smoothing_type)
         self.smoothing_selection_combobox.currentIndexChanged.connect(self.smoothing_action)
         self.tools.addWidget(self.smoothing_selection_combobox)
+
+        # Sping boxes for controling the smoothening, one for each axis. Increasing the number in the spin box increases
+        # the number of neighbouring points that are taken into account when smoothening data.
         self.smoothen_x = QSpinBox()
         self.smoothen_x.valueChanged.connect(self.smoothing_action)
         self.tools.addWidget(self.smoothen_x)
@@ -296,19 +317,27 @@ class Heatmap(BaseGraph):
         # ###############################
         # #### Matrix manipulations #####
         # ###############################
+
+        # Add another part of the toolbar. This toolbar contains actions that create new data/files from the existing
+        # data set
         self.matrix_manipulation_toolbar = QToolBar("Matrix manipulation")
         self.matrix_manipulation_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(self.matrix_manipulation_toolbar)
+
+        # Add an action that when clicked creates a mitrix file of currently displayed data set
         self.create_matrix_file_btn = QAction(QIcon("img/matrix-512.png"), "Matrix", self)
         self.create_matrix_file_btn.setToolTip("Create a raw matrix file from currently displayed data set")
         self.matrix_manipulation_toolbar.addAction(self.create_matrix_file_btn)
+
+        # Add an action that when clicked prompts a user to input some data, and then uses that data to apply a data
+        # correction to the displayed data set
         self.data_correction_action = QAction(QIcon("img/line-chart.png"), "Correct_data", self)
         self.data_correction_action.setToolTip("Get Y(real) values calculated by formula: Y(real) = Y - (I * R)\n"
                                                "R is user input.")
         self.matrix_manipulation_toolbar.addAction(self.data_correction_action)
-        # self.didv_correction_action_btn = QAction(QIcon("img/dIdV.png"), "didv_correction", self)
-        # self.matrix_manipulation_toolbar.addAction(self.didv_correction_action_btn)
 
+        # Add an action that when clicked prompts a user to input some data, and then uses that data to apply a data
+        # correction to the displayed data set (dIdV)
         self.gm_didv = QAction(QIcon("img/dIdV.png"), "gm_didv_correction", self)
         self.gm_didv.setToolTip("Get dV(real) values calculated by formula: dV(real) = dV - (dI * R)\n"
                                 "dV, R are user input")
@@ -317,18 +346,28 @@ class Heatmap(BaseGraph):
         # ###############################
         # #### Window manipulations #####
         # ###############################
+
+        # Additional toolbar that modifies the look of the window (increase/decrease font size, change axis text, ...)
         self.window_toolbar = QToolBar("Window toolbar")
         self.window_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(self.window_toolbar)
+
+        # An action that allows user to modify fonts
         self.customize_font_btn = QAction(QIcon("img/editFontIcon.png"), "Font", self)
         self.customize_font_btn.setToolTip("Open a widget that allows user to customise font and axis values")
         self.window_toolbar.addAction(self.customize_font_btn)
+
+        # An action that opens a 2D window and displays the data currenttly selected by the line_trace_ROI
         self.open_2D = QAction(QIcon("img/2d_icon.png"), "Show_2d", self)
         self.open_2D.setToolTip("Open a selected line trace in new window that allows manipulation and transformations")
         self.window_toolbar.addAction(self.open_2D)
+
+        # Allow a user to zoom in to a certain part of the matrix
         self.zoom_action_btn = QAction(QIcon("img/zoomin_icon.png"), "Zoom", self)
         self.zoom_action_btn.setToolTip("Select area of graph to zoom into")
         self.window_toolbar.addAction(self.zoom_action_btn)
+
+        # Action that closes the current window
         self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
         self.exit_action_btn.setToolTip("Close this heatmap window")
         self.window_toolbar.addAction(self.exit_action_btn)
@@ -336,6 +375,14 @@ class Heatmap(BaseGraph):
         # self.init_line_trace_toolbar()
 
     def init_line_trace_toolbar(self):
+        """
+        TODO: Maybe finish this ?
+
+        This should instantiate an additional toolbar which will allow user to select the matrices displayed when
+        side by side mode is turned on.
+
+        :return:
+        """
         self.line_trace_toolbar = QToolBar("Line trace options")
         self.line_trace_toolbar.actionTriggered[QAction].connect(self.perform_action)
 
@@ -486,10 +533,11 @@ class Heatmap(BaseGraph):
 
     def calculate_crosshair_position(self, mouse_point):
         """
-        TODO: Write documentation
+        Manipulating crosshair is only posible on the x axis, the crosshair y axis gets updated automatically, and the
+        calculation of the value where the horizontal line will be placed is done in this method.
 
-        :param mouse_point:
-        :return:
+        :param mouse_point: position of the mouse pointer
+        :return: x, y positions where vertical and horizontal lines should be placed.
         """
         if self.plot_elements["line_trace_data"] is not None:
             x = mouse_point.x()
@@ -1236,10 +1284,11 @@ class Heatmap(BaseGraph):
 
     def keyPressEvent(self, event):
         """
-        TODO: Write documentation
+        This method gets triggered when a key press event happens. It is used to move the line trace ROI when one of the
+        arrow keys gets pressed.
 
-        :param event:
-        :return:
+        :param event: event that triggered this method
+        :return: NoneType
         """
 
         if self.modes["ROI"]:
@@ -1254,22 +1303,24 @@ class Heatmap(BaseGraph):
             _, scene_coords = point1
             start_coords = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
             self.change_crosshair_position(start_coords.x(), start_coords.y())
+        return
 
     def zoom_to_range(self, data):
         """
-        TODO: Write documentation
+        Method that allows user to zoom to the area of the matrix specified by the lower and upper values of x and y.
 
-        :param data:
-        :return:
+        :param data: list: [xMin, xMax, yMin, yMax]
+        :return: NoneType
         """
 
         x_min, x_max, y_min, y_max = float(data[0]), float(data[1]), float(data[2]), float(data[3])
         self.plot_elements["main_subplot"].vb.setXRange(x_min, x_max, padding=0)
         self.plot_elements["main_subplot"].vb.setYRange(y_min, y_max, padding=0)
+        return
 
     def mark_current_line_trace_point(self):
         """
-
+        TODO: Remember what the hell was this supposed to be
         :return:
         """
         print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
