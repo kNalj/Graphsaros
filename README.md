@@ -1,13 +1,13 @@
 # Graphsaros
 
 
-##About
+## About
 Graphsaros is an open source data analysis tool for opening and viewing datafiles created by QCoDes/QtLab/Labber.
 
 It allows user to do transformations on the data sets, export to matrix format, take arbitrary line traces, apply 
 corrections, etc.
     
-##Table of contents
+## Table of contents
 - Requirements
 - Installation
 - Usage
