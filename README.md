@@ -23,7 +23,7 @@ corrections, etc.
 
 ## Installation
 All of the methods bellow assume that you have installed [python](https://www.python.org/downloads/) and [packages](https://packaging.python.org/tutorials/installing-packages/#use-pip-for-installing) 
-mentioned in the **Requirements** section.
+mentioned in the [**Requirements**](https://github.com/kNalj/Graphsaros#requirements) section.
 ### GitBash
 I would recommend obtaining the program using this method because it makes updating the program much easier then other 
 methods.
@@ -44,10 +44,16 @@ methods.
 3) Dial friends number and ask for a favor
 4) If the program is not installed within next 30 minutes, go back to step 1
 ## Usage
-    TODO: Insert text
+Go to the location where the program has been cloned and double click main.py. If all the requirements have been 
+installed properly the program should start. You are now ready to use Graphsaros.
+
+Click the "OPEN" button and find the file you want to open. After selecting the file, if the file was created as a 
+result of running a measurement in [QCoDeS](https://github.com/QCoDeS/Qcodes) /[QtLab](https://github.com/heeres/qtlab) /
+[Labber](http://labber.org/), the file will be loaded into the table on the top of the window.
+Select the desired measurement and click "PLOT". Your file will be opened and ploted in a window appropriate for plotting
+ such files (2D or 3D measurement).
+ 
+ Use the tools from toolbars to analyze the shit out of your data !
 
 ## Contributing
-### Main window
-### Heatmap window
-![alt text](docs/img/Heatmap.png)
-### Line trace window
+Do pull requests, send me emails, do whatever. It's fine, don't worry about it.
