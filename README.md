@@ -48,7 +48,7 @@ Go to the location where the program has been cloned and double click main.py. I
 installed properly the program should start. You are now ready to use Graphsaros.
 
 Click the "OPEN" button and find the file you want to open. After selecting the file, if the file was created as a 
-result of running a measurement in [QCoDeS](https://github.com/QCoDeS/Qcodes) /[QtLab](https://github.com/heeres/qtlab) /
+result of running a measurement in [QCoDeS](https://github.com/QCoDeS/Qcodes) / [QtLab](https://github.com/heeres/qtlab) /
 [Labber](http://labber.org/), the file will be loaded into the table on the top of the window.
 Select the desired measurement and click "PLOT". Your file will be opened and ploted in a window appropriate for plotting
  such files (2D or 3D measurement).
