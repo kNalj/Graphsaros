@@ -1,11 +1,9 @@
 import pyqtgraph as pg
 import numpy as np
-from math import degrees, radians, atan2, cos, sin, sqrt, tan
-import ntpath
+from math import degrees, atan2, tan
 import sys
-import os
 
-from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSlider, QInputDialog, QSpinBox
+from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
@@ -74,10 +72,14 @@ class Heatmap(BaseGraph):
         # to be able to switch between gauss, lorentz, normal, ...
         self.active_data = self.plt_data[0]
 
+        # name of the data that will be displayed (by default) will allways be matrix0 (index of the matrix of first
+        # parameter will allways be 0)
         self.active_data_name = "matrix0"
 
+        # same as above
         self.active_data_index = 0
 
+        # by default, allways display the first measured parameter
         self.displayed_data_set = self.active_data
 
         # indicates currently displayed data
@@ -111,26 +113,47 @@ class Heatmap(BaseGraph):
     ################################
     """
     def init_ui(self):
+        """
+        This method builds and places user interface elements within the window.
 
+        :return:
+        """
+
+        # Setting the position and size of the window
         self.setGeometry(50, 50, 640, 400)
+        # Central widget is the mail element of the window, all other elements are added to the central widget
         self.setCentralWidget(self.plt)
         self.show()
 
+        # Design of the window is shown in the image that can be found in the readme.md file
+        # https://github.com/kNalj/Graphsaros
         central_item = pg.GraphicsLayout()
         frame_layout = pg.GraphicsLayout()
         central_item.addItem(frame_layout)
+        # add a title to the plot, so that when exported, the image shows the name of the measurement
         main_subplot = frame_layout.addPlot(title=self.data_buffer.name)
+        # print(main_subplot.vb.menu.)
         img = pg.ImageItem()
+        # set the default data as the image data
         img.setImage(self.displayed_data_set, padding=0)
+        # reposition the data to correct starting position (x0, y0)
         img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+        # by default data is drawn on x axis: from 0 to number of points along x axis, also for y: 0 to num of points
+        # on y axis (example: steping 1 param 100 to 110, and steping another 20 to 40 would result in in data being
+        # drawn 0 to 10 on x axis, and 0 to 20 on y axis)
+        # This is way data needs to be scaled after selecting the initial point
         (x_scale, y_scale) = self.data_buffer.get_scale()
         img.scale(x_scale, y_scale)
         main_subplot.addItem(img, padding=0)
+
+        # Seting the limits of the graph so that the user can not go out of the image range
         x_min = min(self.data_buffer.get_x_axis_values())
         x_max = max(self.data_buffer.get_x_axis_values())
         y_min = min(self.data_buffer.get_y_axis_values())
         y_max = max(self.data_buffer.get_y_axis_values())
         main_subplot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
+
+        # Get the data about axis labels and units from the data buffer and apply them to the plot
         legend = {"left": "y", "bottom": "x"}
         print("Gathering axis data . . .")
         for side in ('left', 'bottom'):
@@ -142,10 +165,13 @@ class Heatmap(BaseGraph):
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
+        # Add a controlable curve that shows values greater then selected value (similiar to lines used to show
+        # mountains on geographical maps)
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)
         iso.setData(pg.gaussianFilter(self.active_data, (2, 2)))
 
+        # Add a histogram to control the colors displayed on the image
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
         histogram.gradient.loadPreset("thermal")
@@ -154,6 +180,7 @@ class Heatmap(BaseGraph):
         label_style = {'font-size': '8pt'}
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
+        # Add control for the isoLine to the histogram
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
         histogram.vb.setMouseEnabled(y=False)  # makes user interaction a little easier
@@ -165,10 +192,14 @@ class Heatmap(BaseGraph):
         self.plt.setCentralItem(central_item)
         self.plt.setBackground('w')
         central_item.nextRow()
+
+        # Add line trace graph to the next row of the central item
         line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
         line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
         line_trace_graph.scene().sigMouseClicked.connect(self.mark_current_line_trace_point)
+
+        # configure axes of the line trace graph
         legend = {"left": "z", "bottom": "y", "top": "x"}
         print("Modeling axis data . . .")
         for axis in ["left", "bottom"]:
@@ -182,6 +213,7 @@ class Heatmap(BaseGraph):
             else:
                 ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
+        # Add the third axis (top one) and connect it to the line trace graph
         line_trace_graph.layout.removeItem(
             line_trace_graph.getAxis("top")
         )
@@ -195,12 +227,14 @@ class Heatmap(BaseGraph):
         extra_axis.linkToView(extra_view_box)
         extra_view_box.setXLink(line_trace_graph.vb)
 
+        # Create and add crosshair to the line trace graph
         pen = pg.mkPen("b", width=1)
         v_line = pg.InfiniteLine(angle=90, movable=False, pen=pen)
         h_line = pg.InfiniteLine(angle=0, movable=False, pen=pen)
         line_trace_graph.addItem(v_line)
         line_trace_graph.addItem(h_line)
 
+        # save references to all elements in one dictionary
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
                               "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box,
@@ -435,6 +469,12 @@ class Heatmap(BaseGraph):
             self.line_trace_toolbar.hide()
 
     def toggle_display(self, matrix, action):
+        """
+        TODO: Write documentation
+        :param matrix:
+        :param action:
+        :return:
+        """
         if action.isChecked():
             self.side_by_side_plots[matrix]["plot"].show()
             self.side_by_side_plots[matrix]["histogram"].show()
@@ -442,8 +482,11 @@ class Heatmap(BaseGraph):
             self.side_by_side_plots[matrix]["plot"].hide()
             self.side_by_side_plots[matrix]["histogram"].hide()
 
+        return
+
     def calculate_crosshair_position(self, mouse_point):
         """
+        TODO: Write documentation
 
         :param mouse_point:
         :return:
@@ -477,14 +520,16 @@ class Heatmap(BaseGraph):
 
     def change_crosshair_position(self, x, y):
         """
+        This method updates the position of the crosshair.
 
-
-        :param x:
-        :param y:
-        :return:
+        :param x: value to which the vertical line will be set to
+        :param y: value to which the horizontal line will be set to
+        :return: NoneType
         """
         self.plot_elements["v_line"].setPos(x)
         self.plot_elements["h_line"].setPos(y)
+
+        return
 
     """
     #########################
@@ -754,6 +799,7 @@ class Heatmap(BaseGraph):
         result = (vertical_shift + np.transpose(horizontal_shift)) / 2
 
         self.change_displayed_data_set(result)
+        return
 
     def gaussian_smoothing(self):
         """

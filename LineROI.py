@@ -223,11 +223,11 @@ class LineROI(pg.LineSegmentROI):
         handle_b_parrent_coords = self.mapSceneToParent(handle_b_scene_coords)
 
         if key_pressed == Qt.Key_Left:
-            self.movePoint(handle_a, (handle_a_parrent_coords.x() - + distance, handle_a_parrent_coords.y()))
-            self.movePoint(handle_b, (handle_b_parrent_coords.x() - + distance, handle_b_parrent_coords.y()))
+            self.movePoint(handle_a, (handle_a_parrent_coords.x() - distance, handle_a_parrent_coords.y()))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x() - distance, handle_b_parrent_coords.y()))
         elif key_pressed == Qt.Key_Right:
-            self.movePoint(handle_a, (handle_a_parrent_coords.x() + + distance, handle_a_parrent_coords.y()))
-            self.movePoint(handle_b, (handle_b_parrent_coords.x() + + distance, handle_b_parrent_coords.y()))
+            self.movePoint(handle_a, (handle_a_parrent_coords.x() + distance, handle_a_parrent_coords.y()))
+            self.movePoint(handle_b, (handle_b_parrent_coords.x() + distance, handle_b_parrent_coords.y()))
         elif key_pressed == Qt.Key_Down:
             self.movePoint(handle_a, (handle_a_parrent_coords.x(), handle_a_parrent_coords.y() - + distance))
             self.movePoint(handle_b, (handle_b_parrent_coords.x(), handle_b_parrent_coords.y() - + distance))
