@@ -14,12 +14,25 @@ corrections, etc.
 - Contributing
 
 ## Requirements
-- Python 3.6+
+
+- **Python 3.6+**
 - PyQt5
 - pyqtgraph
 - NumPy
+- SciPy
 - pandas
 - h5py
+- pywin32
+- Labber API (Please read **"Meeting the requirements"**)
+### Meeting the requirements:
+
+Go to [python homepage](https://www.python.org/) and download the latest version of python. Install the downloaded file.
+After installing python start command prompt and install the rest of the packages (all but the last one can be installed
+by using pip (example: ```pip install pyqt5```, wait until it finishes and the run, ```pip install numpy```, ...))
+
+#### Labber API
+
+To enable the Labber API please follow the instructions on the following [link](http://labber.org/online-doc/api/Installation.html).
 
 ## Installation
 All of the methods bellow assume that you have installed [python](https://www.python.org/downloads/) and [packages](https://packaging.python.org/tutorials/installing-packages/#use-pip-for-installing) 
