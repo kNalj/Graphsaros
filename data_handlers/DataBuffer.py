@@ -192,10 +192,13 @@ class DataBuffer(QObject):
         if not self.matrix_dimensions:
             return False
         if "x" not in self.data or "y" not in self.data:
+            print("X or Y not in data")
             return False
         if "x" not in self.axis_values or "y" not in self.axis_values:
+            print("X or Y not in axis values")
             return False
 
+        print("Data is ready to be displayed.")
         return True
 
     def create_matrix_file(self, index):

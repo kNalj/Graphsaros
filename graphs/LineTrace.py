@@ -29,6 +29,7 @@ class LineTrace(BaseGraph):
 
         # Axis data exists when what is being opened is a line trace created by Heatmap window. In that case no
         # reference to data buffer is made.
+
         if axis_data is None:
             self.data_buffer = data
             self.x_values = self.data_buffer.data["x"]
@@ -45,7 +46,6 @@ class LineTrace(BaseGraph):
 
         # indicates in which modes the window is currently working.
         self.modes = {"fit": False}
-
         # used in fit mode of this window, holds data about created fit curves to enable hiding and displaying them at
         # any point
         self.fit_curves = {}

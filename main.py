@@ -317,6 +317,9 @@ class MainWindow(QMainWindow):
             delete_current_file_btn.clicked.connect(self.make_delete_file_from_list(location_item))
             self.opened_datasets_tablewidget.setCellWidget(rows, 2, delete_current_file_btn)
             self.opened_datasets_tablewidget.setItem(rows, 3, item_type)
+            print("Added to the table . . .")
+        else:
+            print("Data not ready ! Abort.")
 
     def display_dataset(self):
         """
@@ -336,7 +339,7 @@ class MainWindow(QMainWindow):
                 self.hm = Heatmap(dataset, self)
                 self.hm.show()
             else:
-                self.lt = LineTrace(dataset, self)
+                self.lt = LineTrace(dataset, None, self)
                 self.lt.show()
 
     def open(self, file_type: str):
