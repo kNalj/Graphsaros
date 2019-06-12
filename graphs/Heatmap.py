@@ -3,7 +3,8 @@ import numpy as np
 from math import degrees, atan2, tan
 import sys
 
-from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox
+from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox, QGraphicsGridLayout, \
+    QGraphicsProxyWidget
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
@@ -13,6 +14,7 @@ from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
 from LineROI import LineROI
+from pyqtgraph_extensions.misc import ColorBarItem, ImageItem
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -125,15 +127,15 @@ class Heatmap(BaseGraph):
         self.setCentralWidget(self.plt)
         self.show()
 
-        # Design of the window is shown in the image that can be found in the readme.md file
-        # https://github.com/kNalj/Graphsaros
+        # Design of the window is shown in the image that can be found in the file
+        # https://github.com/kNalj/Graphsaros/blob/master/docs/img/Heatmap.png
         central_item = pg.GraphicsLayout()
         frame_layout = pg.GraphicsLayout()
         central_item.addItem(frame_layout)
         # add a title to the plot, so that when exported, the image shows the name of the measurement
         main_subplot = frame_layout.addPlot(title=self.data_buffer.name)
         # print(main_subplot.vb.menu.)
-        img = pg.ImageItem()
+        img = ImageItem()
         # set the default data as the image data
         img.setImage(self.displayed_data_set, padding=0)
         # reposition the data to correct starting position (x0, y0)
@@ -180,6 +182,11 @@ class Heatmap(BaseGraph):
         label_style = {'font-size': '8pt'}
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
+        color_bar = ColorBarItem(parent=main_subplot, image=img, label=axis_data["name"])
+        color_bar.layout.setContentsMargins(10, 30, 0, 45)
+        color_bar.hide()
+        frame_layout.addItem(color_bar)
+
         # Add control for the isoLine to the histogram
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
@@ -194,10 +201,11 @@ class Heatmap(BaseGraph):
         central_item.nextRow()
 
         # Add line trace graph to the next row of the central item
-        line_trace_graph = central_item.addPlot(colspan=2, pen=(60, 60, 60))
+        line_trace_graph = central_item.addPlot(colspan=3, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
         line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
         line_trace_graph.scene().sigMouseClicked.connect(self.mark_current_line_trace_point)
+        line_trace_graph.hide()
 
         # configure axes of the line trace graph
         legend = {"left": "z", "bottom": "y", "top": "x"}
@@ -238,7 +246,7 @@ class Heatmap(BaseGraph):
         self.plot_elements = {"central_item": central_item, "frame": frame_layout, "main_subplot": main_subplot,
                               "img": img, "histogram": histogram, "line_trace_graph": line_trace_graph, "iso": iso,
                               "isoLine": isoLine, "extra_axis": extra_axis, "extra_view_box": extra_view_box,
-                              "v_line": v_line, "h_line": h_line, "line_trace_data": None}
+                              "v_line": v_line, "h_line": h_line, "line_trace_data": None, "color_bar": color_bar}
 
         main_subplot.scene().sigMouseMoved.connect(self.mouse_moved)
 
@@ -366,6 +374,12 @@ class Heatmap(BaseGraph):
         self.zoom_action_btn = QAction(QIcon("img/zoomin_icon.png"), "Zoom", self)
         self.zoom_action_btn.setToolTip("Select area of graph to zoom into")
         self.window_toolbar.addAction(self.zoom_action_btn)
+
+        # Switch between histogram look up table and color bar
+        self.toggle_color_bar_btn = QAction(QIcon("img/palette_icon.png"), "Toggle_color_bar", self)
+        self.toggle_color_bar_btn.setToolTip("Switch between histogram and color bar")
+        self.toggle_color_bar_btn.setCheckable(True)
+        self.window_toolbar.addAction(self.toggle_color_bar_btn)
 
         # Action that closes the current window
         self.exit_action_btn = QAction(QIcon("img/closeIcon.png"), "Exit", self)
@@ -592,6 +606,11 @@ class Heatmap(BaseGraph):
         :return:
         """
         # self.open_line_trace_menues()
+
+        if self.line_trace_btn.isChecked():
+            self.plot_elements["line_trace_graph"].show()
+        else:
+            self.plot_elements["line_trace_graph"].hide()
 
         if self.modes["ROI"] == False:
             self.modes["ROI"] = True
@@ -891,6 +910,20 @@ class Heatmap(BaseGraph):
                                                      "Start Y value [Currently {}]".format(current_y_min),
                                                      "End Y value [Currently {}]".format(current_y_max)])
         self.input.submitted.connect(self.zoom_to_range)
+
+    def toggle_color_bar_action(self):
+        """
+
+        :return:
+        """
+        if self.toggle_color_bar_btn.isChecked():
+            self.plot_elements["histogram"].hide()
+            self.plot_elements["histogram"].setFixedWidth(0)
+            self.plot_elements["color_bar"].show()
+        else:
+            self.plot_elements["histogram"].show()
+            self.plot_elements["histogram"].setFixedWidth(self.histogram_width)
+            self.plot_elements["color_bar"].hide()
 
     """
     ########################
