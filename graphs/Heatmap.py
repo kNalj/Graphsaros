@@ -3,8 +3,7 @@ import numpy as np
 from math import degrees, atan2, tan
 import sys
 
-from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox, QGraphicsGridLayout, \
-    QGraphicsProxyWidget
+from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
@@ -13,8 +12,9 @@ from graphs.BaseGraph import BaseGraph
 from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
-from LineROI import LineROI
-from pyqtgraph_extensions.misc import ColorBarItem, ImageItem
+from custom_pg.LineROI import LineROI
+from custom_pg.ColorBar import ColorBarItem
+from custom_pg.ImageItem import ImageItem
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -174,6 +174,7 @@ class Heatmap(BaseGraph):
         iso.setData(pg.gaussianFilter(self.active_data, (2, 2)))
 
         # Add a histogram to control the colors displayed on the image
+        print("Building histogram . . .")
         histogram = pg.HistogramLUTItem()
         histogram.setImageItem(img)
         histogram.gradient.loadPreset("thermal")
@@ -182,12 +183,14 @@ class Heatmap(BaseGraph):
         label_style = {'font-size': '8pt'}
         histogram.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
+        print("Building color bar item . . .")
         color_bar = ColorBarItem(parent=main_subplot, image=img, label=axis_data["name"])
         color_bar.layout.setContentsMargins(10, 30, 0, 45)
         color_bar.hide()
         frame_layout.addItem(color_bar)
 
         # Add control for the isoLine to the histogram
+        print("Building iso line . . .")
         isoLine = pg.InfiniteLine(angle=0, movable=True, pen='g')
         histogram.vb.addItem(isoLine)
         histogram.vb.setMouseEnabled(y=False)  # makes user interaction a little easier
@@ -201,6 +204,7 @@ class Heatmap(BaseGraph):
         central_item.nextRow()
 
         # Add line trace graph to the next row of the central item
+        print("Building line trace graph . . .")
         line_trace_graph = central_item.addPlot(colspan=3, pen=(60, 60, 60))
         line_trace_graph.setMaximumHeight(256)
         line_trace_graph.sigRangeChanged.connect(self.update_extra_axis_range)
