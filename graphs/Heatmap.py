@@ -122,7 +122,7 @@ class Heatmap(BaseGraph):
         """
 
         # Setting the position and size of the window
-        self.setGeometry(50, 50, 640, 400)
+        self.setGeometry(50, 50, 800, 600)
         # Central widget is the mail element of the window, all other elements are added to the central widget
         self.setCentralWidget(self.plt)
         self.show()
@@ -350,6 +350,14 @@ class Heatmap(BaseGraph):
         self.gm_didv.setToolTip("Get dV(real) values calculated by formula: dV(real) = dV - (dI * R)\n"
                                 "dV, R are user input")
         self.matrix_manipulation_toolbar.addAction(self.gm_didv)
+
+        self.horizontal_offset = QAction(QIcon("img/horizontal_offset.png"), "Horizontal_offset", self)
+        self.horizontal_offset.setToolTip("Apply horizontal offset to your data set")
+        self.matrix_manipulation_toolbar.addAction(self.horizontal_offset)
+
+        self.vertical_offset = QAction(QIcon("img/vertical_offset"), "Vertical_offset", self)
+        self.vertical_offset.setToolTip("Apply vertical offset to your data set")
+        self.matrix_manipulation_toolbar.addAction(self.vertical_offset)
 
         # ###############################
         # #### Window manipulations #####
@@ -925,6 +933,16 @@ class Heatmap(BaseGraph):
             self.plot_elements["histogram"].setFixedWidth(self.histogram_width)
             self.plot_elements["color_bar"].hide()
 
+    def horizontal_offset_action(self):
+        self.horizontal_offset_input = helpers.InputData("Apply horizontal offset", 1, ["0"], [True],
+                                                         ["Horizontal offset"])
+        self.horizontal_offset_input.submitted.connect(self.x_axis_offset)
+
+    def vertical_offset_action(self):
+        self.vertical_offset_input = helpers.InputData("Apply vertical offset", 1, ["0"], [True],
+                                                       ["Vertical offset"])
+        self.vertical_offset_input.submitted.connect(self.y_axis_offset)
+
     """
     ########################
     ######## Events ########
@@ -1357,6 +1375,27 @@ class Heatmap(BaseGraph):
         :return:
         """
         print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
+
+    def x_axis_offset(self, data):
+        value = float(data[0])
+        self.apply_axis_offset("x", value)
+
+    def y_axis_offset(self, data):
+        value = float(data[0])
+        self.apply_axis_offset("y", value)
+
+    def apply_axis_offset(self, axis, value):
+        self.data_buffer.data[axis] = self.data_buffer.data[axis] + value
+        self.plot_elements["img"].resetTransform()
+        self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0],
+                                            self.data_buffer.get_y_axis_values()[0])
+        (x_scale, y_scale) = self.data_buffer.get_scale()
+        self.plot_elements["img"].scale(x_scale, y_scale)
+        x_min = min(self.data_buffer.get_x_axis_values())
+        x_max = max(self.data_buffer.get_x_axis_values())
+        y_min = min(self.data_buffer.get_y_axis_values())
+        y_max = max(self.data_buffer.get_y_axis_values())
+        self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
 
 def main():
     app = QApplication(sys.argv)
