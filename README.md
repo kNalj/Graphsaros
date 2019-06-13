@@ -23,7 +23,6 @@ corrections, etc.
 - pandas
 - h5py
 - pywin32
-- pyqtgraph_extensions
 - Labber API (Please read **"Meeting the requirements"**)
 ### Meeting the requirements:
 
