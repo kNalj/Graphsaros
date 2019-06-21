@@ -1401,6 +1401,7 @@ class Heatmap(BaseGraph):
         y_max = max(self.data_buffer.get_y_axis_values())
         self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
 
+
 def main():
     app = QApplication(sys.argv)
 

@@ -1,7 +1,6 @@
 from PyQt5.QtCore import pyqtSlot, QRunnable, QObject, pyqtSignal
 import traceback
 import sys
-import time
 
 
 class Worker(QRunnable):
