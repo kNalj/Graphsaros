@@ -15,6 +15,7 @@ from data_handlers.QtLabDataBuffer import QtLabData
 from custom_pg.LineROI import LineROI
 from custom_pg.ColorBar import ColorBarItem
 from custom_pg.ImageItem import ImageItem
+import custom_pg.VideoExporter
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):

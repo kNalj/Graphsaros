@@ -4,9 +4,6 @@ from pyqtgraph.GraphicsScene import GraphicsScene
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QGraphicsItem
 from custom_pg.VideoPlayer import VideoPlayer
-import numpy as np
-import cv2
-from PIL import ImageGrab
 
 __all__ = ['VideoExporter']
 

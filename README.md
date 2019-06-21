@@ -23,6 +23,7 @@ corrections, etc.
 - pandas
 - h5py
 - pywin32
+- pillow
 - Labber API (Please read **"Meeting the requirements"**)
 ### Meeting the requirements:
 
