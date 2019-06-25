@@ -24,6 +24,7 @@ corrections, etc.
 - h5py
 - pywin32
 - pillow
+- opencv-python
 - Labber API (Please read **"Meeting the requirements"**)
 ### Meeting the requirements:
 
