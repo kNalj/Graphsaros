@@ -38,6 +38,11 @@ class BufferExplorer(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        """
+        Method that builds user interface of buffer explorer window.
+
+        :return:
+        """
         # find dimensions of the monitor (screen)
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         self.setGeometry(int(0.2 * width), int(0.2 * height), 900, 600)
@@ -45,6 +50,8 @@ class BufferExplorer(QWidget):
         self.setWindowTitle("Browse files")
         self.setWindowIcon(QIcon("img/dataStructure.png"))
 
+        # It is possible that there is a lot of measurements in one folder, therefor i create a scroll area and add all
+        # of them to this area. If there is more of them then it can fit, you will be able to scroll to see others
         self.scroll = QScrollArea(self)
         self.scroll.setWidgetResizable(True)
         scroll_content = QWidget(self.scroll)

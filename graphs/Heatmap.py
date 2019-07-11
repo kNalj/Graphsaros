@@ -12,6 +12,7 @@ from graphs.BaseGraph import BaseGraph
 from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.QtLabDataBuffer import QtLabData
+from data_handlers.Dummy2D import DummyBuffer
 from custom_pg.LineROI import LineROI
 from custom_pg.ColorBar import ColorBarItem
 from custom_pg.ImageItem import ImageItem
@@ -533,7 +534,7 @@ class Heatmap(BaseGraph):
 
     def open_line_trace_menues(self):
         """
-        Method that hdies/displays additional menues for controling what is displayed in the line trace graph
+        Method that hides/displays additional menus for controlling what is displayed in the line trace graph
 
         :return: NoneType
         """
@@ -544,7 +545,7 @@ class Heatmap(BaseGraph):
 
     def toggle_display(self, matrix, action):
         """
-        TODO: Write documentation
+        TODO: Implement the feature, and then write documentation
         :param matrix:
         :param action:
         :return:
@@ -595,7 +596,8 @@ class Heatmap(BaseGraph):
 
     def change_crosshair_position(self, x, y):
         """
-        This method updates the position of the crosshair.
+        This method updates the position of the crosshair by moving the vertical and horizontal line to the positions
+        passed to the method as parameters.
 
         :param x: value to which the vertical line will be set to
         :param y: value to which the horizontal line will be set to
@@ -710,7 +712,7 @@ class Heatmap(BaseGraph):
 
     def matrix_action(self):
         """
-        Creates the matrix file version of this data in the same folder where the original file is located
+        Creates the matrix file version of this data in the same folder where the original file is located.
 
         :return: NoneType
         """
@@ -737,7 +739,9 @@ class Heatmap(BaseGraph):
 
     def show_2d_action(self):
         """
-        Opens a line trace graph window for a line trace selected by line_trace_roi
+        Opens a line trace graph window for a line trace selected by line_trace_roi. Get the positions of the end points
+        and then create dummy 2d buffer that only has members and methods needed to easily display 2D graph in a line
+        trace window.
 
         :return:
         """
@@ -747,15 +751,35 @@ class Heatmap(BaseGraph):
         first_point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
         _, scene_coords = first_point
         start = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        start_x = start.x()
+        start_x = start.y()
         last_point = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
         _, scene_coords = last_point
         end = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
-        end_x = end.x()
+        end_x = end.y()
+
+        first_point = self.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = first_point
+        start = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        start_y = start.x()
+        last_point = self.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = last_point
+        end = self.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        end_y = end.x()
 
         x = np.linspace(start_x, end_x, len(selected))
+        x2 = np.linspace(start_y, end_y, len(selected))
 
-        self.line_trace_window = LineTrace(axis_data={"y": selected, "x": x})
+        label_x = self.data_buffer.axis_values["y"]
+        label_y = self.data_buffer.axis_values["z"][self.active_data_index]
+        label_extra = self.data_buffer.axis_values["x"]
+
+        x_dict = {"values": x, "axis": label_x}
+        y_dict = {"values": selected, "axis": label_y}
+        extra_axis_dict = {"values": x2, "axis": label_extra}
+
+        title = self.data_buffer.name
+        dummy = DummyBuffer(title + "Line Trace", x_dict, y_dict, extra_axis=extra_axis_dict)
+        self.line_trace_window = LineTrace(dummy)
 
     def xderivative_action(self):
         """
@@ -926,8 +950,11 @@ class Heatmap(BaseGraph):
 
     def toggle_color_bar_action(self):
         """
+        Method that switches between showing histogram or matlab like color bar. If the button is "ON" histogram is
+        hidden and color bar is displayed. If the button is "OFF" (default), histogram is displayed and color bar is
+        hidden.
 
-        :return:
+        :return: NoneType
         """
         if self.toggle_color_bar_btn.isChecked():
             self.plot_elements["histogram"].hide()
@@ -937,16 +964,31 @@ class Heatmap(BaseGraph):
             self.plot_elements["histogram"].show()
             self.plot_elements["histogram"].setFixedWidth(self.histogram_width)
             self.plot_elements["color_bar"].hide()
+        return
 
     def horizontal_offset_action(self):
+        """
+        Method that opens input window (allows user to input some data) and after submitting the data shifts the whole
+        data set horizontally by the amount specified by the user.
+
+        :return: NoneType
+        """
         self.horizontal_offset_input = helpers.InputData("Apply horizontal offset", 1, ["0"], [True],
                                                          ["Horizontal offset"])
         self.horizontal_offset_input.submitted.connect(self.x_axis_offset)
+        return
 
     def vertical_offset_action(self):
+        """
+        Method that opens input window (allows user to input some data) and after submitting the data shifts the whole
+        data set vertically by the amount specified by the user.
+
+        :return: NoneType
+        """
         self.vertical_offset_input = helpers.InputData("Apply vertical offset", 1, ["0"], [True],
                                                        ["Vertical offset"])
         self.vertical_offset_input.submitted.connect(self.y_axis_offset)
+        return
 
     """
     ########################
@@ -961,6 +1003,7 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
         self.plot_elements["iso"].setLevel(self.plot_elements["isoLine"].value())
+        return
 
     def mouse_moved(self, evt):
         """
@@ -1382,14 +1425,36 @@ class Heatmap(BaseGraph):
         print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
 
     def x_axis_offset(self, data):
+        """
+        Helper method. Calls the method that applies offset. Passes parameters that specify axis and offset amount.
+
+        :param data: array passed trough the signal. Contains user input values.
+        :return: NoneType
+        """
         value = float(data[0])
         self.apply_axis_offset("x", value)
+        return
 
     def y_axis_offset(self, data):
+        """
+        Helper method. Calls the method that applies offset. Passes parameters that specify axis and offset amount.
+
+
+        :param data: array passed trough the signal. Contains user input values.
+        :return: NoneType
+        """
         value = float(data[0])
         self.apply_axis_offset("y", value)
+        return
 
     def apply_axis_offset(self, axis, value):
+        """
+        Method that applies offset to data set opened in this instance of Heatmap window.
+
+        :param axis: string: "x" or "y" to signal which axis to apply offset to
+        :param value: float: the value of offset (how much will data be shifted)
+        :return: NoneType
+        """
         self.data_buffer.data[axis] = self.data_buffer.data[axis] + value
         self.plot_elements["img"].resetTransform()
         self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0],
@@ -1401,6 +1466,7 @@ class Heatmap(BaseGraph):
         y_min = min(self.data_buffer.get_y_axis_values())
         y_max = max(self.data_buffer.get_y_axis_values())
         self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
+        return
 
 
 def main():
