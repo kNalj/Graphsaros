@@ -178,7 +178,7 @@ class QcodesData(DataBuffer):
 
 def main():
 
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Daniel_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
     # 3D
     #file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
 
@@ -191,6 +191,7 @@ def main():
     data = QcodesData(file_location)
     data.prepare_data()
     print(data.data)
+    print(data.axis_values)
 
 
 if __name__ == '__main__':

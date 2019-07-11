@@ -11,6 +11,13 @@ from helpers import is_numeric
 
 
 class DataBuffer(QObject):
+    """
+    Constructor: location: string: String representation of the location of the file on the local disk.
+
+    Signals: ready: emitted when the data is ready
+             progress: gets emited while preparing data to be able to update progress bar in the main window
+
+    """
 
     ready = pyqtSignal()
     progress = pyqtSignal(object)
