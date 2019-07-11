@@ -85,26 +85,20 @@ class AxisItem(pg.AxisItem):
 
     def resizeEvent(self, ev):
         ## Set the position of the label
-        nudge = 5
         br = self.label.boundingRect()
         p = QtCore.QPointF(0, 0)
         if self.orientation == 'left':
             p.setY(int(self.size().height() / 2 + br.width() / 2))
-            # p.setX(-nudge)
             p.setX(self.size().width() - self.neededSpace())
         elif self.orientation == 'right':
             p.setY(int(self.size().height() / 2 + br.width() / 2))
-            # p.setX(int(self.size().width()-br.height()+nudge))
             p.setX(self.labelPos())
         elif self.orientation == 'top':
-            # p.setY(-nudge)
             p.setY(self.size().height() - self.neededSpace())
             p.setX(int(self.size().width() / 2. - br.width() / 2.))
         elif self.orientation == 'bottom':
             p.setX(int(self.size().width() / 2. - br.width() / 2.))
             p.setY(self.labelPos())
-            # p.setY(int(self.size().height()-br.height()+nudge))
-            # p.setY(self.label_y)
 
         self.label.setPos(p)
         self.picture = None
@@ -164,7 +158,6 @@ class AxisItem(pg.AxisItem):
             return
         bounds = v.childrenBoundingRect()
         if self.orientation in {'left', 'right'}:
-            # print bounds.bottom(),bounds.top()
             if type == 0:
                 v = bounds.top()
             else:
@@ -206,7 +199,6 @@ class AxisItem(pg.AxisItem):
             v.disableAutoRange(self.axis())
         else:
             v.enableAutoRange(self.axis())
-        # self.auto_range_enabled=not self.auto_range_enabled
 
     def setButtonsEnabled(self, enabled):
         self.buttons_enabled = enabled

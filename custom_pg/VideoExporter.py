@@ -9,6 +9,11 @@ __all__ = ['VideoExporter']
 
 
 class VideoExporter(Exporter):
+    """
+    A custom class that allows exporting pyqtgraph elements as video.
+
+    Choosing this as an export option opens a new window which displays the part of the program being recorded.
+    """
     Name = "Video file"
     allowCopy = True
 

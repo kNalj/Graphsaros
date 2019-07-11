@@ -11,6 +11,10 @@ import cv2
 
 
 class VideoPlayer(QWidget):
+    """
+    A class used to display a video being recorded as a result of using video exporter.
+
+    """
 
     recordig_started = pyqtSignal(object)
 
@@ -42,6 +46,7 @@ class VideoPlayer(QWidget):
 
     def init_ui(self):
         """
+        User interface for the video window.
 
         :return:
         """
@@ -86,6 +91,7 @@ class VideoPlayer(QWidget):
 
     def get_image(self):
         """
+        Get the selected area as np array of [R, G, B] arrays.
 
         :return:
         """
@@ -97,6 +103,7 @@ class VideoPlayer(QWidget):
 
     def get_frame(self, img=None):
         """
+        Since RGB is not the default color scheme in PIL library, the data needs to be transformed to it.
 
         :param img:
         :return:
@@ -108,6 +115,8 @@ class VideoPlayer(QWidget):
 
     def update_image(self, img=None):
         """
+        Gets the selected area, then flips and rotates it so it can be displayed as an image.
+
 
         :return:
         """
@@ -120,8 +129,9 @@ class VideoPlayer(QWidget):
 
     def toggle_play(self):
         """
+        A method that allows pausing. If the recording is started you can pause it, and resume it.
 
-        :return:
+        :return: NoneType
         """
         if self.play_btn.isChecked():
             if self.recording is False:
@@ -133,6 +143,8 @@ class VideoPlayer(QWidget):
 
     def start_recording_loop(self):
         """
+        Gets called when the play button is pressed for the first time. It starts a thread that constantly gets the
+        selected area and saves it to a file.
 
         :return:
         """
@@ -155,6 +167,7 @@ class VideoPlayer(QWidget):
 
     def stop_recording(self):
         """
+        Stop recording, release the opened file where the video is being saved to and close all cv2 windows.
 
         :return:
         """
