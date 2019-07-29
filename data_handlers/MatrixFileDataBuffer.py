@@ -72,6 +72,8 @@ class MatrixData(DataBuffer):
         else:
             print("Data already exists")
 
+        self.progress.emit(1)
+
     def get_axis_data(self):
         """
         Creates a Qt window that has fields for inputing axis data (start, end, name, unit)

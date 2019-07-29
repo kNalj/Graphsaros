@@ -99,10 +99,12 @@ class QcodesData(DataBuffer):
                 matrices.append(matrix_data)
             self.data = {"x": x_axis, "y": y_axis, "matrix": matrices}
             self.progress.emit(1)
+            self.unit_correction()
             return {"x": x_axis, "y": y_axis, "matrix": matrices}
 
         self.data = {"x": x_axis, "y": y_axis}
         self.progress.emit(1)
+        self.unit_correction()
         return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):
@@ -175,12 +177,78 @@ class QcodesData(DataBuffer):
                 y_axis_data = json_data["actions"][0]
                 return [y_axis_data]
 
+    def unit_correction(self):
+        """
+        Scan all axes and their units. Make all units comply with the SI standard.
+
+        :return: NoneType
+        """
+        for axis in self.axis_values:
+            if axis == "z":
+                for i in self.axis_values[axis]:
+                    if "unit" in self.axis_values[axis][i]:
+                        unit = self.axis_values[axis][i]["unit"]
+                        self.apply_unit_correction(axis, unit, matrix=i)
+            else:
+                unit = self.axis_values[axis]["unit"]
+                self.apply_unit_correction(axis, unit)
+        return
+
+    def apply_unit_correction(self, axis, unit, matrix=None):
+        """
+        qCoDeS uses mV as a default unit. For this reason data needs to be corrected to V. So all of the data is
+        multiplied by a value that is infront of the standard unit.
+
+        :param axis: string x, y or z: which of the three axis to apply the correction to
+        :param unit: Current unit for the axis passed by parameter axis
+        :param matrix: in case that the axis is z, since z can have more then 1 matrix, we need to specify which matrix
+                        are we making the correction for
+        :return: NoneType
+        """
+        valid_unit = False
+        values = {"": 1, "p": 1e-12, "n": 1e-9, "µ": 1e-6, "m": 1e-3, "k": 1e3, "M": 1e6, "G": 1e9}
+        for j in ["", "p", "n", "µ", "m", "k", "M", "G"]:
+            if valid_unit:
+                break
+            for k in ["A", "V", "Ω", "Ohm", "W", "var", "VA", "F", "H", "S", "C", "Ah", "J", "Wh", "eV",
+                      "T", "G", "Wb", "Hz", "dB", "s"]:
+                if unit == j + k:
+                    valid_unit = True
+                    break
+            if valid_unit:
+                if matrix is not None:
+                    self.axis_values[axis][matrix]["unit"] = k
+                    self.apply_gains(axis, values[j], matrix=matrix)
+                else:
+                    self.axis_values[axis]["unit"] = k
+                    self.apply_gains(axis, values[j], matrix=matrix)
+        return
+
+    def apply_gains(self, axis, gain, matrix=None):
+        """
+        Since the unit changes, we also have to change the data accordingly.
+
+        :param axis: string x, y or z: which of the three axis to apply the correction to
+        :param gain: What gain needs to be applied to this data
+        :param matrix: in case that the axis is z, since z can have more then 1 matrix, we need to specify which matrix
+                        are we making the correction for
+        :return: NoneType
+        """
+        if matrix is not None:
+            print("apply {} multiplier to axis {} data, matrix {}".format(gain, axis, matrix))
+            self.data["matrix"][matrix] *= gain
+        else:
+            print("apply {} multiplier to axis {} data".format(gain, axis))
+            self.data[axis] *= gain
+
 
 def main():
 
     file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Daniel_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
     # 3D
     #file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Josh_3d_2m\\\dac_dac5_attenuated_set_dac_dac1_attenuated_set.dat"
 
     # 2D
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
@@ -190,8 +258,9 @@ def main():
 
     data = QcodesData(file_location)
     data.prepare_data()
-    print(data.data)
-    print(data.axis_values)
+    # print(data.data)
+    # print(data.axis_values)
+    data.unit_correction()
 
 
 if __name__ == '__main__':
