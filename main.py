@@ -61,6 +61,10 @@ class MainWindow(QMainWindow):
         self.show()
 
     def init_ui(self):
+        """
+
+        :return:
+        """
 
         print("Modeling main window . . .")
         # find dimensions of the monitor (screen)
@@ -255,9 +259,10 @@ class MainWindow(QMainWindow):
 
     def add_progress_widget(self, buffer):
         """
+        Adds a progress bar that tracks the loading process of data in the data buffer
 
-        :param buffer:
-        :return:
+        :param buffer: DataBuffer: a reference to a data buffer that is being loaded into the program
+        :return: a reference to a newly created progress bar widget
         """
         print("Loading data buffer . . .")
         progress_bar = ProgressBarWidget(buffer.location)
@@ -268,26 +273,32 @@ class MainWindow(QMainWindow):
 
     def remove_progress_widget(self, widget):
         """
-        TODO: Write documentation
-        :param widget:
-        :return:
+        Removes the progress bar after the data buffer has finished loading
+
+        :param widget: a reference to a progress bar that needs to be removed from the main window
+        :return: NoneType
         """
         widget.deleteLater()
+        return
 
     def get_progress(self, progress, progress_bar):
         """
-        TODO: Write documentation
-        :param progress:
-        :param progress_bar:
-        :return:
+        DataBuffers prepare_data() method emits a progress signal while its loading data, this signal carries a value
+        from 0 to 1 (percentage) and get_progress() takes this number and sets to progress bar widgets value to that
+        number multiplied by a 100.
+
+        :param progress: float: a number between 0 and 1 that signals the percentage of loaded data
+        :param progress_bar: a reference to a progress bar widget that needs to be updated
+        :return: NoneType
         """
         progress_bar.setValue(progress*100)
+        return
 
     def make_add_to_table(self, buffer):
         """
         Function factory used to create functions enable adding a loaded data buffer to a table of data buffers
 
-        :param buffer:
+        :param buffer: a reference to a data buffer that is going to be added to the table
         :return: pointer to a function created in this function factory
         """
         def add_to_table():

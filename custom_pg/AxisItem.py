@@ -10,15 +10,12 @@ from functools import partial
 logger = logging.getLogger(__name__)
 
 
-# TODO create a ColorBarAxisItem subclass designed to go next to a colorbar and
-# control an image.
-
 class AxisItem(pg.AxisItem):
     """Replacement for pyqtgraph.AxisItem, with:
         * buttons to set the limits manually (with a dialog box), to set to the full
         extent (auto range) and to toggle autorange on/off
         * ability to handle zero height (for top/bottom) or zero width (for left/right)
-        which is useful for certain complex grid layouts (TODO: example)
+        which is useful for certain complex grid layouts
     """
     range_changed = QtCore.pyqtSignal()
 
@@ -145,7 +142,6 @@ class AxisItem(pg.AxisItem):
             self.enable_auto_range_btn.setPos(x2, 0)
 
     def set_lmt_btn_clicked(self, type):
-        # TODO bug here - sometimes the dialog doesn't show the right range
         logger.debug('range[type]=%s', self.range[type])
         value, ok = QtGui.QInputDialog.getDouble(self.parent(), self.label.toPlainText(),
                                                  ('Lower', 'Upper')[type] + ' limit:', self.range[type], decimals=3)
