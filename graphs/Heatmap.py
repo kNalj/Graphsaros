@@ -7,16 +7,15 @@ from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
-import helpers
+from helpers import get_location_path, get_location_basename, show_error_message, shift
+from widgets import DiDvCorrectionInputWidget, EditAxisWidget, InputDataWidget
 from graphs.BaseGraph import BaseGraph
 from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
-from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.Dummy2D import DummyBuffer
 from custom_pg.LineROI import LineROI
 from custom_pg.ColorBar import ColorBarItem
 from custom_pg.ImageItem import ImageItem
-import custom_pg.VideoExporter
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -136,6 +135,7 @@ class Heatmap(BaseGraph):
         central_item.addItem(frame_layout)
         # add a title to the plot, so that when exported, the image shows the name of the measurement
         main_subplot = frame_layout.addPlot(title=self.data_buffer.name)
+        main_subplot.titleLabel.hide()
         # print(main_subplot.vb.menu.)
         img = ImageItem()
         # set the default data as the image data
@@ -687,7 +687,7 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.eaw = helpers.Edit3DAxisWidget(self)
+        self.eaw = EditAxisWidget.Edit3DAxisWidget(self)
         self.eaw.submitted.connect(self.edit_axis_data)
         self.eaw.show()
 
@@ -719,21 +719,21 @@ class Heatmap(BaseGraph):
 
         def save_matrix(data):
             user_input_name = data
-            new_file_location = helpers.get_location_path(location) + "\\" + user_input_name + "_generated_correction"
+            new_file_location = get_location_path(location) + "\\" + user_input_name + "_generated_correction"
             file = open(new_file_location, "w")
             raw_data = np.transpose(self.displayed_data_set)
             np.savetxt(file, raw_data, delimiter="\t")
             file.close()
 
         location = self.data_buffer.location
-        name = helpers.get_location_basename(location)
+        name = get_location_basename(location)
         index = self.active_data_index
         if index > self.data_buffer.number_of_measured_parameters:
-            self.select_file_name = helpers.InputData("Please select the name of the output file.", default_value=name)
+            self.select_file_name = InputDataWidget.InputData("Please select the name of the output file.", default_value=name)
             self.select_file_name.submitted.connect(save_matrix)
         elif self.modes["Side-by-side"]:
-            helpers.show_error_message("NO, U CANT DO THAT !",
-                                       "Creating a matrix file for side by side view is not possible.")
+            show_error_message("NO, U CANT DO THAT !",
+                               "Creating a matrix file for side by side view is not possible.")
         else:
             self.data_buffer.create_matrix_file(index)
 
@@ -847,8 +847,8 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.input = helpers.InputData("Please input the resistance something something to correct your data", 1,
-                                       numeric=[True], placeholders=["Resistance"])
+        self.input = InputDataWidget.InputData("Please input the resistance something something to correct your data",
+                                               1, numeric=[True], placeholders=["Resistance"])
         self.input.submitted.connect(self.apply_correction)
 
     def naive_smoothing(self):
@@ -881,10 +881,10 @@ class Heatmap(BaseGraph):
             for shift_value in range(-axis, axis + 1):
                 if shift_value != 0:
                     if i:
-                        temp = helpers.shift(np.transpose(data), shift_value, 0)
+                        temp = shift(np.transpose(data), shift_value, 0)
                         np.add(horizontal_shift, temp, horizontal_shift)
                     else:
-                        temp = helpers.shift(data, shift_value, 0)
+                        temp = shift(data, shift_value, 0)
                         np.add(vertical_shift, temp, vertical_shift)
         limit_vertical = len(vertical_shift) - 1
         limit_horizontal = len(horizontal_shift) - 1
@@ -925,7 +925,7 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.didv_input = helpers.DiDvCorrectionInputWidget(parent=self)
+        self.didv_input = DiDvCorrectionInputWidget.DiDvCorrectionInputWidget(parent=self)
         self.didv_input.submitted.connect(self.apply_gm_didv_correction)
 
     def zoom_action(self):
@@ -940,12 +940,12 @@ class Heatmap(BaseGraph):
         current_x_max = max(self.data_buffer.get_x_axis_values())
         current_y_min = min(self.data_buffer.get_y_axis_values())
         current_y_max = max(self.data_buffer.get_y_axis_values())
-        self.input = helpers.InputData("Please input ranges of values to display", 4,
-                                       numeric=[True, True, True, True],
-                                       placeholders=["Start X value [Currently: {}]".format(current_x_min),
-                                                     "End X value [Currently {}]".format(current_x_max),
-                                                     "Start Y value [Currently {}]".format(current_y_min),
-                                                     "End Y value [Currently {}]".format(current_y_max)])
+        self.input = InputDataWidget.InputData("Please input ranges of values to display", 4,
+                                               numeric=[True, True, True, True],
+                                               placeholders=["Start X value [Currently: {}]".format(current_x_min),
+                                                             "End X value [Currently {}]".format(current_x_max),
+                                                             "Start Y value [Currently {}]".format(current_y_min),
+                                                             "End Y value [Currently {}]".format(current_y_max)])
         self.input.submitted.connect(self.zoom_to_range)
 
     def toggle_color_bar_action(self):
@@ -973,8 +973,8 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.horizontal_offset_input = helpers.InputData("Apply horizontal offset", 1, ["0"], [True],
-                                                         ["Horizontal offset"])
+        self.horizontal_offset_input = InputDataWidget.InputData("Apply horizontal offset", 1, ["0"], [True],
+                                                                 ["Horizontal offset"])
         self.horizontal_offset_input.submitted.connect(self.x_axis_offset)
         return
 
@@ -985,8 +985,8 @@ class Heatmap(BaseGraph):
 
         :return: NoneType
         """
-        self.vertical_offset_input = helpers.InputData("Apply vertical offset", 1, ["0"], [True],
-                                                       ["Vertical offset"])
+        self.vertical_offset_input = InputDataWidget.InputData("Apply vertical offset", 1, ["0"], [True],
+                                                               ["Vertical offset"])
         self.vertical_offset_input.submitted.connect(self.y_axis_offset)
         return
 
@@ -1420,9 +1420,11 @@ class Heatmap(BaseGraph):
     def mark_current_line_trace_point(self):
         """
         TODO: Remember what the hell was this supposed to be
+        I think the idea was to put a point on a current location of the crosshair
         :return:
         """
-        print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
+        pass
+        # print(self.plot_elements["v_line"].value(), self.plot_elements["h_line"].value())
 
     def x_axis_offset(self, data):
         """
@@ -1483,9 +1485,6 @@ def main():
 
     # Matthias huge ass file
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\005802_GatevsGate_W3_1I03_NW-l_g3@2060_g5@2260_BZ_0T_-_3T_time.dat"
-
-    data = QtLabData(file_location)
-    # data = MatrixData(file_location)
 
     ex = Heatmap(data=data)
     sys.exit(app.exec_())

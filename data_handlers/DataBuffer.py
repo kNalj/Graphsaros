@@ -1,13 +1,11 @@
-from helpers import show_error_message
 from PyQt5.QtWidgets import QWidget, QGridLayout, QApplication, QLineEdit, QLabel, QDesktopWidget, QPushButton
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
 
 import os
 import sys
-import subprocess
 import numpy as np
-from helpers import is_numeric
+from helpers import show_error_message, is_numeric
 
 
 class DataBuffer(QObject):

@@ -2,15 +2,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidg
     QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy, QVBoxLayout
 from PyQt5 import QtCore, QtGui
 
-from data_handlers.QtLabDataBuffer import QtLabData
-from data_handlers.QcodesDataBuffer import QcodesData
-from data_handlers.MatrixFileDataBuffer import MatrixData
-from data_handlers.LabberDataBuffer import LabberData
+from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer
+from widgets import ProgressBarWidget
 from BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
 from graphs.LineTrace import LineTrace
 from ThreadWorker import Worker
-from helpers import get_location_basename, ProgressBarWidget
+from helpers import get_location_basename
+from custom_pg.VideoExporter import VideoExporter
 
 import pyqtgraph as pg
 
@@ -222,7 +221,7 @@ class MainWindow(QMainWindow):
             with open(file, "r") as current_file:
                 if file.lower().endswith(".hdf5"):
                     type_item = QTableWidgetItem("Labber")
-                    buffer = LabberData(file)
+                    buffer = LabberDataBuffer.LabberData(file)
                     worker = Worker(buffer.prepare_data)
                     progress_bar = self.add_progress_widget(buffer)
                     buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
@@ -236,15 +235,15 @@ class MainWindow(QMainWindow):
                         if i == 2:
                             if line.strip(" \n") == "":
                                 type_item = QTableWidgetItem("QtLab")
-                                buffer = QtLabData(file)
+                                buffer = QtLabDataBuffer.QtLabData(file)
                                 worker = Worker(buffer.prepare_data)
                             elif line.startswith("#"):
                                 type_item = QTableWidgetItem("QCoDeS")
-                                buffer = QcodesData(file)
+                                buffer = QcodesDataBuffer.QcodesData(file)
                                 worker = Worker(buffer.prepare_data)
                             else:
                                 type_item = QTableWidgetItem("Matrix")
-                                buffer = MatrixData(file)
+                                buffer = MatrixFileDataBuffer.MatrixData(file)
                                 worker = Worker(buffer.prepare_data)
 
                             progress_bar = self.add_progress_widget(buffer)
@@ -265,7 +264,7 @@ class MainWindow(QMainWindow):
         :return: a reference to a newly created progress bar widget
         """
         print("Loading data buffer . . .")
-        progress_bar = ProgressBarWidget(buffer.location)
+        progress_bar = ProgressBarWidget.ProgressBarWidget(buffer.location)
         progress_bar.finished.connect(self.remove_progress_widget)
         self.loading_bars_layout.addWidget(progress_bar)
 

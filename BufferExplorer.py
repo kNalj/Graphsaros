@@ -6,7 +6,8 @@ from PyQt5.QtCore import pyqtSignal
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.MatrixFileDataBuffer import MatrixData
-from helpers import InfoWidget, get_location_basename, get_location_path
+from helpers import get_location_basename, get_location_path
+from widgets.InfoWidget import InfoWidget
 
 import pyqtgraph as pg
 

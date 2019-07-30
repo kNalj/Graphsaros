@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import h5py
 from Script import Labber
 
 from data_handlers.DataBuffer import DataBuffer
