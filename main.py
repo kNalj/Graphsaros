@@ -4,12 +4,11 @@ from PyQt5 import QtCore, QtGui
 
 from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer
 from widgets import ProgressBarWidget
-from BufferExplorer import BufferExplorer
+from widgets.BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
 from graphs.LineTrace import LineTrace
 from ThreadWorker import Worker
 from helpers import get_location_basename
-from custom_pg.VideoExporter import VideoExporter
 
 import pyqtgraph as pg
 
@@ -217,7 +216,7 @@ class MainWindow(QMainWindow):
         file_dialog = QFileDialog.getOpenFileNames()
 
         for file in file_dialog[0]:
-            name = get_location_basename(file)
+            name = get_location_basename(os.path.dirname(file))
             with open(file, "r") as current_file:
                 if file.lower().endswith(".hdf5"):
                     type_item = QTableWidgetItem("Labber")
@@ -314,7 +313,7 @@ class MainWindow(QMainWindow):
         """
         print("Adding buffer to the table . . .")
         if buffer.is_data_ready():
-            name = os.path.basename(buffer.get_location())
+            name = get_location_basename(os.path.dirname(buffer.get_location()))
             rows = self.opened_datasets_tablewidget.rowCount()
             self.opened_datasets_tablewidget.insertRow(rows)
             table_item = QTableWidgetItem(name)
@@ -342,7 +341,7 @@ class MainWindow(QMainWindow):
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
             location = item.text()
-            name = os.path.basename(location)
+            name = get_location_basename(os.path.dirname(location))
             dataset = self.datasets[name]
 
             if dataset.get_number_of_dimension() == 3:
@@ -397,7 +396,7 @@ class MainWindow(QMainWindow):
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
             location = item.text()
-            name = os.path.basename(location)
+            name = get_location_basename(os.path.dirname(location))
             dataset = self.datasets[name]
 
             if dataset.get_number_of_dimension() == 2:
@@ -443,7 +442,7 @@ class MainWindow(QMainWindow):
         if row != -1:
             item = self.opened_datasets_tablewidget.item(row, 1)
             location = item.text()
-            name = os.path.basename(location)
+            name = get_location_basename(os.path.dirname(location))
             dataset = self.datasets[name]
 
             self.selected_dataset_textbrowser.append("X [Step: {}]\tY [Step: {}]".format(

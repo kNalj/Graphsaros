@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon
 import os
 import sys
 import numpy as np
-from helpers import show_error_message, is_numeric
+from helpers import show_error_message, is_numeric, get_location_basename
 
 
 class DataBuffer(QObject):
@@ -26,7 +26,7 @@ class DataBuffer(QObject):
         # location is absolute path to a location of the file on the disk
         self.location = location
 
-        self.name = os.path.basename(self.get_location())
+        self.name = get_location_basename(os.path.dirname(self.location))
 
         # data is a dictionary containing:
         #   For 3D measurement: matrix, x, y
