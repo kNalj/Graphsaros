@@ -473,7 +473,7 @@ class MainWindow(QMainWindow):
         """
         for path, buffer in buffers.items():
             self.add_buffer_to_table(buffer, QTableWidgetItem(buffer.string_type))
-            name = os.path.basename(buffer.get_location())
+            name = get_location_basename(os.path.dirname(buffer.get_location()))
             self.datasets[name] = buffer
 
 

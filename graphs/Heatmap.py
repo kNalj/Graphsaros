@@ -13,6 +13,7 @@ from graphs.BaseGraph import BaseGraph
 from graphs.LineTrace import LineTrace
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.Dummy2D import DummyBuffer
+from data_handlers.QcodesDataBuffer import QcodesData
 from custom_pg.LineROI import LineROI
 from custom_pg.ColorBar import ColorBarItem
 from custom_pg.ImageItem import ImageItem
@@ -1485,6 +1486,9 @@ def main():
 
     # Matthias huge ass file
     # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\005802_GatevsGate_W3_1I03_NW-l_g3@2060_g5@2260_BZ_0T_-_3T_time.dat"
+
+    data = QcodesData("C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Daniel_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat")
+    data.prepare_data()
 
     ex = Heatmap(data=data)
     sys.exit(app.exec_())
