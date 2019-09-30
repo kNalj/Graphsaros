@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import helpers
 
-from PyQt5.QtWidgets import QAction, QApplication, QToolBar
+from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt
 
@@ -31,6 +31,7 @@ class LineTrace(BaseGraph):
 
     def __init__(self, data: DataBuffer = None, axis_data=None, parent=None, labels=None):
         """
+        TODO: Fix documentation, i might have changed things and forgot to update documentation (axis_data)
         Inherits: BaseGraph()
 
         Used to display 2D type of graphs. Enables user to to transformations to 2D type of data (x, y)
@@ -49,22 +50,19 @@ class LineTrace(BaseGraph):
         self.x_values = self.data_buffer.data["x"]
         self.y_values = self.data_buffer.data["y"]
 
+        self.active_data_set = self.y_values[0]
+        self.displayed_data_set = self.active_data_set
+
         self.labels = labels
-        title = self.data_buffer.name
-
-        # Elements for ploting data
-        self.plt = pg.GraphicsView()
-        self.central_item = pg.GraphicsLayout()
-        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.y_values, pen=(60, 60, 60), title=title)
-        self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
-        self.fit_plot.sigRangeChanged.connect(self.update_region_area)
-
+        self.title = self.data_buffer.name
 
         # indicates in which modes the window is currently working.
         self.modes = {"fit": False}
         # used in fit mode of this window, holds data about created fit curves to enable hiding and displaying them at
         # any point
         self.fit_curves = {}
+        for index, data in enumerate(self.y_values):
+            self.fit_curves[index] = {}
 
         self.init_ui()
 
@@ -85,6 +83,14 @@ class LineTrace(BaseGraph):
         self.setGeometry(50, 50, 640, 400)
         self.setWindowTitle("Line trace window")
         self.setWindowIcon(QIcon("../img/lineGraph.png"))
+
+        # Elements for ploting data
+        self.plt = pg.GraphicsView()
+        self.central_item = pg.GraphicsLayout()
+        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.active_data_set, pen=(60, 60, 60), title=self.title)
+        self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
+        self.fit_plot.sigRangeChanged.connect(self.update_region_area)
+
         self.setCentralWidget(self.plt)
 
         # set the color of the background and set the central widget. All other elements are added to this central
@@ -103,6 +109,7 @@ class LineTrace(BaseGraph):
         # connect the range changed signal of main subplot to a method that updates the range of the extra axis.
         self.main_subplot.sigRangeChanged.connect(self.update_extra_axis)
 
+        print("Configuring axis data . . .")
         for plot_item in [self.main_subplot, self.fit_plot]:
             for axis in ['left', 'bottom']:
                 pi = plot_item
@@ -140,9 +147,21 @@ class LineTrace(BaseGraph):
 
         :return: NoneType
         """
+        print("Creating toolbar . . .")
         self.tools = self.addToolBar("Tools")
         self.tools.actionTriggered[QAction].connect(self.perform_action)
 
+        print("Filling selection combobox . . .")
+        self.data_selection_combobox = QComboBox()
+        for index, data in enumerate(self.data_buffer.data["y"]):
+            display_member = "param{}".format(index)
+            value_member = data
+            self.data_selection_combobox.addItem(display_member, value_member)
+        self.data_selection_combobox.currentIndexChanged.connect(lambda: self.change_active_set(
+            index=self.data_selection_combobox.currentIndex()))
+        self.tools.addWidget(self.data_selection_combobox)
+
+        print("Adding actions . . .")
         self.toggle_fit_mode = QAction(QIcon("img/fit_curve_icon.png"), "Fit_mode", self)
         self.tools.addAction(self.toggle_fit_mode)
         self.toggle_fit_mode.setCheckable(True)
@@ -166,6 +185,7 @@ class LineTrace(BaseGraph):
 
         :return: NoneType
         """
+        print("Initialising fit toolbar . . .")
         self.fit_toolbar = QToolBar("Fitting options")
         self.fit_toolbar.actionTriggered[QAction].connect(self.perform_action)
         self.addToolBar(Qt.RightToolBarArea, self.fit_toolbar)
@@ -175,6 +195,10 @@ class LineTrace(BaseGraph):
         self.default_graph.setCheckable(True)
         self.default_graph.setChecked(True)
         self.fit_toolbar.addAction(self.default_graph)
+
+        self.linear = QAction(QIcon("img/linear_fit_icon.png"), "Linear_fit", self)
+        self.linear.setCheckable(True)
+        self.fit_toolbar.addAction(self.linear)
 
         self.gauss = QAction(QIcon("img/gaussianIcon.png"), "Gaussian_fit", self)
         self.gauss.setCheckable(True)
@@ -206,10 +230,35 @@ class LineTrace(BaseGraph):
         for i, value in enumerate(self.x_values):
             if value >= min_x and value <= max_x:
                 x.append(value)
-                y.append(self.y_values[i])
+                y.append(self.active_data_set[i])
         x = np.array(x)
         y = np.array(y)
         return x, y
+
+    def change_active_set(self, index):
+        """
+
+        :param index:
+        :return:
+        """
+        data = self.y_values[index]
+        self.active_data_set = data
+        self.change_displayed_data_set(data)
+
+    def change_displayed_data_set(self, data_set):
+        """
+
+        :param data_set:
+        :return:
+        """
+        self.displayed_data_set = data_set
+        self.plot_elements["main_subplot"].clear()
+        self.plot_elements["main_subplot"].plot(self.x_values, self.active_data_set, pen=(60, 60, 60))
+        self.plot_elements["fit_plot"].clear()
+        self.plot_elements["fit_plot"].plot(self.x_values, self.active_data_set)
+        if self.modes["fit"]:
+            self.modes["fit"] = False
+            self.fit_mode_action()
 
     """
     # ###########################################
@@ -254,7 +303,7 @@ class LineTrace(BaseGraph):
         """
 
         self.fit_plot.clear()
-        plot_item = pg.PlotDataItem(self.x_values, self.y_values)
+        plot_item = pg.PlotDataItem(self.x_values, self.active_data_set)
         self.fit_plot.addItem(plot_item)
         self.fit_curves["default"] = plot_item
 
@@ -285,7 +334,7 @@ class LineTrace(BaseGraph):
         """
         if self.default_graph.isChecked():
             x = self.x_values
-            y = self.y_values
+            y = self.active_data_set
 
             plot_item = pg.PlotDataItem(x, y)
             self.fit_plot.addItem(plot_item)
@@ -330,6 +379,7 @@ class LineTrace(BaseGraph):
                 show_error_message("Could not find fit", str(e))
         else:
             self.fit_plot.removeItem(self.fit_curves["gauss"])
+            del self.fit_curves["gauss"]
 
     def sinus_fit_action(self):
         """
@@ -367,6 +417,36 @@ class LineTrace(BaseGraph):
             self.fit_curves["sinus"] = plot_item
         else:
             self.fit_plot.removeItem(self.fit_curves["sinus"])
+            del self.fit_curves["sinus"]
+
+    def linear_fit_action(self):
+        """
+
+        :return:
+        """
+
+        def linear(a, b, k):
+            """
+
+            :param a:
+            :param b:
+            :param k:
+            :return:
+            """
+            return a*k + b
+
+        if self.linear.isChecked():
+            x, y = self.get_selection_area()
+            initial_guess = np.polyfit(x, y, 1)
+            fit = curve_fit(linear, x, y, initial_guess)
+            fit_data = linear(x, *fit[0])
+            plot_item = pg.PlotDataItem(x, fit_data)
+            plot_item.setPen(0, 0, 255)
+            self.fit_plot.addItem(plot_item)
+            self.fit_curves["linear"] = plot_item
+        else:
+            self.fit_plot.removeItem(self.fit_curves["linear"])
+            del self.fit_curves["linear"]
 
     """
     # ###########################################

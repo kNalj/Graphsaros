@@ -10,6 +10,7 @@ from graphs.LineTrace import LineTrace
 from ThreadWorker import Worker
 from helpers import get_location_basename
 
+import custom_pg.VideoExporter
 import pyqtgraph as pg
 
 import sys
@@ -263,7 +264,7 @@ class MainWindow(QMainWindow):
         :return: a reference to a newly created progress bar widget
         """
         print("Loading data buffer . . .")
-        progress_bar = ProgressBarWidget.ProgressBarWidget(buffer.location)
+        progress_bar = ProgressBarWidget.ProgressBarWidget(buffer.name)
         progress_bar.finished.connect(self.remove_progress_widget)
         self.loading_bars_layout.addWidget(progress_bar)
 
@@ -403,7 +404,7 @@ class MainWindow(QMainWindow):
                 print(" Drawing 2d plot . . .")
                 self.mini_plot_items["main_subplot"].clear()
                 self.mini_plot_items["main_subplot"].plot(x=dataset.get_x_axis_values(),
-                                                          y=dataset.get_y_axis_values(),
+                                                          y=dataset.get_y_axis_values()[0],
                                                           pen=(60, 60, 60))
             else:
                 print(" Drawing 3d plot . . .")

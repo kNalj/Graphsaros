@@ -166,11 +166,14 @@ class Heatmap(BaseGraph):
             ax.setPen((60, 60, 60))
             ax.setZValue(10)
             ax.setStyle(tickLength=5)
+            # ax.setPen("k", width=1.5)  # This changes the
+            # print(ax._pen.width())
+            # print(ax._tickSpacing)  # Yields None ?!?
             axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
-        # Add a controlable curve that shows values greater then selected value (similiar to lines used to show
+        # Add a controllable curve that shows values greater then selected value (similar to lines used to show
         # mountains on geographical maps)
         iso = pg.IsocurveItem(level=0.8, pen='g')
         iso.setParentItem(img)
@@ -746,6 +749,7 @@ class Heatmap(BaseGraph):
 
         :return:
         """
+        print("Preparing data for line trace window . . .")
         data = self.displayed_data_set
         img = self.plot_elements["img"]
         selected = self.line_segment_roi["ROI"].getArrayRegion(data, img)
@@ -775,7 +779,7 @@ class Heatmap(BaseGraph):
         label_extra = self.data_buffer.axis_values["x"]
 
         x_dict = {"values": x, "axis": label_x}
-        y_dict = {"values": selected, "axis": label_y}
+        y_dict = {"values": [selected], "axis": label_y}
         extra_axis_dict = {"values": x2, "axis": label_extra}
 
         title = self.data_buffer.name

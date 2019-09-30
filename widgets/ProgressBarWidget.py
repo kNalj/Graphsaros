@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QGridLayout, QProgressBar
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
 
 
 class ProgressBarWidget(QWidget):
