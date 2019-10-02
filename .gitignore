@@ -112,3 +112,7 @@ venv.bak/
 
 #ignore test file
 dummies.py
+Untitled.avi
+
+#ignore test data
+/other

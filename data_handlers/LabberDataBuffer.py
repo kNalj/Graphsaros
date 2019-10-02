@@ -1,5 +1,9 @@
 import numpy as np
-from Script import Labber
+try:
+    from Script import Labber
+except ImportError as e:
+    print("Seems like Labber API files are not available on this computer.")
+    print("Detailed exception text: ", str(e))
 
 from data_handlers.DataBuffer import DataBuffer
 
@@ -35,8 +39,7 @@ class LabberData(DataBuffer):
                         x - number of points on x axis
                         y - number of points on y axis
         """
-
-
+        # Find all channels that are valid candidates to be an actual step channel
         self.candidates = []
         for channel in self.log_file.getStepChannels():
             if len(channel["values"]) > 1:
@@ -45,8 +48,7 @@ class LabberData(DataBuffer):
         if len(self.candidates) == 2:
             for channel in self.log_file.getStepChannels():
                 data = self.log_file.getData(channel["name"])
-                if self.check_if_alternate_direction(data):
-                    self.alternate = True
+                self.alternate = self.check_if_alternate_direction(data)
 
             matrix_dimensions = [len(self.candidates[0]["values"]), len(self.candidates[1]["values"])]
 

@@ -75,7 +75,9 @@ class QcodesData(DataBuffer):
             y_axis = pd.unique([value[1] for value in data])
         else:
             x_axis = np.array([value[0] for value in data])
-            y_axis = np.array([value[1] for value in data])
+            y_axis = [np.array([value[i+1] for value in data]) for i in range(self.number_of_measured_parameters)]
+
+            print(y_axis)
 
         if self.get_number_of_dimension() == 3:
             matrices = []
@@ -103,8 +105,9 @@ class QcodesData(DataBuffer):
             return {"x": x_axis, "y": y_axis, "matrix": matrices}
 
         self.data = {"x": x_axis, "y": y_axis}
-        self.progress.emit(1)
         self.unit_correction()
+        self.progress.emit(1)
+        # self.unit_correction()
         return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):

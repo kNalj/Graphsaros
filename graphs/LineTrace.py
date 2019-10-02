@@ -87,7 +87,7 @@ class LineTrace(BaseGraph):
         # Elements for ploting data
         self.plt = pg.GraphicsView()
         self.central_item = pg.GraphicsLayout()
-        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.active_data_set, pen=(60, 60, 60), title=self.title)
+        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.y_values[0], pen=(60, 60, 60), title=self.title)
         self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
         self.fit_plot.sigRangeChanged.connect(self.update_region_area)
 
@@ -441,7 +441,7 @@ class LineTrace(BaseGraph):
             fit = curve_fit(linear, x, y, initial_guess)
             fit_data = linear(x, *fit[0])
             plot_item = pg.PlotDataItem(x, fit_data)
-            plot_item.setPen(0, 0, 255)
+            plot_item.setPen(0, 255, 0)
             self.fit_plot.addItem(plot_item)
             self.fit_curves["linear"] = plot_item
         else:
