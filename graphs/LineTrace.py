@@ -110,30 +110,7 @@ class LineTrace(BaseGraph):
         self.main_subplot.sigRangeChanged.connect(self.update_extra_axis)
 
         print("Configuring axis data . . .")
-        for plot_item in [self.main_subplot, self.fit_plot]:
-            for axis in ['left', 'bottom']:
-                pi = plot_item
-                ax = pi.getAxis(axis)
-                ax.setPen((60, 60, 60))
-                if self.labels is not None:
-                    axis_data = self.labels[legend[axis]]
-                    label_style = {'font-size': '10pt'}
-                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-                else:
-                    axis_data = self.data_buffer.axis_values[legend[axis]]
-                    label_style = {'font-size': '10pt'}
-                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-            plot_item.layout.removeItem(plot_item.getAxis("top"))
-            if "extra_axis" in self.data_buffer.data:
-                extra_view_box = pg.ViewBox()
-                extra_axis = pg.AxisItem("top")
-                extra_axis.setPen((60, 60, 60))
-                axis_data = self.data_buffer.axis_values[legend["top"]]
-                label_style = {'font-size': '9pt'}
-                extra_axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-                plot_item.layout.addItem(extra_axis, 0, 1)
-                extra_axis.linkToView(extra_view_box)
-                extra_view_box.setXLink(plot_item.vb)
+        self.update_axis_labels()
 
         self.plot_elements = {"main_subplot": self.main_subplot, "fit_plot": self.fit_plot}
 
@@ -237,18 +214,21 @@ class LineTrace(BaseGraph):
 
     def change_active_set(self, index):
         """
+        TODO: Write documentation
 
         :param index:
         :return:
         """
         data = self.y_values[index]
         self.active_data_set = data
-        self.change_displayed_data_set(data)
+        self.change_displayed_data_set(data, index)
 
-    def change_displayed_data_set(self, data_set):
+    def change_displayed_data_set(self, data_set, index):
         """
+        TODO: Write documentation
 
         :param data_set:
+        :param index:
         :return:
         """
         self.displayed_data_set = data_set
@@ -256,6 +236,9 @@ class LineTrace(BaseGraph):
         self.plot_elements["main_subplot"].plot(self.x_values, self.active_data_set, pen=(60, 60, 60))
         self.plot_elements["fit_plot"].clear()
         self.plot_elements["fit_plot"].plot(self.x_values, self.active_data_set)
+
+        self.update_axis_labels(index)
+
         if self.modes["fit"]:
             self.modes["fit"] = False
             self.fit_mode_action()
@@ -447,6 +430,42 @@ class LineTrace(BaseGraph):
         else:
             self.fit_plot.removeItem(self.fit_curves["linear"])
             del self.fit_curves["linear"]
+
+    """
+    # ###########################################
+    # ################# Helpers #################
+    # ###########################################
+    """
+    def update_axis_labels(self, y_index=0):
+        legend = {"left": "y", "bottom": "x", "top": "extra_axis"}
+        for plot_item in [self.main_subplot, self.fit_plot]:
+            for axis in ['left', 'bottom']:
+                pi = plot_item
+                ax = pi.getAxis(axis)
+                ax.setPen((60, 60, 60))
+                if self.labels is not None:
+                    axis_data = self.labels[legend[axis]]
+                    label_style = {'font-size': '10pt'}
+                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                else:
+                    axis_data = self.data_buffer.axis_values[legend[axis]]
+                    label_style = {'font-size': '10pt'}
+                    if axis == "left":
+                        ax.setLabel(axis_data[y_index]["name"], axis_data[y_index]["unit"], **label_style)
+                    else:
+                        ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+
+            plot_item.layout.removeItem(plot_item.getAxis("top"))
+            if "extra_axis" in self.data_buffer.data:
+                extra_view_box = pg.ViewBox()
+                extra_axis = pg.AxisItem("top")
+                extra_axis.setPen((60, 60, 60))
+                axis_data = self.data_buffer.axis_values[legend["top"]]
+                label_style = {'font-size': '9pt'}
+                extra_axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                plot_item.layout.addItem(extra_axis, 0, 1)
+                extra_axis.linkToView(extra_view_box)
+                extra_view_box.setXLink(plot_item.vb)
 
     """
     # ###########################################
