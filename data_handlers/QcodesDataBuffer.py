@@ -77,8 +77,6 @@ class QcodesData(DataBuffer):
             x_axis = np.array([value[0] for value in data])
             y_axis = [np.array([value[i+1] for value in data]) for i in range(self.number_of_measured_parameters)]
 
-            print(y_axis)
-
         if self.get_number_of_dimension() == 3:
             matrices = []
             start_index = self.number_of_set_parameters
@@ -107,7 +105,6 @@ class QcodesData(DataBuffer):
         self.data = {"x": x_axis, "y": y_axis}
         self.unit_correction()
         self.progress.emit(1)
-        # self.unit_correction()
         return {"x": x_axis, "y": y_axis}
 
     def get_axis_data(self):
@@ -160,7 +157,6 @@ class QcodesData(DataBuffer):
         :return: array: containing one or two dictionaries (depending if its 2D or 3D measurement) containing data for all
                         action parameters
         """
-
         if "loop" in json_data:
             json_data = json_data["loop"]
 
@@ -177,7 +173,10 @@ class QcodesData(DataBuffer):
                 return [y_axis_data, z_axis_data]
             else:
                 # otherwise we only need y axis data since it's a 2D graph and there is no z
-                y_axis_data = json_data["actions"][0]
+                y_axis_data = {}
+                for i, action in enumerate(json_data["actions"]):
+                    y_axis_data[i] = json_data["actions"][i]
+                # y_axis_data = json_data["actions"][0]
                 return [y_axis_data]
 
     def unit_correction(self):
@@ -192,18 +191,29 @@ class QcodesData(DataBuffer):
                     if "unit" in self.axis_values[axis][i]:
                         unit = self.axis_values[axis][i]["unit"]
                         self.apply_unit_correction(axis, unit, matrix=i)
+            elif axis == "y":
+                if self.get_number_of_dimension() == 2:
+                    for i in self.axis_values[axis]:
+                        if "unit" in self.axis_values[axis][i]:
+                            unit = self.axis_values[axis][i]["unit"]
+                            self.apply_unit_correction(axis, unit, y_index=i)
+                else:
+                    unit = self.axis_values[axis]["unit"]
+                    self.apply_unit_correction(axis, unit)
             else:
                 unit = self.axis_values[axis]["unit"]
                 self.apply_unit_correction(axis, unit)
         return
 
-    def apply_unit_correction(self, axis, unit, matrix=None):
+    def apply_unit_correction(self, axis, unit, y_index=None, matrix=None):
         """
         qCoDeS uses mV as a default unit. For this reason data needs to be corrected to V. So all of the data is
         multiplied by a value that is infront of the standard unit.
 
         :param axis: string x, y or z: which of the three axis to apply the correction to
         :param unit: Current unit for the axis passed by parameter axis
+        :param y_index: In case that the axis is y, since we can have multiple measured parameters, we need to specify
+                        which data list are we making the correction for
         :param matrix: in case that the axis is z, since z can have more then 1 matrix, we need to specify which matrix
                         are we making the correction for
         :return: NoneType
@@ -222,17 +232,22 @@ class QcodesData(DataBuffer):
                 if matrix is not None:
                     self.axis_values[axis][matrix]["unit"] = k
                     self.apply_gains(axis, values[j], matrix=matrix)
+                elif y_index is not None:
+                    self.axis_values[axis][y_index]["unit"] = k
+                    self.apply_gains(axis, values[j], y_index=y_index)
                 else:
                     self.axis_values[axis]["unit"] = k
                     self.apply_gains(axis, values[j], matrix=matrix)
         return
 
-    def apply_gains(self, axis, gain, matrix=None):
+    def apply_gains(self, axis, gain, y_index=None, matrix=None):
         """
         Since the unit changes, we also have to change the data accordingly.
 
         :param axis: string x, y or z: which of the three axis to apply the correction to
         :param gain: What gain needs to be applied to this data
+        :param y_index: In case that the axis is y, since we can have multiple measured parameters, we need to specify
+                        which data list are we making the correction for
         :param matrix: in case that the axis is z, since z can have more then 1 matrix, we need to specify which matrix
                         are we making the correction for
         :return: NoneType
@@ -240,6 +255,9 @@ class QcodesData(DataBuffer):
         if matrix is not None:
             print("apply {} multiplier to axis {} data, matrix {}".format(gain, axis, matrix))
             self.data["matrix"][matrix] *= gain
+        elif y_index is not None:
+            print("Apply {} multiplier to axis {} data, index {}".format(gain, axis, y_index))
+            self.data["y"][y_index] *= gain
         else:
             print("apply {} multiplier to axis {} data".format(gain, axis))
             self.data[axis] *= gain
@@ -247,23 +265,15 @@ class QcodesData(DataBuffer):
 
 def main():
 
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Daniel_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
-    # 3D
-    #file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-24\\#001_Test_11-17-26\\inst1_g1_set_inst1_g1_set_0.dat"
+    # Unit tests
 
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Josh_3d_2m\\\dac_dac5_attenuated_set_dac_dac1_attenuated_set.dat"
+    # QCoDeS data examples
+    qc11 = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Josh_1d1\\dac_dac1_attenuated_set.dat"
+    qc12 = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_TEST_1x2(long)\\test_g1_set.dat"
+    qc21 = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Daniel_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
+    qc22 = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_Josh_3d_2m\\dac_dac5_attenuated_set_dac_dac1_attenuated_set.dat"
 
-    # 2D
-    # file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\qcodesGUI\\data\\2018-05-25\\#001_{name}_13-22-09\\inst1_g1_set.dat"
-
-    # Daniels measurement example
-    # file_location = "K:\\Measurement\\Daniel\\2017-07-04\\#117_Belle_3to6_Daimond_PLLT_LTon700_CTon910_SLon1900_17-13-25\\IVVI_PLLT_set_IVVI_Ohmic_set.dat"
-
-    data = QcodesData(file_location)
-    data.prepare_data()
-    # print(data.data)
-    # print(data.axis_values)
-    data.unit_correction()
+    qc_list = [qc11, qc12, qc21, qc22]
 
 
 if __name__ == '__main__':
