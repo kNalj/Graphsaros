@@ -81,7 +81,7 @@ class LabberData(DataBuffer):
             alt_y = self.check_if_alternate_direction(self.log_file.getData(self.candidates[1]["name"]))
         else:
             x_axis = self.candidates[0]["values"]
-            y_axis = self.candidates[1]["values"]
+            y_axis = [self.log_file.getData(names[i])[0] for i in range(len(names))]
 
         if self.get_number_of_dimension() == 3:
             print("Fetching matrix values . . .")
@@ -140,6 +140,10 @@ class LabberData(DataBuffer):
                 data_dict["z"][index] = channel_dict
 
         elif self.get_number_of_dimension() == 2:
+            y_data = {}
+            for i, channel in enumerate(self.log_file.getLogChannels()):
+                y_data[i] = {"name": self.log_file.getLogChannels()[i]["name"],
+                             "unit": self.log_file.getLogChannels()[i]["unit"]}
             data_dict = {"x": {"name": self.log_file.getStepChannels()[0]["name"],
                                "unit": self.log_file.getStepChannels()[0]["unit"]},
                          "y": y_data}
