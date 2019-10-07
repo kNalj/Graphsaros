@@ -4,7 +4,6 @@ try:
 except ImportError as e:
     print("Seems like Labber API files are not available on this computer.")
     print("Detailed exception text: ", str(e))
-
 from data_handlers.DataBuffer import DataBuffer
 
 
@@ -21,7 +20,7 @@ class LabberData(DataBuffer):
         self.legend = {1: "x", 0: "y"}
         super().__init__(location)
 
-        self.alternate = False
+        self.alternate = {"x": False, "y": False}
 
         self.log_file = Labber.LogFile(location)
 
@@ -48,17 +47,11 @@ class LabberData(DataBuffer):
         if len(self.candidates) == 2:
             for channel in self.log_file.getStepChannels():
                 data = self.log_file.getData(channel["name"])
-                self.alternate = self.check_if_alternate_direction(data)
 
             matrix_dimensions = [len(self.candidates[0]["values"]), len(self.candidates[1]["values"])]
-
             self.number_of_set_parameters = 2
         elif len(self.candidates) == 1:
             matrix_dimensions = [len(self.log_file.getData(self.log_file.getLogChannels()[0]["name"]))]
-            self.axis_values = {"x": {"name": self.log_file.getStepChannels()[0]["name"],
-                                      "unit": self.log_file.getStepChannels()[0]["unit"]},
-                                "y": {"name": self.log_file.getLogChannels()[0]["name"],
-                                      "unit": self.log_file.getLogChannels()[0]["unit"]}}
         else:
             "I need to create a widget that lets you select the things"
             pass
@@ -83,7 +76,9 @@ class LabberData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             x_axis = self.candidates[0]["values"]
+            alt_x = self.check_if_alternate_direction(self.log_file.getData(self.candidates[0]["name"]))
             y_axis = self.candidates[1]["values"]
+            alt_y = self.check_if_alternate_direction(self.log_file.getData(self.candidates[1]["name"]))
         else:
             x_axis = self.candidates[0]["values"]
             y_axis = self.candidates[1]["values"]
@@ -96,12 +91,21 @@ class LabberData(DataBuffer):
             for matrix in range(self.number_of_measured_parameters):
                 data = self.log_file.getData(names[matrix])
                 matrix_data = np.zeros((x_dimension, y_dimension))
-                num_of_elements = np.size(data)
+
+                # There is a chance that the actual data is smaller then expected because the user stop the measurement
+                # before it ended completely. This is way before getting the data point from the actual data we need to
+                # check if that data points exists in the data by comparing boundaries of the data with the indexes we
+                # are trying to get
+                x, y = np.shape(data)
                 for i in range(x_dimension):
                     for j in range(y_dimension):
-                        if i * y_dimension + j < num_of_elements:
-                            if self.alternate and j % 2:
-                                matrix_data[i][j] = data[j][-i-1]
+                        if i < y and j < x:
+                            if alt_x and alt_y and matrix % 2 and j % 2:
+                                matrix_data[i][j] = data[-j-1][-i-1]  # Both axes were recorded in alternate directions
+                            elif alt_x and j % 2:
+                                matrix_data[i][j] = data[j][-i-1]  # X axis was recorded in alternate directions
+                            elif alt_y and matrix % 2:
+                                matrix_data[i][j] = data[-j-1][i]  # Y axis was recorded in alternate directions
                             else:
                                 matrix_data[i][j] = data[j][i]
                             self.progress.emit(
@@ -138,9 +142,7 @@ class LabberData(DataBuffer):
         elif self.get_number_of_dimension() == 2:
             data_dict = {"x": {"name": self.log_file.getStepChannels()[0]["name"],
                                "unit": self.log_file.getStepChannels()[0]["unit"]},
-                         "y": {"name": self.log_file.getLogChannels()[0]["name"],
-                               "unit": self.log_file.getLogChannels()[0]["unit"]}}
-
+                         "y": y_data}
         return data_dict
 
     def check_if_alternate_direction(self, data):
@@ -151,16 +153,13 @@ class LabberData(DataBuffer):
         :param data:
         :return:
         """
-
-        if (data[0] == np.flip(data[1], axis=0)).all():
+        if (data[0] == np.flip(data[1], axis=0)).all() and data[0][0] != data[0][1]:
             return True
         return False
 
-def main():
-    file_location = "K:\\Measurement\\Andrea\\Majo3\\1stCooldown\\2019\\02\\Data_0217\\I_sweepSG_BG+3000mV.hdf5"
 
-    ex = LabberData(file_location)
-    ex.prepare_data()
+def main():
+    pass
 
 
 if __name__ == "__main__":
