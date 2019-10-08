@@ -13,7 +13,7 @@ class DummyBuffer(DataBuffer):
 
         self.name = name
         self.data = {"x": x["values"], "y": y["values"]}
-        self.axis_values = {"x": x["axis"], "y": y["axis"]}
+        self.axis_values = {"x": x["axis"], "y": {0: y["axis"]}}
         if extra_axis is not None:
             self.data["extra_axis"] = extra_axis["values"]
             self.axis_values["extra_axis"] = extra_axis["axis"]

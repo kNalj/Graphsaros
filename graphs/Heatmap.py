@@ -777,7 +777,7 @@ class Heatmap(BaseGraph):
         x = np.linspace(start_x, end_x, len(selected))
         x2 = np.linspace(start_y, end_y, len(selected))
 
-        label_x = self.data_buffer.axis_values["y"]
+        label_x = self.data_buffer.axis_values["y"][0]
         label_y = self.data_buffer.axis_values["z"][self.active_data_index]
         label_extra = self.data_buffer.axis_values["x"]
 

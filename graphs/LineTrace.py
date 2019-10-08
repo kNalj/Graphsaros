@@ -87,7 +87,7 @@ class LineTrace(BaseGraph):
         # Elements for ploting data
         self.plt = pg.GraphicsView()
         self.central_item = pg.GraphicsLayout()
-        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.y_values[0], pen=(60, 60, 60), title=self.title)
+        self.main_subplot = pg.PlotItem(x=self.x_values, y=self.active_data_set, pen=(60, 60, 60), title=self.title)
         self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
         self.fit_plot.sigRangeChanged.connect(self.update_region_area)
 
