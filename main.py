@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
         self.opened_datasets_tablewidget = QTableWidget(0, 4)
         self.opened_datasets_tablewidget.setMinimumSize(600, 200)
         self.opened_datasets_tablewidget.setHorizontalHeaderLabels(("Name", "Location", "Delete", "Type"))
+        self.opened_datasets_tablewidget.doubleClicked.connect(self.display_dataset)
         header = self.opened_datasets_tablewidget.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
@@ -205,6 +206,17 @@ class MainWindow(QMainWindow):
         :return:
         """
         self.exit()
+
+    def keyPressEvent(self, qKeyEvent):
+        """
+
+        :param qKeyEvent:
+        :return:
+        """
+        if qKeyEvent.key() in [QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter]:
+            self.display_dataset()
+        else:
+            super().keyPressEvent(qKeyEvent)
 
     def open_file_dialog(self):
         """
@@ -413,7 +425,7 @@ class MainWindow(QMainWindow):
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix(index=0))
                 (x_scale, y_scale) = dataset.get_scale()
-                img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0])
+                img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0][0])
                 img.scale(x_scale, y_scale)
                 print(" Drawing histogram . . .")
                 histogram = pg.HistogramLUTItem()
@@ -426,7 +438,10 @@ class MainWindow(QMainWindow):
                 for side in ('left', 'bottom'):
                     ax = self.mini_plot_items["main_subplot"].getAxis(side)
                     ax.setPen((60, 60, 60))
-                    axis_data = self.datasets[name].axis_values[legend[side]]
+                    if legend[side] == "y":
+                        axis_data = self.datasets[name].axis_values[legend[side]][0]
+                    else:
+                        axis_data = self.datasets[name].axis_values[legend[side]]
                     label_style = {'font-size': '7pt'}
                     ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
