@@ -113,11 +113,11 @@ class DataBuffer(QObject):
         x_divider = len(self.data["x"])
         if x_divider == 0:
             x_divider = 1
-        y_divider = len(self.data["y"])
+        y_divider = len(self.data["y"][0])
         if y_divider == 0:
             y_divider = 1
         return (self.data["x"][-1] - self.data["x"][0]) / x_divider, \
-               (self.data["y"][-1] - self.data["y"][0]) / y_divider
+               (self.data["y"][0][-1] - self.data["y"][0][0]) / y_divider
 
     def get_matrix(self, index=None):
         """

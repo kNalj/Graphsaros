@@ -72,7 +72,7 @@ class QcodesData(DataBuffer):
 
         if self.get_number_of_dimension() == 3:
             x_axis = pd.unique([value[0] for value in data])
-            y_axis = pd.unique([value[1] for value in data])
+            y_axis = [pd.unique([value[1] for value in data])]
         else:
             x_axis = np.array([value[0] for value in data])
             y_axis = [np.array([value[i+1] for value in data]) for i in range(self.number_of_measured_parameters)]
@@ -170,7 +170,7 @@ class QcodesData(DataBuffer):
                 z_axis_data = {}
                 for i, action in enumerate(json_data["actions"]):
                     z_axis_data[i] = json_data["actions"][i]
-                return [y_axis_data, z_axis_data]
+                return [{0: y_axis_data}, z_axis_data]
             else:
                 # otherwise we only need y axis data since it's a 2D graph and there is no z
                 y_axis_data = {}
@@ -198,8 +198,8 @@ class QcodesData(DataBuffer):
                             unit = self.axis_values[axis][i]["unit"]
                             self.apply_unit_correction(axis, unit, y_index=i)
                 else:
-                    unit = self.axis_values[axis]["unit"]
-                    self.apply_unit_correction(axis, unit)
+                    unit = self.axis_values[axis][0]["unit"]
+                    self.apply_unit_correction(axis, unit, y_index=0)
             else:
                 unit = self.axis_values[axis]["unit"]
                 self.apply_unit_correction(axis, unit)

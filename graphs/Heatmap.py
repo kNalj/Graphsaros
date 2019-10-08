@@ -122,7 +122,7 @@ class Heatmap(BaseGraph):
 
         :return:
         """
-
+        print("Initializing UI . . .")
         # Setting the position and size of the window
         self.setGeometry(50, 50, 800, 600)
         # Central widget is the mail element of the window, all other elements are added to the central widget
@@ -142,7 +142,7 @@ class Heatmap(BaseGraph):
         # set the default data as the image data
         img.setImage(self.displayed_data_set, padding=0)
         # reposition the data to correct starting position (x0, y0)
-        img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+        img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0][0])
         # by default data is drawn on x axis: from 0 to number of points along x axis, also for y: 0 to num of points
         # on y axis (example: steping 1 param 100 to 110, and steping another 20 to 40 would result in in data being
         # drawn 0 to 10 on x axis, and 0 to 20 on y axis)
@@ -151,13 +151,15 @@ class Heatmap(BaseGraph):
         img.scale(x_scale, y_scale)
         main_subplot.addItem(img, padding=0)
 
+        print("Determining graph limits . . .")
         # Seting the limits of the graph so that the user can not go out of the image range
         x_min = min(self.data_buffer.get_x_axis_values())
         x_max = max(self.data_buffer.get_x_axis_values())
-        y_min = min(self.data_buffer.get_y_axis_values())
-        y_max = max(self.data_buffer.get_y_axis_values())
+        y_min = min(self.data_buffer.get_y_axis_values()[0])
+        y_max = max(self.data_buffer.get_y_axis_values()[0])
         main_subplot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
 
+        print("Updating labels . . .")
         # Get the data about axis labels and units from the data buffer and apply them to the plot
         legend = {"left": "y", "bottom": "x"}
         print("Gathering axis data . . .")
@@ -169,7 +171,10 @@ class Heatmap(BaseGraph):
             # ax.setPen("k", width=1.5)  # This changes the
             # print(ax._pen.width())
             # print(ax._tickSpacing)  # Yields None ?!?
-            axis_data = self.data_buffer.axis_values[legend[side]]
+            if legend[side] == "y":
+                axis_data = self.data_buffer.axis_values[legend[side]][0]
+            else:
+                axis_data = self.data_buffer.axis_values[legend[side]]
             label_style = {'font-size': '10pt'}
             ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
@@ -226,10 +231,7 @@ class Heatmap(BaseGraph):
             ax.setPen((60, 60, 60))
             axis_data = self.data_buffer.axis_values[legend[axis]]
             label_style = {'font-size': '9pt'}
-            if axis == "left":
-                ax.setLabel(axis_data[0]["name"], axis_data[0]["unit"], **label_style)
-            else:
-                ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+            ax.setLabel(axis_data[0]["name"], axis_data[0]["unit"], **label_style)
 
         # Add the third axis (top one) and connect it to the line trace graph
         line_trace_graph.layout.removeItem(
@@ -273,6 +275,7 @@ class Heatmap(BaseGraph):
         # ##### Data manipulations ######
         # ###############################
 
+        print("Initializing toolbar . . .")
         # Create a toolbar
         self.tools = self.addToolBar("Tools")
         # Connect all actions to a "perform action" method. Perform action takes the name of the action and finds the
@@ -460,7 +463,7 @@ class Heatmap(BaseGraph):
 
                     img.setImage(matrix)
                     (x_scale, y_scale) = self.data_buffer.get_scale()
-                    img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0])
+                    img.translate(self.data_buffer.get_x_axis_values()[0], self.data_buffer.get_y_axis_values()[0][0])
                     img.scale(x_scale, y_scale)
 
                     histogram.setImageItem(img)
@@ -637,18 +640,18 @@ class Heatmap(BaseGraph):
             if self.line_segment_roi["ROI"] is None:
                 # ROI instantiation
                 x0 = min(self.data_buffer.get_x_axis_values())
-                y0 = min(self.data_buffer.get_y_axis_values())
+                y0 = min(self.data_buffer.get_y_axis_values()[0])
 
                 x1 = min(self.data_buffer.get_x_axis_values())
-                y1 = max(self.data_buffer.get_y_axis_values())
+                y1 = max(self.data_buffer.get_y_axis_values()[0])
 
                 line_segmet_roi = LineROI(positions=([x0, y0], [x1, y1]),
                                           pos=(0, 0),
                                           pen=(5, 9),
                                           edges=[self.data_buffer.get_x_axis_values()[0],
                                                  self.data_buffer.get_x_axis_values()[-1],
-                                                 self.data_buffer.get_y_axis_values()[0],
-                                                 self.data_buffer.get_y_axis_values()[-1]])
+                                                 self.data_buffer.get_y_axis_values()[0][0],
+                                                 self.data_buffer.get_y_axis_values()[0][-1]])
                 self.label_a = pg.TextItem("[A]", color=(255, 255, 255))
                 self.label_a.setAnchor((0, 1))
                 self.label_a.setParentItem(line_segmet_roi)
@@ -1397,7 +1400,7 @@ class Heatmap(BaseGraph):
 
         if self.modes["ROI"]:
             if event.key() in [Qt.Key_Up, Qt.Key_Down]:
-                distance = abs(self.data_buffer.get_y_axis_values()[1] - self.data_buffer.get_y_axis_values()[0])
+                distance = abs(self.data_buffer.get_y_axis_values()[0][1] - self.data_buffer.get_y_axis_values()[0][0])
             elif event.key() in [Qt.Key_Right, Qt.Key_Left]:
                 distance = abs(self.data_buffer.get_x_axis_values()[1] - self.data_buffer.get_x_axis_values()[0])
             else:
@@ -1465,7 +1468,7 @@ class Heatmap(BaseGraph):
         self.data_buffer.data[axis] = self.data_buffer.data[axis] + value
         self.plot_elements["img"].resetTransform()
         self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0],
-                                            self.data_buffer.get_y_axis_values()[0])
+                                            self.data_buffer.get_y_axis_values()[0][0])
         (x_scale, y_scale) = self.data_buffer.get_scale()
         self.plot_elements["img"].scale(x_scale, y_scale)
         x_min = min(self.data_buffer.get_x_axis_values())

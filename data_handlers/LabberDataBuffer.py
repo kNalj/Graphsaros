@@ -45,9 +45,6 @@ class LabberData(DataBuffer):
                 self.candidates.append(channel)
 
         if len(self.candidates) == 2:
-            for channel in self.log_file.getStepChannels():
-                data = self.log_file.getData(channel["name"])
-
             matrix_dimensions = [len(self.candidates[0]["values"]), len(self.candidates[1]["values"])]
             self.number_of_set_parameters = 2
         elif len(self.candidates) == 1:
@@ -77,7 +74,7 @@ class LabberData(DataBuffer):
         if self.get_number_of_dimension() == 3:
             x_axis = self.candidates[0]["values"]
             alt_x = self.check_if_alternate_direction(self.log_file.getData(self.candidates[0]["name"]))
-            y_axis = self.candidates[1]["values"]
+            y_axis = [self.candidates[1]["values"]]
             alt_y = self.check_if_alternate_direction(self.log_file.getData(self.candidates[1]["name"]))
         else:
             x_axis = self.candidates[0]["values"]
@@ -130,7 +127,7 @@ class LabberData(DataBuffer):
         """
         if self.get_number_of_dimension() == 3:
             data_dict = {"x": {"name": self.candidates[0]["name"], "unit": self.candidates[0]["unit"]},
-                         "y": {"name": self.candidates[1]["name"], "unit": self.candidates[1]["unit"]},
+                         "y": {0: {"name": self.candidates[1]["name"], "unit": self.candidates[1]["unit"]}},
                          "z": {}}
 
             data = [(channel["name"], channel["unit"]) for channel in self.log_file.getLogChannels()]
