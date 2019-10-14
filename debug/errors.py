@@ -4,10 +4,13 @@ from time import asctime
 
 
 class ErrorHandler:
-    def __init__(self):
+    def __init__(self, msg):
         """
 
+        :param msg:
         """
+        self.msg = msg
+
         self.exc_type = sys.exc_info()[0]
         self.exc_value = sys.exc_info()[1]
         self.exc_traceback = sys.exc_info()[2]
@@ -21,7 +24,8 @@ class ErrorHandler:
         :return:
         """
         timestamp = asctime()
-        string = timestamp + "\nCaught exception of type {} cause by: {}\n".format(self.exc_type, self.exc_value)
+        string = timestamp + "\n" + self.msg
+        string = string + "\nCaught exception of type {} caused by: {}\n".format(self.exc_type, self.exc_value)
         for frame in self.formatted:
             string = string + frame
 
@@ -35,4 +39,11 @@ class ErrorHandler:
         with open("log.txt", "a+") as file:
             print("Writing to log")
             file.write(self.format_error_msg())
+            print("Done")
+
+    @staticmethod
+    def string_to_file(string):
+        with open("log.txt", "a+") as file:
+            print("Writing to log")
+            file.write(string)
             print("Done")
