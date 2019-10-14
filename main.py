@@ -461,10 +461,15 @@ class MainWindow(QMainWindow):
             name = get_location_basename(os.path.dirname(location))
             dataset = self.datasets[name]
 
-            self.selected_dataset_textbrowser.append("X [Step: {}]\tY [Step: {}]".format(
-                (dataset.get_x_axis_values()[-1] - dataset.get_x_axis_values()[0]) / len(dataset.get_x_axis_values()),
-                (dataset.get_y_axis_values()[-1] - dataset.get_y_axis_values()[0]) / len(dataset.get_y_axis_values())))
-            self.selected_dataset_textbrowser.append(dataset.textual_data_representation())
+            self.selected_dataset_textbrowser.append("X:\n\t[Name: {}]\n\t[Unit: {}]\n\t[Step: {}]\n".format(
+                dataset.axis_values["x"]["name"],
+                dataset.axis_values["x"]["unit"],
+                (dataset.get_x_axis_values()[-1] - dataset.get_x_axis_values()[0]) / len(dataset.get_x_axis_values()) - 1))
+            self.selected_dataset_textbrowser.append("Y:\n\t[Name: {}]\n\t[Unit: {}]\n\t[Step: {}]\n".format(
+                dataset.axis_values["y"][0]["name"],
+                dataset.axis_values["y"][0]["unit"],
+                (dataset.get_y_axis_values()[0][-1] - dataset.get_y_axis_values()[0][0]) / len(dataset.get_y_axis_values()[0]) - 1))
+            self.selected_dataset_textbrowser.append("Matrix:\n {}".format(dataset.textual_data_representation()))
 
     def open_folder_explorer(self):
         """

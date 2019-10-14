@@ -67,7 +67,7 @@ class MatrixData(DataBuffer):
         self.number_of_set_parameters = 2
         if not self.data["matrix"]:
             transposed = np.transpose(self.raw_data)
-            self.data["matrix"].append(transposed)
+            self.data["matrix"].append([transposed])
         else:
             print("Data already exists")
 
