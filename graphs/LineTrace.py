@@ -520,19 +520,11 @@ class LineTrace(BaseGraph):
 
 def main():
     app = QApplication(sys.argv)
-    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\inst1_g1_set.dat"
+    file_location = "C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_1d2(long test)\\test_g1_set.dat"
     data = QcodesData(file_location)
     data.prepare_data()
 
-    N = 1000
-    x_values_sin_test = t = np.linspace(0, 4*np.pi, N)
-    y_values_sin_test = 3.0*np.sin(t+0.001) + 0.5 + np.random.randn(N) # create artificial data with noise
-
-    dummy = DummyBuffer("test name",
-                        {"values": x_values_sin_test, "axis": {"name": "test label", "unit": "test unit"}},
-                        {"values": y_values_sin_test, "axis": {"name": "y test label", "unit": "y test unit"}})
-
-    ex = LineTrace(dummy)
+    ex = LineTrace(data)
     sys.exit(app.exec_())
 
 

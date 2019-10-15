@@ -109,6 +109,8 @@ class Heatmap(BaseGraph):
 
         self.histogram_width = self.width() * 0.2
 
+        self.offsets = {"horizontal": 0, "vertical": 0}
+
         self.init_ui()
 
     """
@@ -196,6 +198,8 @@ class Heatmap(BaseGraph):
 
         print("Building color bar item . . .")
         color_bar = ColorBarItem(parent=main_subplot, image=img, label=axis_data["name"])
+        label_style = {"font-size": "8pt"}
+        color_bar.axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
         color_bar.layout.setContentsMargins(10, 30, 0, 45)
         color_bar.hide()
         frame_layout.addItem(color_bar)
@@ -1113,11 +1117,12 @@ class Heatmap(BaseGraph):
                             This array is sent to this method as a signal from the InputWindow widget.
         :return: NoneType
         """
+        print("Reading data from correction widget . . .")
         self.correction_resistance = float(data[0])
 
         dimensions = self.data_buffer.get_matrix_dimensions()
         matrix = self.active_data
-        y_data = self.data_buffer.get_y_axis_values()
+        y_data = self.data_buffer.get_y_axis_values()[0]
         corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
 
         biases = [1 if voltage >= 0 else -1 for voltage in y_data]
@@ -1181,7 +1186,7 @@ class Heatmap(BaseGraph):
         dimensions = self.data_buffer.get_matrix_dimensions()
         currents_matrix = data[2]
         matrix = self.active_data
-        y_data = self.data_buffer.get_y_axis_values()
+        y_data = self.data_buffer.get_y_axis_values()[0]
         corrected_matrix = np.zeros((dimensions[0], dimensions[1]))
 
         biases = [1 if voltage >= 0 else -1 for voltage in y_data]
@@ -1465,16 +1470,19 @@ class Heatmap(BaseGraph):
         :param value: float: the value of offset (how much will data be shifted)
         :return: NoneType
         """
-        self.data_buffer.data[axis] = self.data_buffer.data[axis] + value
+        if axis == "x":
+            self.offsets["horizontal"] += value
+        else:
+            self.offsets["vertical"] += value
         self.plot_elements["img"].resetTransform()
-        self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0],
-                                            self.data_buffer.get_y_axis_values()[0][0])
+        self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0] + self.offsets["horizontal"],
+                                            self.data_buffer.get_y_axis_values()[0][0] + self.offsets["vertical"])
         (x_scale, y_scale) = self.data_buffer.get_scale()
         self.plot_elements["img"].scale(x_scale, y_scale)
-        x_min = min(self.data_buffer.get_x_axis_values())
-        x_max = max(self.data_buffer.get_x_axis_values())
-        y_min = min(self.data_buffer.get_y_axis_values())
-        y_max = max(self.data_buffer.get_y_axis_values())
+        x_min = min(self.data_buffer.get_x_axis_values() + self.offsets["horizontal"])
+        x_max = max(self.data_buffer.get_x_axis_values() + self.offsets["horizontal"])
+        y_min = min(self.data_buffer.get_y_axis_values()[0] + self.offsets["vertical"])
+        y_max = max(self.data_buffer.get_y_axis_values()[0] + self.offsets["vertical"])
         self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
         return
 
