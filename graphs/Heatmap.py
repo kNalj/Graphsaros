@@ -791,7 +791,7 @@ class Heatmap(BaseGraph):
 
         title = self.data_buffer.name
         dummy = DummyBuffer(title + "Line Trace", x_dict, y_dict, extra_axis=extra_axis_dict)
-        self.line_trace_window = LineTrace(dummy)
+        self.line_trace_window = LineTrace(dummy, parent=self)
 
     def xderivative_action(self):
         """

@@ -206,7 +206,6 @@ class HeatMapSettings(SettingsWidget):
             self.add_tab("Data", name, scroll)
             self.fill_tab("Data", name, tab)
 
-
     def build_general_tabs(self):
         """
 

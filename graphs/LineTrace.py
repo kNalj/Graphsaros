@@ -1,7 +1,7 @@
 import pyqtgraph as pg
 import numpy as np
 import sys
-import helpers
+from math import degrees, atan2, tan
 
 from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox
 from PyQt5.QtGui import QIcon, QFont
@@ -15,6 +15,7 @@ from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.DataBuffer import DataBuffer
 from data_handlers.Dummy2D import DummyBuffer
 from helpers import show_error_message
+from widgets.EditAxisWidget import Edit2DAxisWidget
 
 
 def trap_exc_during_debug(exctype, value, traceback, *args):
@@ -29,7 +30,7 @@ sys.excepthook = trap_exc_during_debug
 
 class LineTrace(BaseGraph):
 
-    def __init__(self, data: DataBuffer = None, axis_data=None, parent=None, labels=None):
+    def __init__(self, data: DataBuffer = None, parent=None):
         """
         TODO: Fix documentation, i might have changed things and forgot to update documentation (axis_data)
         Inherits: BaseGraph()
@@ -41,10 +42,12 @@ class LineTrace(BaseGraph):
                                     no actual data buffer rather just x and y axis data
         """
         print("Instantiating 2d window . . .")
-        super().__init__(parent=parent)
+        super().__init__()
 
         # Axis data exists when what is being opened is a line trace created by Heatmap window. In that case no
         # reference to data buffer is made.
+
+        self.parent = parent
 
         self.data_buffer = data
         self.x_values = self.data_buffer.data["x"]
@@ -53,7 +56,6 @@ class LineTrace(BaseGraph):
         self.active_data_set = self.y_values[0]
         self.displayed_data_set = self.active_data_set
 
-        self.labels = labels
         self.title = self.data_buffer.name
 
         # indicates in which modes the window is currently working.
@@ -91,6 +93,23 @@ class LineTrace(BaseGraph):
         self.fit_plot = pg.PlotItem(pen=(60, 60, 60))
         self.fit_plot.sigRangeChanged.connect(self.update_region_area)
 
+        for plot_item in [self.main_subplot, self.fit_plot]:
+            plot_item.layout.removeItem(plot_item.getAxis("top"))
+            if "extra_axis" in self.data_buffer.data:
+                extra_view_box = pg.ViewBox()
+                extra_axis = pg.AxisItem("top")
+                extra_axis.setPen((60, 60, 60))
+                axis_data = self.data_buffer.axis_values["extra_axis"]
+                label_style = {'font-size': '9pt'}
+                extra_axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                plot_item.layout.addItem(extra_axis, 0, 1)
+                extra_axis.linkToView(extra_view_box)
+                extra_view_box.setXLink(plot_item.vb)
+                if plot_item == self.main_subplot:
+                    extra_view_box_main = extra_view_box
+                else:
+                    extra_view_box_fit = extra_view_box
+
         self.setCentralWidget(self.plt)
 
         # set the color of the background and set the central widget. All other elements are added to this central
@@ -106,13 +125,17 @@ class LineTrace(BaseGraph):
         self.central_item.addItem(self.fit_plot)
         self.fit_plot.hide()
 
+        self.plot_elements = {"main_subplot": self.main_subplot, "fit_plot": self.fit_plot}
+        if "extra_axis" in self.data_buffer.data:
+            self.plot_elements["extra_view_box_main"] = extra_view_box_main
+            self.plot_elements["extra_view_box_fit"] = extra_view_box_fit
+
         # connect the range changed signal of main subplot to a method that updates the range of the extra axis.
-        self.main_subplot.sigRangeChanged.connect(self.update_extra_axis)
+        self.main_subplot.sigRangeChanged.connect(self.update_extra_axis_main)
+        self.fit_plot.sigRangeChanged.connect(self.update_extra_axis_fit)
 
         print("Configuring axis data . . .")
         self.update_axis_labels()
-
-        self.plot_elements = {"main_subplot": self.main_subplot, "fit_plot": self.fit_plot}
 
         self.init_toolbar()
 
@@ -301,7 +324,7 @@ class LineTrace(BaseGraph):
         :return: NoneType
         """
 
-        self.eaw = helpers.Edit2DAxisWidget(self)
+        self.eaw = Edit2DAxisWidget(self)
         self.eaw.submitted.connect(self.edit_axis_data)
         self.eaw.show()
 
@@ -443,29 +466,12 @@ class LineTrace(BaseGraph):
                 pi = plot_item
                 ax = pi.getAxis(axis)
                 ax.setPen((60, 60, 60))
-                if self.labels is not None:
-                    axis_data = self.labels[legend[axis]]
-                    label_style = {'font-size': '10pt'}
-                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                axis_data = self.data_buffer.axis_values[legend[axis]]
+                label_style = {'font-size': '10pt'}
+                if axis == "left":
+                    ax.setLabel(axis_data[y_index]["name"], axis_data[y_index]["unit"], **label_style)
                 else:
-                    axis_data = self.data_buffer.axis_values[legend[axis]]
-                    label_style = {'font-size': '10pt'}
-                    if axis == "left":
-                        ax.setLabel(axis_data[y_index]["name"], axis_data[y_index]["unit"], **label_style)
-                    else:
-                        ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-
-            plot_item.layout.removeItem(plot_item.getAxis("top"))
-            if "extra_axis" in self.data_buffer.data:
-                extra_view_box = pg.ViewBox()
-                extra_axis = pg.AxisItem("top")
-                extra_axis.setPen((60, 60, 60))
-                axis_data = self.data_buffer.axis_values[legend["top"]]
-                label_style = {'font-size': '9pt'}
-                extra_axis.setLabel(axis_data["name"], axis_data["unit"], **label_style)
-                plot_item.layout.addItem(extra_axis, 0, 1)
-                extra_axis.linkToView(extra_view_box)
-                extra_view_box.setXLink(plot_item.vb)
+                    ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
 
     """
     # ###########################################
@@ -514,8 +520,77 @@ class LineTrace(BaseGraph):
                         axis.setStyle(tickTextOffset=int(int(options["ticks"]["font"]) / 2))
         return
 
-    def update_extra_axis(self):
-        pass
+    def update_extra_axis_fit(self):
+        """
+
+        :return:
+        """
+        self.update_extra_axis(self.fit_plot.vb, self.plot_elements["extra_view_box_fit"])
+
+    def update_extra_axis_main(self):
+        """
+
+        :return:
+        """
+        self.update_extra_axis(self.main_subplot.vb, self.plot_elements["extra_view_box_main"])
+
+    def update_extra_axis(self, view_box, extra_view_box):
+        """
+
+        :return:
+        """
+        point1 = self.parent.line_segment_roi["ROI"].getSceneHandlePositions(0)
+        _, scene_coords = point1
+        start_coords = self.parent.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+        point2 = self.parent.line_segment_roi["ROI"].getSceneHandlePositions(1)
+        _, scene_coords = point2
+        end_coords = self.parent.line_segment_roi["ROI"].mapSceneToParent(scene_coords)
+
+        x_diff = end_coords.x() - start_coords.x()
+        y_diff = end_coords.y() - start_coords.y()
+
+        angle = atan2(y_diff, x_diff)
+
+        angle_tan = tan(angle)
+
+        start_value_x_axis = view_box.state["viewRange"][0][0]
+        end_value_x_axis = view_box.state["viewRange"][0][1]
+        # padding = view_box.suggestPadding(0)
+
+        if (start_coords.y() > start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+            delta_x_start = start_coords.y() - start_value_x_axis
+            delta_y_start = delta_x_start / angle_tan
+            delta_x_end = end_value_x_axis - end_coords.y()
+            delta_y_end = delta_x_end / angle_tan
+            start_value_extra_axis = start_coords.x() - delta_y_start
+            end_value_extra_axis = end_coords.x() + delta_y_end
+        # Option 2: starting point has been dragged outside of the visible range on line trace graph
+        elif (start_coords.y() < start_value_x_axis) and (end_coords.y() < end_value_x_axis):
+            delta_x_start = start_value_x_axis - start_coords.y()
+            delta_y_start = delta_x_start / angle_tan
+            delta_x_end = end_value_x_axis - end_coords.y()
+            delta_y_end = delta_x_end / angle_tan
+            start_value_extra_axis = start_coords.x() + delta_y_start
+            end_value_extra_axis = end_coords.x() + delta_y_end
+        # Option 3: ending point has been draged outside of the visible range of line trace graph
+        elif (start_coords.y() > start_value_x_axis) and (end_coords.y() > end_value_x_axis):
+            delta_x_start = start_coords.y() - start_value_x_axis
+            delta_y_start = delta_x_start / angle_tan
+            delta_x_end = end_coords.y() - end_value_x_axis
+            delta_y_end = delta_x_end / angle_tan
+            start_value_extra_axis = start_coords.x() - delta_y_start
+            end_value_extra_axis = end_coords.x() - delta_y_end
+        # Option 4: graph has been zoomed in and neither starting or ending point are visible on the line trace
+        # graph
+        else:
+            delta_x_start = start_value_x_axis - start_coords.y()
+            delta_y_start = delta_x_start / angle_tan
+            delta_x_end = end_coords.y() - end_value_x_axis
+            delta_y_end = delta_x_end / angle_tan
+            start_value_extra_axis = start_coords.x() + delta_y_start
+            end_value_extra_axis = end_coords.x() - delta_y_end
+
+        extra_view_box.setXRange(start_value_extra_axis, end_value_extra_axis, padding=0)
 
 
 def main():

@@ -15,8 +15,6 @@ def unit_test():
 
     qd = QcodesData(qc22)
     qd.prepare_data()
-    print(qd.data["y"])
-    print(qd.axis_values)
 
     return file_dict
 
