@@ -361,7 +361,7 @@ class MainWindow(QMainWindow):
                 self.hm = Heatmap(dataset, self)
                 self.hm.show()
             else:
-                self.lt = LineTrace(dataset, None, self)
+                self.lt = LineTrace(dataset, None)
                 self.lt.show()
 
     def open(self, file_type: str):
