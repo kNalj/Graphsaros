@@ -103,10 +103,20 @@ class ColorBarItem(pg.GraphicsWidget):
         self.vb.updateAutoRange()
 
     def setImage(self, image):
+        """
+
+        :param image:
+        :return:
+        """
         self.setImages((image,))
 
     def lookupTableChanged(self, image):
-        """Sets the lookup table based on zeroth image."""
+        """
+        Sets the lookup table based on zeroth image.
+
+        :param image:
+        :return:
+        """
         self.bar.setLookupTable(image.lut)
         for im in self.images:
             if image is im:
@@ -115,7 +125,12 @@ class ColorBarItem(pg.GraphicsWidget):
             im.setLookupTable(image.lut, emit=False)
 
     def imageRangeChanged(self, images):
-        """Respond to change in the range of the images."""
+        """
+        Respond to change in the range of the images.
+
+        :param images:
+        :return:
+        """
         for image in images:
             image_data = image.image
             if image_data is None:
@@ -130,6 +145,11 @@ class ColorBarItem(pg.GraphicsWidget):
         self.updateBarLevels()
 
     def imageLevelsChanged(self, image):
+        """
+
+        :param image:
+        :return:
+        """
         if not np.allclose(self.vb.viewRange()[1], image.levels):
             logger.debug('setYRange %g,%g', *image.levels)
             assert len(image.levels) == 2
@@ -140,9 +160,13 @@ class ColorBarItem(pg.GraphicsWidget):
         self.updateBarLevels()
 
     def updateBarLevels(self):
-        """Update the levels of the bar ImageItem from the image.
+        """
+        Update the levels of the bar ImageItem from the image.
 
-        These depend on both the image levels and the image range."""
+        These depend on both the image levels and the image range.
+
+        :return:
+        """
         # Assume all images have same level
         image_levels = self.images[0].levels
         if not hasattr(self, 'image_max'):
@@ -158,6 +182,10 @@ class ColorBarItem(pg.GraphicsWidget):
         self.bar.setLevels(bar_levels)
 
     def updateManual(self):
+        """
+
+        :return:
+        """
         if self.manual_levels is None or self.manual_lut is None:
             return
         self.vb.setYRange(*self.manual_levels, padding=0)
@@ -165,11 +193,21 @@ class ColorBarItem(pg.GraphicsWidget):
         self.bar.setLookupTable(self.manual_lut)
 
     def setManual(self, lut=None, levels=None):
+        """
+
+        :param lut:
+        :param levels:
+        :return:
+        """
         self.manual_levels = levels
         self.manual_lut = lut
         self.updateManual()
 
     def axis_to_levels(self):
+        """
+
+        :return:
+        """
         logger.debug('axis_to_levels: axis.range=%g,%g', *self.axis.range)
         for image in self.images:
             if image.levels is None:

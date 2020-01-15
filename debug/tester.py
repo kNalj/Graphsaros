@@ -16,7 +16,7 @@ class Tester:
     def prepare_unit_test_start(self):
         user = getpass.getuser()
         tested_file = self.filename
-        start = time.clock()
+        start = time.perf_counter()
 
         with open("log.txt", "a+") as file:
             file.write(
@@ -27,7 +27,7 @@ class Tester:
         return start
 
     def finish_unit_test(self, start, err_num):
-        end = time.clock()
+        end = time.perf_counter()
         with open("log.txt", "a+") as file:
             file.write("Unit test finished with {} error(s).\n".format(err_num))
             file.write("Execution time: {}.\n".format(end - start))

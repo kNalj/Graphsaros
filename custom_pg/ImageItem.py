@@ -47,8 +47,16 @@ class ImageItem(pg.ImageItem):
             self.sigLookupTableChanged.emit()
 
     def setImage(self, image=None, autoLevels=True, levels=None, **kwargs):
-        """Add behaviour that if autoLevels is False and levels is None, levels
-        is set to current (if that is not None). (In original, this causes an error.)"""
+        """
+        Add behaviour that if autoLevels is False and levels is None, levels
+        is set to current (if that is not None). (In original, this causes an error.)
+
+        :param image:
+        :param autoLevels:
+        :param levels:
+        :param kwargs:
+        :return:
+        """
         if levels is None and not autoLevels:
             if self.levels is not None:
                 logger.debug('setImage retaining levels')

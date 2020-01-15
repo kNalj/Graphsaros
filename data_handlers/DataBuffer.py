@@ -21,6 +21,13 @@ class DataBuffer(QObject):
     progress = pyqtSignal(object)
 
     def __init__(self, location):
+        """
+        A constructor for DataBuffer class. This is an abstract class. Contains some methods common to all of the
+        DataBuffer classes but most of the methods are abstract methods.
+
+        :param location: A string representing the location of the file on the disk
+        :type location: str
+        """
         super().__init__()
 
         # location is absolute path to a location of the file on the disk
@@ -160,7 +167,7 @@ class DataBuffer(QObject):
 
     def read_axis_data_from_widget(self, data_dict):
         """
-        Method that creates arrays of data (measure poitns) for x and y axis using user input data.
+        Method that creates arrays of data (measure points) for x and y axis using user input data.
 
         This method is a slot and is being called when this class receives a signal from AxisWindow widget that the data
         has been submitted.

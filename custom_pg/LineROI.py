@@ -16,13 +16,24 @@ class LineROI(pg.LineSegmentROI):
 
         self.temp_line = 0
 
-    # On right-click, raise the context menu
     def mouseClickEvent(self, ev):
+        """
+        On right-click, raise the context menu
+
+        :param ev: event
+        :return: NoneType
+        """
         if ev.button() == Qt.RightButton:
             if self.raiseContextMenu(ev):
                 ev.accept()
 
     def raiseContextMenu(self, ev):
+        """
+        Create custom menu items and append them to the parents menu.
+
+        :param ev: event
+        :return: True
+        """
         menu = self.getContextMenus()
 
         # Let the scene add on to the end of our context menu
@@ -33,9 +44,17 @@ class LineROI(pg.LineSegmentROI):
         menu.popup(QPoint(pos.x(), pos.y()))
         return True
 
-    # This method will be called when this item's _children_ want to raise
-    # a context menu that includes their parents' menus.
     def getContextMenus(self, event=None):
+        """
+        This method will be called when this item's _children_ want to raise a context menu that includes their
+        parents' menus.
+
+        Adds options to the menu that are bound to the LineROI item only. Those options are horizontal, vertical and
+        diagonal alignment.
+
+        :param event:
+        :return:
+        """
         if self.menu is None:
             self.menu = QMenu()
             self.menu.setTitle("Options")
@@ -103,11 +122,28 @@ class LineROI(pg.LineSegmentROI):
         return self.menu
 
     def leave_menu_event(self, event):
+        """
+        When mouse leaves the menu, make sure to remove the previews of the alignment if any exists.
+
+        :param event: event object
+        :return: NoneType
+        """
         if self.temp_line:
             self.parentItem().scene().removeItem(self.temp_line)
             self.temp_line = 0
 
+        return
+
     def hover_action(self, point: int, orientation: str):
+        """
+        When user is hovering its mouse over one of the custom menu items, show a preview of how the line will be
+        aligned.
+
+        :param point: can be 0, 1, 2 or 3. 0 and 1 are the edges of the lineROI, 2 and 3 are used to represent the
+                      diagonal previews
+        :param orientation: can be horizontal, vertical or diagonal
+        :return: NoneType
+        """
         if point in [0, 1]:
             handle_point = self.getSceneHandlePositions()[point]
             name, scene_coords = handle_point
@@ -129,7 +165,19 @@ class LineROI(pg.LineSegmentROI):
             show_error_message("Warning", "Non existent orientation. HOW THE HELL DID U MANAGE TO DO THIS !?")
             return
 
+        return
+
     def add_preview(self, position, orientation, angle):
+        """
+        Draws a preview of the aligned line as a dashed line in a place where the LineROI would be placed by selecting
+        the hovered option.
+
+        :param position: If vertical, then the x axis value of the selected point. If horizontal, then the y axis value
+                         of the selected point.
+        :param orientation: horizontal, vertical or diagonal
+        :param angle: required if diagonal line is being added
+        :return: NoneType
+        """
         pen = pg.mkPen('y', width=1, style=Qt.DashLine)
         if orientation == "vertical":
             new_line = pg.InfiniteLine(angle=angle, pen=pen, movable=False)
@@ -150,7 +198,16 @@ class LineROI(pg.LineSegmentROI):
                 self.temp_line = new_line
                 self.parentItem().addItem(self.temp_line)
 
+        return
+
     def align_line_trace_ROI(self, point, orientation):
+        """
+        Calculate what points need to be moved and where.
+
+        :param point:
+        :param orientation:
+        :return: NoneType
+        """
         if point in [0, 1]:
             handle_to_be_moved = self.getHandles()[1-point]
             align_to_this_point = self.getSceneHandlePositions(point)
@@ -177,6 +234,7 @@ class LineROI(pg.LineSegmentROI):
             self.movePoint(h2, h2_new_coords)
 
         self.align_points()
+        return
 
     def get_angle_from_points(self, p1=None, p2=None):
         """
@@ -208,9 +266,22 @@ class LineROI(pg.LineSegmentROI):
         pass
 
     def align_points(self):
+        """
+        Emit the signal that the points were aligned.
+
+        :return: NoneType
+        """
         self.aligned.emit()
+        return
 
     def arrow_move(self, key_pressed, distance):
+        """
+        Move the LineROI using arrow keys on the keyboard. Moves both points of the LineROI.
+
+        :param key_pressed: Which key was pressed to trigger this action
+        :param distance: How far should the points move (1 / number of sweep steps in specified direction)
+        :return: NoneType
+        """
         handle_a = self.getHandles()[0]
         handle_b = self.getHandles()[1]
 

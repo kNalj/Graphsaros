@@ -47,10 +47,10 @@ class QtLabData(DataBuffer):
                 x_axis = [value[0] for value in self.raw_data]
                 y_axis = [value[1] for value in self.raw_data]
                 self.data["x"] = x_axis
-                self.data["y"] = y_axis
+                self.data["y"] = {0: y_axis}
                 return [len(x_axis)]
             self.data["x"] = x_axis
-            self.data["y"] = y_axis
+            self.data["y"] = {0: y_axis}
             return [len(x_axis), len(y_axis)]
 
     def prepare_data(self):
@@ -125,6 +125,8 @@ class QtLabData(DataBuffer):
                 else:
                     if i[0].isdigit() or (i.startswith("-") and i[1].isdigit()):
                         break
+            data_dict["y"] = {0: data_dict["y"]}
+            print(data_dict)
         return data_dict
 
 

@@ -49,8 +49,11 @@ class AxisItem(pg.AxisItem):
         self.buttons_enabled = True
         self.updateButtons()
 
-
     def close(self):
+        """
+
+        :return:
+        """
         for btn in self.set_lmt_btns:
             btn.setParent(None)
         self.set_lmt_btns = None
@@ -62,9 +65,19 @@ class AxisItem(pg.AxisItem):
         pg.AxisItem.close(self)
 
     def axis(self):
+        """
+
+        :return:
+        :rtype: int
+        """
         return int(self.orientation in {'left', 'right'})
 
     def linkToView(self, view):
+        """
+
+        :param view:
+        :return: NoneType
+        """
         old_view = self.linkedView()
         pg.AxisItem.linkToView(self, view)
         view = self.linkedView()
@@ -74,6 +87,10 @@ class AxisItem(pg.AxisItem):
             view.sigStateChanged.connect(self.respond_linked_view_state_change)
 
     def respond_linked_view_state_change(self):
+        """
+
+        :return: NoneType
+        """
         s = not (self.linkedView().autoRangeEnabled()[self.axis()] is False)
         self.auto_range_enabled = s
         path = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +98,11 @@ class AxisItem(pg.AxisItem):
             QtGui.QPixmap(os.path.join(path, 'autorange_toggle_' + ('on' if s else 'off') + '.png')))
 
     def resizeEvent(self, ev):
+        """
+
+        :param ev:
+        :return: NoneType
+        """
         ## Set the position of the label
         br = self.label.boundingRect()
         p = QtCore.QPointF(0, 0)
@@ -142,6 +164,11 @@ class AxisItem(pg.AxisItem):
             self.enable_auto_range_btn.setPos(x2, 0)
 
     def set_lmt_btn_clicked(self, type):
+        """
+
+        :param type:
+        :return:
+        """
         logger.debug('range[type]=%s', self.range[type])
         value, ok = QtGui.QInputDialog.getDouble(self.parent(), self.label.toPlainText(),
                                                  ('Lower', 'Upper')[type] + ' limit:', self.range[type], decimals=3)
@@ -149,6 +176,11 @@ class AxisItem(pg.AxisItem):
             self.set_view_range(type, value)
 
     def aset_lmt_btn_clicked(self, type):
+        """
+
+        :param type:
+        :return:
+        """
         v = self.linkedView()
         if v == None:
             return
@@ -166,6 +198,12 @@ class AxisItem(pg.AxisItem):
         self.set_view_range(type, v)
 
     def set_view_range(self, type, value):
+        """
+
+        :param type:
+        :param value:
+        :return:
+        """
         v = self.linkedView()
         if v == None:
             range = self.range
@@ -183,11 +221,21 @@ class AxisItem(pg.AxisItem):
                 v.setRange(xRange=range, padding=0)
 
     def setRange(self, mn, mx):
+        """
+
+        :param mn:
+        :param mx:
+        :return:
+        """
         # Override superclass method to emit signal
         super().setRange(mn, mx)
         self.range_changed.emit()
 
     def enable_auto_range_btn_clicked(self):
+        """
+
+        :return:
+        """
         v = self.linkedView()
         if v == None:
             return
@@ -197,9 +245,19 @@ class AxisItem(pg.AxisItem):
             v.enableAutoRange(self.axis())
 
     def setButtonsEnabled(self, enabled):
+        """
+
+        :param enabled:
+        :return:
+        """
         self.buttons_enabled = enabled
 
     def hoverEvent(self, ev):
+        """
+
+        :param ev:
+        :return:
+        """
         if ev.enter:
             self.mouseHovering = True
         if ev.exit:
@@ -207,6 +265,10 @@ class AxisItem(pg.AxisItem):
         self.updateButtons()
 
     def updateButtons(self):
+        """
+
+        :return:
+        """
         btns = self.set_lmt_btns + self.aset_lmt_btns + [self.enable_auto_range_btn]
         try:
             if self.mouseHovering and self._exportOpts is False and self.buttons_enabled:
@@ -219,6 +281,11 @@ class AxisItem(pg.AxisItem):
             pass  # this can happen if the plot has been deleted.
 
     def _updateMaxTextSize(self, x):
+        """
+
+        :param x:
+        :return:
+        """
         ## Informs that the maximum tick size orthogonal to the axis has
         ## changed; we use this to decide whether the item needs to be resized
         ## to accomodate.
@@ -237,7 +304,11 @@ class AxisItem(pg.AxisItem):
                     # return True  ## size has changed
 
     def labelPos(self):
-        """Calculate position (x for left/right, y for top/bottom) of axis label"""
+        """
+        Calculate position (x for left/right, y for top/bottom) of axis label
+
+        :return:
+        """
         if self.orientation in ('left', 'right'):
             # Tick label
             if not self.style['showValues']:
@@ -266,7 +337,11 @@ class AxisItem(pg.AxisItem):
             return h
 
     def neededSpace(self):
-        """Calculate needed space (width for left/right, height for top/bottom)"""
+        """
+        Calculate needed space (width for left/right, height for top/bottom)
+
+        :return:
+        """
         s = self.labelPos()
         if self.label.isVisible():
             s += self.label.boundingRect().height() * 0.8
@@ -275,6 +350,10 @@ class AxisItem(pg.AxisItem):
         return s
 
     def boundingRect(self):
+        """
+
+        :return:
+        """
         linkedView = self.linkedView()
         if linkedView is None or self.grid is False:
             rect = self.mapRectFromParent(self.geometry())
@@ -298,13 +377,26 @@ class AxisItem(pg.AxisItem):
             return self.mapRectFromParent(self.geometry()) | linkedView.mapRectToItem(self, linkedView.boundingRect())
 
     def setExportMode(self, export, opts=None):
+        """
+
+        :param export:
+        :param opts:
+        :return:
+        """
         pg.AxisItem.setExportMode(self, export, opts)
         self.updateButtons()
 
 
 class TimeAxisItem(AxisItem):
     def tickStrings(self, values, scale, spacing):
-        """Copied from pyqtgraph examples."""
+        """
+        Copied from pyqtgraph examples.
+
+        :param values:
+        :param scale:
+        :param spacing:
+        :return:
+        """
         strns = []
         if len(values) == 0:
             return AxisItem.tickStrings(self, values, scale, spacing)
@@ -330,7 +422,7 @@ class TimeAxisItem(AxisItem):
         for x in values:
             try:
                 strns.append(time.strftime(string, time.localtime(x)))
-            except ValueError:  ## Windows can't handle dates before 1970
+            except ValueError:  # Windows can't handle dates before 1970
                 strns.append('')
         try:
             label = time.strftime(label1, time.localtime(min(values))) + time.strftime(label2,
