@@ -96,7 +96,7 @@ class BufferExplorer(QWidget):
                 if self.buffers[candidate].get_number_of_dimension() == 2:
                     main_subplot.clear()
                     main_subplot.plot(x=self.buffers[candidate].get_x_axis_values(),
-                                      y=self.buffers[candidate].get_y_axis_values(),
+                                      y=self.buffers[candidate].get_y_axis_values()[0],
                                       pen=(60, 60, 60))
                 else:
                     main_subplot.clear()
@@ -104,7 +104,7 @@ class BufferExplorer(QWidget):
                     img.setImage(self.buffers[candidate].get_matrix(index=0))
                     (x_scale, y_scale) = self.buffers[candidate].get_scale()
                     img.translate(self.buffers[candidate].get_x_axis_values()[0],
-                                  self.buffers[candidate].get_y_axis_values()[0])
+                                  self.buffers[candidate].get_y_axis_values()[0][0])
                     img.scale(x_scale, y_scale)
                     histogram = pg.HistogramLUTItem()
                     histogram.setImageItem(img)
@@ -116,7 +116,10 @@ class BufferExplorer(QWidget):
                         ax.setPen((60, 60, 60))
                         axis_data = self.buffers[candidate].axis_values[legend[side]]
                         label_style = {'font-size': '7pt'}
-                        ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                        if side == "bottom":
+                            ax.setLabel(axis_data["name"], axis_data["unit"], **label_style)
+                        else:
+                            ax.setLabel(axis_data[0]["name"], axis_data[0]["unit"], **label_style)
 
                 v_layout = QVBoxLayout()
                 v_layout.addWidget(QLabel(get_location_basename(candidate)[:30]))

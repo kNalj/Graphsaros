@@ -543,7 +543,7 @@ class HeatMapSettings(SettingsWidget):
 def main():
     app = QApplication(sys.argv)
 
-    buffer = QcodesData("C:\\Users\\ldrmic\\Documents\\GitHub\\Graphsaros\\other\\QCoDeS_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat")
+    buffer = QcodesData("C:\\Users\\ldrmic\\Projects\\Graphsaros\\other\\QCoDeS_2d1\\IVVI_PLLT_set_IVVI_Ohmic_set.dat")
     buffer.prepare_data()
     hm = Heatmap(buffer)
     ex = HeatMapSettings(hm)

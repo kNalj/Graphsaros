@@ -47,14 +47,14 @@ class InfoWidget(QWidget):
 
         y_axis_h_layout = QHBoxLayout()
         y_start_label = QLabel("Start")
-        y_start_line_edit = QLineEdit(str(self.buffer.data["y"][0]))
+        y_start_line_edit = QLineEdit(str(self.buffer.data["y"][0][0]))
         y_start_line_edit.setDisabled(True)
         y_end_label = QLabel("End")
-        y_end_line_edit = QLineEdit(str(self.buffer.data["y"][-1]))
+        y_end_line_edit = QLineEdit(str(self.buffer.data["y"][0][-1]))
         y_end_line_edit.setDisabled(True)
         y_step_label = QLabel("Step")
         y_step_line_edit = QLineEdit(
-            str((self.buffer.data["y"][-1] - self.buffer.data["y"][0]) / (len(self.buffer.data["y"]) - 1)))
+            str((self.buffer.data["y"][0][-1] - self.buffer.data["y"][0][0]) / (len(self.buffer.data["y"][0]) - 1)))
         y_step_line_edit.setDisabled(True)
         y_axis = [y_start_label, y_start_line_edit, y_end_label, y_end_line_edit, y_step_label, y_step_line_edit]
         for e in y_axis:
