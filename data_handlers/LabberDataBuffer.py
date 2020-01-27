@@ -3,6 +3,7 @@ try:
     from Script import Labber
 except ImportError as e:
     print("Seems like Labber API files are not available on this computer.")
+    print("You will not be able to open Labber files on this PC.")
     print("Detailed exception text: ", str(e))
 from data_handlers.DataBuffer import DataBuffer
 

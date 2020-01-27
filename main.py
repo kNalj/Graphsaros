@@ -9,18 +9,19 @@ from graphs.Heatmap import Heatmap
 from graphs.LineTrace import LineTrace
 from ThreadWorker import Worker
 from helpers import get_location_basename
+from debug.errors import ErrorHandler
 
-import custom_pg.VideoExporter
 import pyqtgraph as pg
 
 import sys
 import os
 
 
-def trap_exc_during_debug(exctype, value, traceback, *args):
+def trap_exc_during_debug(*args):
     # when app raises uncaught exception, print info
-    print(args)
-    print(exctype, value, traceback)
+    eh = ErrorHandler("Exception trap triggered. ", args[0], args[1], args[2])
+    eh.to_file()
+    eh.print_full_report()
 
 
 # install exception hook: without this, uncaught exception would cause application to exit
@@ -499,6 +500,7 @@ class MainWindow(QMainWindow):
 
 
 def main():
+
     app = QApplication(sys.argv)
     ex = MainWindow()
     sys.exit(app.exec_())

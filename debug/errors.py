@@ -1,22 +1,33 @@
 import sys
-import traceback
+import traceback as tb
 from time import asctime
 
 
 class ErrorHandler:
-    def __init__(self, msg):
+    def __init__(self, msg=None, exc_type=None, exc_value=None, exc_traceback=None):
         """
 
         :param msg:
         """
         self.msg = msg
 
-        self.exc_type = sys.exc_info()[0]
-        self.exc_value = sys.exc_info()[1]
-        self.exc_traceback = sys.exc_info()[2]
+        if exc_type is None:
+            self.exc_type = sys.exc_info()[0]
+        else:
+            self.exc_type = exc_type
 
-        self.list = traceback.extract_tb(self.exc_traceback)
-        self.formatted = traceback.format_list(self.list)
+        if exc_value is None:
+            self.exc_value = sys.exc_info()[1]
+        else:
+            self.exc_value = exc_value
+
+        if exc_traceback is None:
+            self.exc_traceback = sys.exc_info()[2]
+        else:
+            self.exc_traceback = exc_traceback
+
+        self.list = tb.extract_tb(self.exc_traceback)
+        self.formatted = tb.format_list(self.list)
 
     def format_error_msg(self):
         """
@@ -47,3 +58,6 @@ class ErrorHandler:
             print("Writing to log")
             file.write(string)
             print("Done")
+
+    def print_full_report(self):
+        print('\x1b[0;31;49m' + self.format_error_msg() + '\x1b[0m')

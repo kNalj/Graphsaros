@@ -126,7 +126,6 @@ class QtLabData(DataBuffer):
                     if i[0].isdigit() or (i.startswith("-") and i[1].isdigit()):
                         break
             data_dict["y"] = {0: data_dict["y"]}
-            print(data_dict)
         return data_dict
 
 
