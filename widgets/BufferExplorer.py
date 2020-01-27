@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal
 from data_handlers.QcodesDataBuffer import QcodesData
 from data_handlers.QtLabDataBuffer import QtLabData
 from data_handlers.MatrixFileDataBuffer import MatrixData
+from data_handlers.LabberDataBuffer import LabberData
 from helpers import get_location_basename, get_location_path
 from widgets.InfoWidget import InfoWidget
 
@@ -25,17 +26,20 @@ class BufferExplorer(QWidget):
     folder finding all .dat files within it and its subfolders (recursively) and adds mini graph representation of them
     to self along some additional data about them.
     
-    It is used to quickly browse through a large set of datasets and gives you an
+    It is used to quickly browse through a large set of datasets and gives you a quick overview.
     """
 
     def __init__(self, folder):
         super(BufferExplorer, self).__init__()
 
+        print("Instantiating folder explorer . . .")
         self.root_folder = folder
+        print("Finding potential files . . .")
         self.candidates = self.find_candidate_files()
         self.buffers = {}
         self.checkboxes = {}
 
+        print("Initilaizing folder explorer user interface . . .")
         self.init_ui()
 
     def init_ui(self):
@@ -48,11 +52,13 @@ class BufferExplorer(QWidget):
         _, _, width, height = QDesktopWidget().screenGeometry().getCoords()
         self.setGeometry(int(0.2 * width), int(0.2 * height), 900, 600)
 
+        print("Setting window title and icon . . .")
         self.setWindowTitle("Browse files")
         self.setWindowIcon(QIcon("img/dataStructure.png"))
 
         # It is possible that there is a lot of measurements in one folder, therefor i create a scroll area and add all
         # of them to this area. If there is more of them then it can fit, you will be able to scroll to see others
+        print("Creating scroll area . . .")
         self.scroll = QScrollArea(self)
         self.scroll.setWidgetResizable(True)
         scroll_content = QWidget(self.scroll)
@@ -63,23 +69,29 @@ class BufferExplorer(QWidget):
         layout = QGridLayout()
         row, column = 0, 0
 
+        print("Instantiating data buffer objects . . .")
         for candidate in self.candidates:
-            with open(candidate, "r") as current_file:
-                for i, line in enumerate(current_file):
-                    if i == 2:
-                        if line.strip(" \n") == "":
-                            self.buffers[candidate] = QtLabData(candidate)
-                            self.buffers[candidate].prepare_data()
-                        elif line.startswith("#"):
-                            self.buffers[candidate] = QcodesData(candidate)
-                            self.buffers[candidate].prepare_data()
-                        else:
-                            self.buffers[candidate] = MatrixData(candidate)
-                            self.buffers[candidate].prepare_data()
+            if candidate.endswith(".dat"):
+                with open(candidate, "r") as current_file:
+                    for i, line in enumerate(current_file):
+                        if i == 2:
+                            if line.strip(" \n") == "":
+                                self.buffers[candidate] = QtLabData(candidate)
+                                self.buffers[candidate].prepare_data()
+                            elif line.startswith("#"):
+                                self.buffers[candidate] = QcodesData(candidate)
+                                self.buffers[candidate].prepare_data()
+                            else:
+                                self.buffers[candidate] = MatrixData(candidate)
+                                self.buffers[candidate].prepare_data()
 
-                        break
+                            break
+            else:
+                self.buffers[candidate] = LabberData(candidate)
+                self.buffers[candidate].prepare_data()
 
             if self.buffers[candidate].is_data_ready():
+                print("{} data is ready. Adding plot and info buttons . . .".format(candidate))
                 mini_plot_widget = QWidget(self)
                 mini_plot_widget.setMinimumHeight(250)
 
@@ -168,6 +180,11 @@ class BufferExplorer(QWidget):
                 if file.endswith(".dat"):
                     file = os.path.join(root, file)
                     candidates.append(file)
+                elif file.endswith(".hdf5"):
+                    print(file)
+                    file = os.path.join(root, file)
+                    candidates.append(file)
+
         return candidates
 
     def submit(self):
