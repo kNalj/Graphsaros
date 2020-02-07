@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
-from math import degrees, atan2, tan
+from math import degrees, atan2, tan, sqrt
 import sys
 
 from PyQt5.QtWidgets import QAction, QApplication, QToolBar, QComboBox, QSpinBox
@@ -18,16 +18,6 @@ from data_handlers.VipDataBuffer import VipData
 from custom_pg.LineROI import LineROI
 from custom_pg.ColorBar import ColorBarItem
 from custom_pg.ImageItem import ImageItem
-
-
-def trap_exc_during_debug(exctype, value, traceback, *args):
-    # when app raises uncaught exception, print info
-    print(args)
-    print(exctype, value, traceback)
-
-
-# install exception hook: without this, uncaught exception would cause application to exit
-sys.excepthook = trap_exc_during_debug
 
 
 class Heatmap(BaseGraph):
@@ -111,6 +101,15 @@ class Heatmap(BaseGraph):
         self.histogram_width = self.width() * 0.2
 
         self.offsets = {"horizontal": 0, "vertical": 0}
+
+        self.transformations = {}
+        for axis in self.data_buffer.data:
+            if axis in ["x", "y"]:
+                self.transformations[axis] = None
+            else:
+                self.transformations[axis] = []
+                for index in range(len(self.data_buffer.data[axis])):
+                    self.transformations[axis].append(None)
 
         self.init_ui()
 
@@ -376,6 +375,14 @@ class Heatmap(BaseGraph):
         self.vertical_offset = QAction(QIcon("img/vertical_offset"), "Vertical_offset", self)
         self.vertical_offset.setToolTip("Apply vertical offset to your data set")
         self.matrix_manipulation_toolbar.addAction(self.vertical_offset)
+
+        self.x_transformation = QAction(QIcon("img/xtransform.png"), "X_axis_transformation", self)
+        self.x_transformation.setToolTip("Apply a function to x axis")
+        self.matrix_manipulation_toolbar.addAction(self.x_transformation)
+
+        self.y_transformation = QAction(QIcon("img/ytransform.png"), "Y_axis_transformation", self)
+        self.y_transformation.setToolTip("Apply a function to y axis")
+        self.matrix_manipulation_toolbar.addAction(self.y_transformation)
 
         # ###############################
         # #### Window manipulations #####
@@ -1003,6 +1010,26 @@ class Heatmap(BaseGraph):
         self.vertical_offset_input.submitted.connect(self.y_axis_offset)
         return
 
+    def x_axis_transformation_action(self):
+        """
+
+        :return:
+        """
+        self.idw = InputDataWidget.InputData("Formula to apply to x axis.", 1,
+                                             placeholders=["X"], numeric=[False])
+        self.idw.submitted.connect(self.transform_x_axis)
+        self.idw.show()
+
+    def y_axis_transformation_action(self):
+        """
+
+        :return:
+        """
+        self.idw = InputDataWidget.InputData("Formula to apply to y axis.", 1,
+                                             placeholders=["Y"], numeric=[False])
+        self.idw.submitted.connect(self.transform_y_axis)
+        self.idw.show()
+
     """
     ########################
     ######## Events ########
@@ -1174,7 +1201,7 @@ class Heatmap(BaseGraph):
         Data is calculated using the formula: dV(real) = dV - (dI * R) where R and dV are obtained by user input in the
         InputWindow.
 
-        After generating new matrix, it is added to a dictionery of matrices and is available for selection in dropdown
+        After generating new matrix, it is added to a dictionary of matrices and is available for selection in dropdown
         located in the toolbar and can be displayed it the window.
 
         :param data: array: contains value of R, dV and a matrix to which we apply the correction to. Passed to this
@@ -1487,6 +1514,69 @@ class Heatmap(BaseGraph):
         self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
         return
 
+    def transform_x_axis(self, data):
+        """
+
+        :param data:
+        :return:
+        """
+        self.apply_transformation(data, "x")
+
+    def transform_y_axis(self, data):
+        """
+
+        :param data:
+        :return:
+        """
+        self.apply_transformation(data, "y")
+
+    def apply_transformation(self, expression, axis):
+        """
+
+        :param expression:
+        :return:
+        """
+        data = []
+        for index, value in enumerate(self.data_buffer.data[axis]):
+            try:
+                if axis == "x":
+                    result = eval(expression[0], globals(), {axis: self.data_buffer.data[axis][index]})
+                    data.append(result)
+                else:
+                    print(value)
+                    for y_index, val in enumerate(value):
+                        result = eval(expression[0], globals(), {axis: self.data_buffer.data[axis][0][y_index]})
+                        data.append(result)
+                    print(data)
+            except Exception as e:
+                 show_error_message("Task failed successfully !", str(e))
+                 return
+
+        (x_scale, y_scale) = self.data_buffer.get_scale()
+        self.plot_elements["img"].resetTransform()
+        if axis == "x":
+            self.plot_elements["img"].translate(data[0], self.data_buffer.get_y_axis_values()[0][0])
+            x_min = min(self.data_buffer.get_x_axis_values())
+            x_max = max(self.data_buffer.get_x_axis_values())
+            new_x_min = min(data)
+            new_x_max = max(data)
+            y_min = min(self.data_buffer.get_y_axis_values()[0])
+            y_max = max(self.data_buffer.get_y_axis_values()[0])
+            self.plot_elements["img"].scale(((new_x_max - new_x_min) / (x_max - x_min)) * x_scale, y_scale)
+            self.plot_elements["main_subplot"].setLimits(xMin=new_x_min, xMax=new_x_max, yMin=y_min, yMax=y_max)
+        else:
+            self.plot_elements["img"].translate(self.data_buffer.get_x_axis_values()[0], data[0])
+            new_y_min = min(data)
+            new_y_max = max(data)
+            y_min = min(self.data_buffer.get_y_axis_values()[0])
+            y_max = max(self.data_buffer.get_y_axis_values()[0])
+            x_min = min(self.data_buffer.get_x_axis_values())
+            x_max = max(self.data_buffer.get_x_axis_values())
+            self.plot_elements["img"].scale(x_scale, ((new_y_max - new_y_min) / (y_max - y_min)) * y_scale)
+            self.plot_elements["main_subplot"].setLimits(xMin=x_min, xMax=x_max, yMin=new_y_min, yMax=new_y_max)
+
+        return data
+
 
 def main():
     app = QApplication(sys.argv)
@@ -1511,7 +1601,11 @@ def main():
         data.prepare_data()
     elif typee == "vip":
         data = VipData("K:\\FaridH\\voltage_sweep_45_data_191028_16h11m42s.txt")
+        data = VipData("K:\\RiyaS\\Photon_Blockade\\Ver2\\Flux Sweep\\Zoom Sweep_65_data_191225_09h26m54s.txt")
+        # data = VipData("K:\\FaridH\\Rabi_shevron.txt")
         data.prepare_data()
+
+    print(data.data["matrix"][0])
 
     ex = Heatmap(data=data)
     sys.exit(app.exec_())
