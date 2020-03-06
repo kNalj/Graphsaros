@@ -96,7 +96,7 @@ class Heatmap(BaseGraph):
         # need to move this to plt data options
         self.corrected_data = None
 
-        self.unit_correction = 1000
+        self.unit_correction = 1
 
         self.histogram_width = self.width() * 0.2
 
@@ -868,7 +868,7 @@ class Heatmap(BaseGraph):
         :return: NoneType
         """
         self.input = InputDataWidget.InputData("Please input the resistance something something to correct your data",
-                                               1, numeric=[True], placeholders=["Resistance"])
+                                               1, numeric=[True], placeholders=["Resistance [Ω]"])
         self.input.submitted.connect(self.apply_correction)
 
     def naive_smoothing(self):
