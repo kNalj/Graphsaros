@@ -641,23 +641,19 @@ class Heatmap(BaseGraph):
         """
         # self.open_line_trace_menues()
 
-        if self.line_trace_btn.isChecked():
-            self.plot_elements["line_trace_graph"].show()
-        else:
-            self.plot_elements["line_trace_graph"].hide()
+        # ROI instantiation
+        x0, x1 = self.plot_elements["main_subplot"].getAxis("bottom").range
+        y0, y1 = self.plot_elements["main_subplot"].getAxis("left").range
+
+        x0 = x0 + (x1 - x0) * 0.1
+        y0 = y0 + (y1 - y0) * 0.1
+        y1 = y1 - (y1 - y0) * 0.1
 
         if self.modes["ROI"] == False:
             self.modes["ROI"] = True
 
             if self.line_segment_roi["ROI"] is None:
-                # ROI instantiation
-                x0 = min(self.data_buffer.get_x_axis_values())
-                y0 = min(self.data_buffer.get_y_axis_values()[0])
-
-                x1 = min(self.data_buffer.get_x_axis_values())
-                y1 = max(self.data_buffer.get_y_axis_values()[0])
-
-                line_segmet_roi = LineROI(positions=([x0, y0], [x1, y1]),
+                line_segmet_roi = LineROI(positions=([x0, y0], [x0, y1]),
                                           pos=(0, 0),
                                           pen=(5, 9),
                                           edges=[self.data_buffer.get_x_axis_values()[0],
@@ -696,6 +692,14 @@ class Heatmap(BaseGraph):
             self.line_segment_roi["ROI"].hide()
             self.label_a.hide()
             self.label_b.hide()
+
+        if self.line_trace_btn.isChecked():
+            roi = self.line_segment_roi["ROI"]
+            roi.movePoint(roi.getHandles()[0], (x0, y0))
+            roi.movePoint(roi.getHandles()[1], (x0, y1))
+            self.plot_elements["line_trace_graph"].show()
+        else:
+            self.plot_elements["line_trace_graph"].hide()
 
     def side_by_side_line_trace(self):
         pass
