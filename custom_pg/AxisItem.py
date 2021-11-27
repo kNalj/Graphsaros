@@ -4,7 +4,7 @@
 
 import os, logging, time
 import pyqtgraph as pg
-from pyqtgraph import QtCore, QtGui
+from pyqtgraph import QtCore, QtGui, icons
 from functools import partial
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class AxisItem(pg.AxisItem):
     range_changed = QtCore.pyqtSignal()
 
     def __init__(self, orientation, pen=None, linkView=None, parent=None, maxTickLength=-5, showValues=True):
-        pg.AxisItem.__init__(self, orientation, pen, linkView, parent, maxTickLength, showValues)
+        pg.AxisItem.__init__(self, orientation, pen, None, linkView, parent, maxTickLength, showValues)
         self.set_lmt_btns = []
         self.aset_lmt_btns = []
         path = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +34,7 @@ class AxisItem(pg.AxisItem):
             btn.clicked.connect(partial(self.set_lmt_btn_clicked, type))  # late binding if function used
             self.set_lmt_btns.append(btn)
             # autoset limit button
-            btn = pg.ButtonItem(pg.pixmaps.getPixmap('auto'), 14, self)
+            btn = pg.ButtonItem(pg.icons.getPixmap('auto'), 14, self)
             btn.setZValue(-1000)
             btn.setFlag(btn.ItemNegativeZStacksBehindParent)
             btn.clicked.connect(partial(self.aset_lmt_btn_clicked, type))  # late binding if function used
