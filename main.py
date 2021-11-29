@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidget, QPushButton, QWidget, QTableWidget,\
-    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy, QVBoxLayout
+    QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy, QVBoxLayout, QMessageBox
 from PyQt5 import QtCore, QtGui
 
-from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer
+from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer, QttDataBuffer
 from widgets import ProgressBarWidget
 from widgets.BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
@@ -251,8 +251,24 @@ class MainWindow(QMainWindow):
                                 buffer = QtLabDataBuffer.QtLabData(file)
                                 worker = Worker(buffer.prepare_data)
                             elif line.startswith("#"):
-                                type_item = QTableWidgetItem("QCoDeS")
-                                buffer = QcodesDataBuffer.QcodesData(file)
+
+                                msg_box = QMessageBox(self)
+                                msg_box.setWindowTitle("I don't know ...")
+                                msg_box.setText("... which one is it ?")
+                                msg_box.setStandardButtons(QMessageBox.Yes|QMessageBox.No)
+                                qc = msg_box.button(QMessageBox.Yes)
+                                qc.setText("QCoDeS")
+                                qtt = msg_box.button(QMessageBox.No)
+                                qtt.setText("Qtt")
+                                msg_box.exec_()
+
+                                if msg_box.clickedButton() == qc:
+                                    type_item = QTableWidgetItem("QCoDeS")
+                                    buffer = QcodesDataBuffer.QcodesData(file)
+                                elif msg_box.clickedButton() == qtt:
+                                    type_item = QTableWidgetItem("Qtt")
+                                    buffer = QttDataBuffer.QttData(file)
+
                                 worker = Worker(buffer.prepare_data)
                             else:
                                 type_item = QTableWidgetItem("Matrix")
@@ -426,8 +442,8 @@ class MainWindow(QMainWindow):
                 img = pg.ImageItem()
                 img.setImage(dataset.get_matrix(index=0))
                 (x_scale, y_scale) = dataset.get_scale()
-                img.translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0][0])
-                img.scale(x_scale, y_scale)
+                img.transform().translate(dataset.get_x_axis_values()[0], dataset.get_y_axis_values()[0][0])
+                img.transform().scale(x_scale, y_scale)
                 print(" Drawing histogram . . .")
                 histogram = pg.HistogramLUTItem()
                 histogram.setImageItem(img)

@@ -42,19 +42,19 @@ class DataBuffer(QObject):
         #       y: list of y axis values
         #   For 2D measurement: x, y
         #       x and y same as in 3D
-        self.data = None
+        self.data = {}
 
         # Not all measurements have the same numbers of parameters that are being set. We might have a measurement that
         # sets two different parameters and measures one, also a measurement that is a loop in a loop which also sets
         # two parameters and measures one but its not the same thing. Also there might be more then one measured
         # parameter
-        self.number_of_set_parameters = None
+        self.number_of_set_parameters = 0
 
         # Same as number of set parameters. Its usefull to have this number available at all times. its usefull to some
         # other windows when displaying data to know how many columns are set parameters, and how many columns are data
         # to be displayed. (Example: Loop in a loop measurement has 2 parameters that are being measured. In this case
         # we want to give user to option to chose which measured parameter is displayed as a graph)
-        self.number_of_measured_parameters = None
+        self.number_of_measured_parameters = 0
 
         # Textual representetion of data set. Enables wuick overview of the data in the main window
         self.textual = None
