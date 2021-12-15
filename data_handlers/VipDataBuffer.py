@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from data_handlers.DataBuffer import DataBuffer
 
 
@@ -32,48 +33,27 @@ class VipData(DataBuffer):
         """
 
         """
-        legend = {0: "x", 1: "y", 2: "matrix"}
-        index = 0
-        m_index = 0
         data = {}
         data_dict = {"x": {}, "y": {}, "matrix": {}}
 
         with open(self.location, "r") as file:
             for i in file:
                 if i.startswith("%"):  # for whatever reason "comment" lines start with %
-
-                    if index <= 2:
-                        index += 1
-                    if index == 1:
-                        data[legend[index - 1]] = np.array([])
+                    axis = i.strip("\n").split(" ")[1:]
+                    if len(axis) > 1:
+                        name = "".join(axis[:-1])
+                        unit = axis[-1:][0]
                     else:
-                        data[legend[index - 1]] = {}
+                        name = axis[0]
+                        unit = ""
+                    if not data_dict["y"]:
+                        data_dict["y"][len(data_dict["y"])] = {"name": name, "unit": unit}
+                    elif not data_dict["x"]:
+                        data_dict["x"] = {"name": name, "unit": unit}
+                    else:
+                        data_dict["matrix"][len(data_dict["matrix"])] = {"name": name, "unit": unit}
 
-                    param = i.split(" ")
-                    if len(param) <= 2:  # extract name and unit for sweep params
-                        data_dict[legend[index - 1]]["name"] = "".join(param[1:])
-                        data_dict[legend[index - 1]]["unit"] = ""
-                        data[legend[index - 1]][m_index] = np.array([])
-                        print(data_dict[legend[index - 1]]["name"], data_dict[legend[index - 1]]["unit"], index,
-                              m_index)
-                    else:  # extract name and unit for measurement params
-                        data_dict[legend[index - 1]]["name"] = "".join(param[1:-1])
-                        data_dict[legend[index - 1]]["unit"] = "".join(param[-1:])
-                        if legend[index - 1] == "x":
-                            data[legend[index - 1]] = np.array([])
-                        else:
-                            data[legend[index - 1]][m_index] = np.array([])
-                else:
-                    if i.startswith(("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ".", "-")):
-                        new_data = self.get_data_from_string(i)
-                        if legend[index - 1] == "x":
-                            data[legend[index - 1]] = np.concatenate((data[legend[index - 1]], new_data))
-                        else:
-                            data[legend[index - 1]][m_index] = np.concatenate(
-                                (data[legend[index - 1]][m_index], new_data))
-
-        data["matrix"][0] = np.split(data["matrix"][0], len(data["x"]))
-        self.axis_values = {"x": data_dict["x"], "y": {0: data_dict["y"]}, "matrix": {0: data_dict["matrix"]}}
+        self.axis_values = {"x": data_dict["x"], "y": data_dict["y"], "matrix": data_dict["matrix"]}
         self.data = data
         return data
 
@@ -96,7 +76,7 @@ class VipData(DataBuffer):
 
 
 def main():
-    location = "K:\\FaridH\\voltage_sweep_45_data_191028_16h11m42s.txt"
+    location = "D:\\Projects\\Graphsaros\\data\\1x1\\JPA_Pump9MHzHigher_Pumppower-2p0dBm_VNAPower_-30dBm_103_data_211207_18h18m48s.txt"
     buffer = VipData(location)
     buffer.prepare_data()
     print(buffer.matrix_dimensions)

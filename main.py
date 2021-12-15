@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QDesktopWidg
     QTextBrowser, QAction, QMenu, QFileDialog, QHeaderView, QTableWidgetItem, QSizePolicy, QVBoxLayout, QMessageBox
 from PyQt5 import QtCore, QtGui
 
-from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer, QttDataBuffer
+from data_handlers import LabberDataBuffer, QcodesDataBuffer, QtLabDataBuffer, MatrixFileDataBuffer, QttDataBuffer, VipDataBuffer
 from widgets import ProgressBarWidget
 from widgets.BufferExplorer import BufferExplorer
 from graphs.Heatmap import Heatmap
@@ -243,6 +243,16 @@ class MainWindow(QMainWindow):
                     worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
                                                                                      type_item))
                     self.thread_pool.start(worker)
+                elif file.lower().endswith(".txt"):
+                    type_item = QTableWidgetItem("VIP")
+                    buffer = VipDataBuffer.VipData(file)
+                    worker = Worker(buffer.prepare_data)
+                    progress_bar = self.add_progress_widget(buffer)
+                    buffer.progress.connect(lambda progress: self.get_progress(progress, progress_bar))
+                    self.datasets[name] = buffer
+                    buffer.ready.connect(self.make_add_to_table(self.datasets[name]))
+                    worker.signals.finished.connect(lambda: self.add_buffer_to_table(self.datasets[name],
+                                                                                     type_item))
                 else:
                     for i, line in enumerate(current_file):
                         if i == 2:
